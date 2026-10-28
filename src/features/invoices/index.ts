@@ -1,0 +1,2 @@
+// Invoices feature module
+export {}
