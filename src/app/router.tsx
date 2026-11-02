@@ -10,6 +10,7 @@ import VisitNew from '@/routes/VisitNew'
 import VisitSummary from '@/routes/VisitSummary'
 import Invoices from '@/routes/Invoices'
 import Catalog from '@/routes/Catalog'
+import Warung from '@/routes/Warung'
 import Receipt from '@/routes/Receipt'
 
 // Lazy load DesignLab khusus saat development environment (tree-shaken di build produksi)
@@ -42,7 +43,7 @@ export const router = createBrowserRouter([
       { path: '/kunjungan/baru', element: <VisitNew /> },
       { path: '/visit/new', element: <VisitNew /> },
       { path: '/visit/summary', element: <VisitSummary /> },
-      { path: '/warung', element: <Catalog /> },
+      { path: '/warung', element: <Warung /> },
       { path: '/tagihan', element: <Invoices /> },
       { path: '/invoices', element: <Invoices /> },
       { path: '/produk', element: <Catalog /> },
