@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from '@/app/layouts/AppLayout'
 import PublicLayout from '@/app/layouts/PublicLayout'
 import Home from '@/routes/Home'
+import Visit from '@/routes/Visit'
 import Landing from '@/routes/Landing'
 import Auth from '@/routes/Auth'
 import VisitNew from '@/routes/VisitNew'
@@ -37,7 +38,8 @@ export const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/home', element: <Home /> },
-      { path: '/kunjungan', element: <VisitNew /> },
+      { path: '/kunjungan', element: <Visit /> },
+      { path: '/kunjungan/baru', element: <VisitNew /> },
       { path: '/visit/new', element: <VisitNew /> },
       { path: '/visit/summary', element: <VisitSummary /> },
       { path: '/warung', element: <Catalog /> },

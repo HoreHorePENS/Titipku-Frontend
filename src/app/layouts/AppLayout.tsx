@@ -128,6 +128,7 @@ export const NAV_ITEMS: NavItemConfig[] = [
 
 export function AppLayout() {
   const location = useLocation()
+  const isVisitNew = location.pathname.startsWith('/kunjungan/baru')
 
   return (
     <div
@@ -203,45 +204,49 @@ export function AppLayout() {
 
       {/* --------------------------------------------------------------------
           3. MOBILE BOTTOM NAVIGATION (Sesuai mockup HP)
+          Disembunyikan pada alur /kunjungan/baru agar tidak tumpang tindih
+          dengan bar aksi 'Lanjut Pembayaran' (Thumb-zone)
           -------------------------------------------------------------------- */}
-      <nav
-        aria-label="Navigasi Bawah Mobile"
-        className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line md:hidden pb-[env(safe-area-inset-bottom,0px)]"
-      >
-        <div className="flex items-center justify-around px-2 py-1.5">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              item.to === '/'
-                ? location.pathname === '/' || location.pathname === '/home'
-                : location.pathname.startsWith(item.to)
+      {!isVisitNew && (
+        <nav
+          aria-label="Navigasi Bawah Mobile"
+          className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line md:hidden pb-[env(safe-area-inset-bottom,0px)]"
+        >
+          <div className="flex items-center justify-around px-2 py-1.5">
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                item.to === '/'
+                  ? location.pathname === '/' || location.pathname === '/home'
+                  : location.pathname.startsWith(item.to)
 
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={`flex-1 min-h-[50px] min-w-[48px] py-1 flex flex-col items-center justify-center gap-1 transition-colors select-none ${
-                  isActive ? 'text-primary' : 'text-ink-soft'
-                }`}
-              >
-                <div className="relative flex items-center justify-center">
-                  <item.icon className="w-6 h-6" />
-                  {item.hasBadge && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger ring-1.5 ring-surface" />
-                  )}
-                </div>
-
-                <span
-                  className={`text-[11px] leading-none tracking-tight ${
-                    isActive ? 'font-bold text-primary' : 'font-medium text-ink-soft'
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={`flex-1 min-h-[50px] min-w-[48px] py-1 flex flex-col items-center justify-center gap-1 transition-colors select-none ${
+                    isActive ? 'text-primary' : 'text-ink-soft'
                   }`}
                 >
-                  {item.label}
-                </span>
-              </NavLink>
-            )
-          })}
-        </div>
-      </nav>
+                  <div className="relative flex items-center justify-center">
+                    <item.icon className="w-6 h-6" />
+                    {item.hasBadge && (
+                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-danger ring-1.5 ring-surface" />
+                    )}
+                  </div>
+
+                  <span
+                    className={`text-[11px] leading-none tracking-tight ${
+                      isActive ? 'font-bold text-primary' : 'font-medium text-ink-soft'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </NavLink>
+              )
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   )
 }
