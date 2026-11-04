@@ -3,6 +3,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Money } from '@/components/shared/Money'
 import { Button } from '@/components/ui/Button'
 import { formatDateWIB, rupiah } from '@/lib/format'
+import { useVisitDetail } from '../api'
 import type { VisitRecord } from '../types'
 
 export interface VisitDetailModalProps {
@@ -10,7 +11,10 @@ export interface VisitDetailModalProps {
   onClose: () => void
 }
 
-export function VisitDetailModal({ visit, onClose }: VisitDetailModalProps) {
+export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailModalProps) {
+  const { data: detailedVisit } = useVisitDetail(initialVisit?.id)
+  const visit = detailedVisit || initialVisit
+
   if (!visit) return null
 
   const statusLabel =

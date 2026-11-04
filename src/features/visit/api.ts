@@ -147,15 +147,6 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
   const invoices = invoicesRes.data || []
   const partners = partnersRes.data || []
 
-  // Backend /v1/visits tidak menyertakan rincian items, ambil detail tiap kunjungan
-  const visits = await Promise.all(
-    basicVisits.map((v) =>
-      apiClient<{ data: BackendVisit }>(`/v1/visits/${v.id}`)
-        .then((res) => res.data)
-        .catch(() => v)
-    )
-  )
-
   const partnerAreaMap = new Map<string, string>()
   partners.forEach((p) => {
     if (p.address) {
@@ -168,7 +159,7 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
     invoiceMap.set(inv.visit_id, inv)
   })
 
-  return visits.map((v) => {
+  return basicVisits.map((v) => {
     const invoice = invoiceMap.get(v.id)
     const status: PaymentStatus = invoice ? invoice.status : v.total === 0 ? 'paid' : 'unpaid'
     const paid = invoice ? invoice.paid : 0

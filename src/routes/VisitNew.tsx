@@ -8,7 +8,7 @@ import { ApiError } from '@/lib/api-client'
 import { ProductStockCard } from '@/features/visit/components/ProductStockCard'
 import { VisitSummaryStep, type PaymentChoice } from '@/features/visit/components/VisitSummaryStep'
 import { VisitSuccessCard } from '@/features/visit/components/VisitSuccessCard'
-import { usePartnerOptions, useProducts, useVisits, useCreateVisit } from '@/features/visit/api'
+import { usePartnerOptions, useProducts, useVisits, useVisitDetail, useCreateVisit } from '@/features/visit/api'
 import { calculateVisitTotals } from '@/features/visit/calc'
 import { rupiah, formatJamWIB } from '@/lib/format'
 import { generateUUID } from '@/lib/uuid'
@@ -61,21 +61,25 @@ export default function VisitNewRoute() {
     return partnerOptions.find((p) => p.id === selectedPartnerId)
   }, [partnerOptions, selectedPartnerId])
 
-  // Petakan stok terakhir (stock_after) per produk di warung ini
-  const prevStockMap = useMemo(() => {
-    const map = new Map<string, number>()
-    // Urutkan kunjungan warung dari terbaru
+  const latestVisitId = useMemo(() => {
+    if (partnerVisits.length === 0) return undefined
     const sorted = [...partnerVisits].sort(
       (a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime()
     )
-    if (sorted.length > 0) {
-      const latest = sorted[0]
-      for (const it of latest.items || []) {
-        map.set(it.productId, it.stockAfter ?? 0)
-      }
+    return sorted[0]?.id
+  }, [partnerVisits])
+
+  const { data: latestVisitDetail } = useVisitDetail(latestVisitId)
+
+  // Petakan stok terakhir (stock_after) per produk di warung ini
+  const prevStockMap = useMemo(() => {
+    const map = new Map<string, number>()
+    const items = latestVisitDetail?.items || partnerVisits[0]?.items || []
+    for (const it of items) {
+      map.set(it.productId, it.stockAfter ?? 0)
     }
     return map
-  }, [partnerVisits])
+  }, [latestVisitDetail, partnerVisits])
 
   // Inisialisasi item input berdasarkan produk aktif
   const [customItems, setCustomItems] = useState<VisitItemInput[] | null>(null)
