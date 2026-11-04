@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toast'
 import { ApiError } from '@/lib/api-client'
+import { partnerFormSchema, type PartnerFormData } from '../schema'
 import type { Partner, PartnerFormInput } from '../types'
 
 export interface PartnerFormModalProps {
@@ -20,62 +23,55 @@ export function PartnerFormModal({
   initialData,
   isLoading = false,
 }: PartnerFormModalProps) {
-  const [name, setName] = useState('')
-  const [ownerName, setOwnerName] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
-  const [address, setAddress] = useState('')
-  const [isActive, setIsActive] = useState(true)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const isEditMode = Boolean(initialData)
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    setError,
+    formState: { errors },
+  } = useForm<PartnerFormData>({
+    resolver: zodResolver(partnerFormSchema),
+    defaultValues: {
+      name: initialData?.name || '',
+      ownerName: initialData?.ownerName || '',
+      whatsapp: initialData?.whatsapp || '',
+      address: initialData?.address || '',
+      isActive: initialData?.isActive ?? true,
+    },
+  })
 
   useEffect(() => {
-    if (initialData) {
-      setName(initialData.name)
-      setOwnerName(initialData.ownerName || '')
-      setWhatsapp(initialData.whatsapp || '')
-      setAddress(initialData.address || '')
-      setIsActive(initialData.isActive)
-    } else {
-      setName('')
-      setOwnerName('')
-      setWhatsapp('')
-      setAddress('')
-      setIsActive(true)
+    if (isOpen) {
+      reset({
+        name: initialData?.name || '',
+        ownerName: initialData?.ownerName || '',
+        whatsapp: initialData?.whatsapp || '',
+        address: initialData?.address || '',
+        isActive: initialData?.isActive ?? true,
+      })
     }
-    setErrors({})
-  }, [initialData, isOpen])
+  }, [isOpen, initialData, reset])
+
+  const isActive = watch('isActive')
 
   if (!isOpen) return null
 
-  const validate = () => {
-    const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = 'Nama warung wajib diisi'
-    if (!ownerName.trim()) errs.ownerName = 'Nama pemilik/penjaga wajib diisi'
-    if (!whatsapp.trim()) {
-      errs.whatsapp = 'Nomor WhatsApp wajib diisi'
-    } else if (whatsapp.replace(/\D/g, '').length < 9) {
-      errs.whatsapp = 'Nomor WhatsApp minimal 9 digit angka'
-    }
-    if (!address.trim()) errs.address = 'Alamat/daerah warung wajib diisi'
-
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-
+  const onValidSubmit = async (data: PartnerFormData) => {
     try {
       await onSubmit({
-        name: name.trim(),
-        owner_name: ownerName.trim(),
-        whatsapp: whatsapp.trim(),
-        address: address.trim(),
-        is_active: isActive,
+        name: data.name.trim(),
+        owner_name: data.ownerName.trim(),
+        whatsapp: data.whatsapp.trim(),
+        address: data.address.trim(),
+        is_active: data.isActive,
       })
       toast.show({
         title: isEditMode ? 'Warung Diperbarui' : 'Warung Ditambahkan',
-        description: `Data warung ${name.trim()} berhasil disimpan.`,
+        description: `Data warung ${data.name.trim()} berhasil disimpan.`,
         type: 'success',
       })
       onClose()
@@ -84,7 +80,7 @@ export function PartnerFormModal({
       if (err instanceof ApiError) {
         if (err.status === 409 || err.code === 'WHATSAPP_TAKEN') {
           desc = 'Nomor WhatsApp ini sudah terdaftar untuk warung lain. Gunakan nomor berbeda.'
-          setErrors((prev) => ({ ...prev, whatsapp: 'Nomor WhatsApp sudah digunakan' }))
+          setError('whatsapp', { type: 'manual', message: 'Nomor WhatsApp sudah digunakan' })
         } else if (err.code === 'VALIDATION_ERROR') {
           desc = 'Periksa kembali kelengkapan formulir warung.'
         } else if (err.message) {
@@ -106,8 +102,6 @@ export function PartnerFormModal({
       })
     }
   }
-
-  const isEditMode = Boolean(initialData)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs animate-fadeIn font-sans">
@@ -141,31 +135,28 @@ export function PartnerFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onValidSubmit)} className="p-5 overflow-y-auto flex flex-col gap-4">
           <Input
             label="Nama Warung"
             placeholder="Contoh: Warung Bu Sri"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            error={errors.name}
+            {...register('name')}
+            error={errors.name?.message}
             required
           />
 
           <Input
             label="Nama Pemilik / Penjaga"
             placeholder="Contoh: Bu Sri"
-            value={ownerName}
-            onChange={(e) => setOwnerName(e.target.value)}
-            error={errors.ownerName}
+            {...register('ownerName')}
+            error={errors.ownerName?.message}
             required
           />
 
           <Input
             label="Nomor WhatsApp"
             placeholder="Contoh: 081330124471"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            error={errors.whatsapp}
+            {...register('whatsapp')}
+            error={errors.whatsapp?.message}
             hint="Digunakan untuk pengiriman Nota Digital via WhatsApp"
             type="tel"
             required
@@ -174,9 +165,8 @@ export function PartnerFormModal({
           <Input
             label="Alamat Lengkap & Daerah"
             placeholder="Contoh: Jl. Rungkut Asri Tengah No. 14, Rungkut, Surabaya"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            error={errors.address}
+            {...register('address')}
+            error={errors.address?.message}
             required
           />
 
@@ -191,7 +181,7 @@ export function PartnerFormModal({
 
               <button
                 type="button"
-                onClick={() => setIsActive(!isActive)}
+                onClick={() => setValue('isActive', !isActive, { shouldValidate: true })}
                 className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
                   isActive ? 'bg-primary' : 'bg-ink-disabled'
                 }`}
