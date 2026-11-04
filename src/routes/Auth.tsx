@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
-import { toast } from '@/components/ui/Toast'
+import { toast } from '@/components/ui/toast-store'
 import { loginUser, isAuthenticated } from '@/features/auth'
 import { ApiError } from '@/lib/api-client'
 

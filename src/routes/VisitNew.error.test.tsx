@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { toastStore } from '@/components/ui/Toast'
+import { toastStore } from '@/components/ui/toast-store'
 import { ApiError } from '@/lib/api-client'
 
 describe('VisitNew Error Handling (No Alert, Uses Toast)', () => {

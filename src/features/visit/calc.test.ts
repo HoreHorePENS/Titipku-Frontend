@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  calculateVisit,
   calculateVisitItem,
   calculateVisitTotals,
   aggregateVisitItems,
@@ -9,18 +8,6 @@ import {
   filterVisits,
 } from './calc'
 import type { VisitItem, VisitRecord } from './types'
-
-describe('calculateVisit', () => {
-  it('harus menghitung barang terjual dan stok setelah kunjungan', () => {
-    const result = calculateVisit({
-      initialStock: 10,
-      returnedQty: 2,
-      newStockAdded: 5,
-    })
-    expect(result.soldQty).toBe(8)
-    expect(result.finalStock).toBe(7)
-  })
-})
 
 describe('aggregateVisitItems', () => {
   it('harus menjumlahkan barang terjual, retur, dan titip baru dengan tepat', () => {

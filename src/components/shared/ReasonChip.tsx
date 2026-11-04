@@ -1,28 +1,8 @@
-import React from 'react'
+import type React from 'react'
 import { Badge, type BadgeSize } from '@/components/ui/Badge'
+import { REASON_CONFIG_MAP, type PriorityReason } from './badge-constants'
 
-export type PriorityReason = 'stok_hampir_habis' | 'hampir_kedaluwarsa' | 'piutang'
-
-export const REASON_CONFIG_MAP: Record<
-  PriorityReason,
-  {
-    tone: 'neutral' | 'danger' | 'warning'
-    defaultLabel: string
-  }
-> = {
-  stok_hampir_habis: {
-    tone: 'neutral', // Dilepas dari teal agar tidak tampak seperti tombol aksi
-    defaultLabel: 'Stok hampir habis',
-  },
-  hampir_kedaluwarsa: {
-    tone: 'danger',
-    defaultLabel: 'Hampir kedaluwarsa',
-  },
-  piutang: {
-    tone: 'warning',
-    defaultLabel: 'Piutang 14 hari',
-  },
-}
+export type { PriorityReason }
 
 export interface ReasonChipProps {
   reason: PriorityReason
@@ -45,3 +25,5 @@ export function ReasonChip({
     </Badge>
   )
 }
+
+export default ReasonChip

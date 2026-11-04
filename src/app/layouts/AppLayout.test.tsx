@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
-import { AppLayout, NAV_ITEMS } from './AppLayout'
+import { AppLayout } from './AppLayout'
+import { NAV_ITEMS } from './nav-items'
 
 describe('AppLayout Shell & Navigation', () => {
   it('harus memuat tepat 5 item navigasi resmi', () => {

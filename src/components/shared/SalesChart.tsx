@@ -8,7 +8,7 @@ import {
 } from './SalesChart.calc'
 
 // 30 hari data penjualan default (Oktober 2026 - Keripik Pisang Rina)
-export const DEFAULT_SALES_DATA: DailySalesPoint[] = [
+const DEFAULT_SALES_DATA: DailySalesPoint[] = [
   { date: '28 Sep', amount: 160_000 },
   { date: '29 Sep', amount: 180_000 },
   { date: '30 Sep', amount: 150_000 },

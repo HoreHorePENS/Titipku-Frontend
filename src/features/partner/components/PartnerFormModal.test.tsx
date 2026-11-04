@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PartnerFormModal } from './PartnerFormModal'
 import { ApiError } from '@/lib/api-client'
-import { toastStore } from '@/components/ui/Toast'
+import { toastStore } from '@/components/ui/toast-store'
 
 describe('PartnerFormModal Error & Toast Handling', () => {
   beforeEach(() => {

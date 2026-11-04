@@ -12,7 +12,7 @@ export const partnerFormSchema = z.object({
       return digits.length >= 9 && digits.length <= 16
     }, 'Nomor WhatsApp minimal 9 digit angka'),
   address: z.string().trim().min(1, 'Alamat/daerah warung wajib diisi'),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 })
 
 export type PartnerFormData = z.infer<typeof partnerFormSchema>

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PaymentRecordModal } from './PaymentRecordModal'
 import { ApiError } from '@/lib/api-client'
-import { toastStore } from '@/components/ui/Toast'
+import { toastStore } from '@/components/ui/toast-store'
 import type { Invoice } from '../types'
 import type { Partner } from '@/features/partner/types'
 
@@ -32,6 +32,7 @@ describe('PaymentRecordModal Error & Toast Handling', () => {
       id: 'inv-1',
       partnerId: 'p-1',
       partnerName: 'Warung Barokah',
+      partnerWhatsApp: '081234567890',
       visitId: 'v-1',
       visitNumber: 'N-261028-0001',
       visitDate: '2026-10-28T13:00:00Z',

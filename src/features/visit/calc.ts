@@ -8,18 +8,6 @@ export interface CalcItemResult {
   errorMessage: string
 }
 
-export interface CalcVisitParams {
-  initialStock: number
-  returnedQty: number
-  newStockAdded: number
-}
-
-export function calculateVisit(params: CalcVisitParams) {
-  const soldQty = Math.max(0, params.initialStock - params.returnedQty)
-  const finalStock = params.returnedQty + params.newStockAdded
-  return { soldQty, finalStock }
-}
-
 /**
  * Menghitung pergerakan stok satu produk konsinyasi dan mengevaluasi validitasnya.
  * Sesuai aturan:

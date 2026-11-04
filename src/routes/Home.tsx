@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/Button'
@@ -43,7 +43,7 @@ export default function HomeRoute() {
   const activePartnersCount = dashboard?.active_partners || partners.length
   const unpaidInvoicesCount = dashboard?.unpaid_invoices || 0
 
-  const todayFormatted = useMemo(() => tanggalWIB(new Date()), [])
+  const [todayFormatted] = useState(() => tanggalWIB(new Date()))
 
   const handleStartVisit = (partnerId?: string) => {
     if (partnerId) {
