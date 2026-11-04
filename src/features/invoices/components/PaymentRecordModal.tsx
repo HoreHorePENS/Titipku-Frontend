@@ -1,4 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toast'
@@ -6,6 +8,7 @@ import { ApiError } from '@/lib/api-client'
 import { rupiah } from '@/lib/format'
 import { generateUUID } from '@/lib/uuid'
 import { simulateFIFOAllocation } from '../calc'
+import { paymentRecordSchema, type PaymentRecordFormData } from '../schema'
 import type { Invoice, PaymentPayload, PaymentMethod } from '../types'
 import type { Partner } from '@/features/partner/types'
 
@@ -28,20 +31,42 @@ export function PaymentRecordModal({
   initialPartnerId = '',
   isLoading = false,
 }: PaymentRecordModalProps) {
-  const [partnerId, setPartnerId] = useState(initialPartnerId)
-  const [amount, setAmount] = useState(0)
-  const [method, setMethod] = useState<PaymentMethod>('cash')
-  const [paidAtDate, setPaidAtDate] = useState(() => new Date().toISOString().split('T')[0])
-  const [note, setNote] = useState('')
   const [clientRequestId] = useState(() => generateUUID())
+
+  const defaultPartnerId = useMemo(() => {
+    if (initialPartnerId) return initialPartnerId
+    return partners[0]?.id || ''
+  }, [initialPartnerId, partners])
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<PaymentRecordFormData>({
+    resolver: zodResolver(paymentRecordSchema),
+    defaultValues: {
+      partnerId: defaultPartnerId,
+      amount: 0,
+      method: 'cash',
+      paidAtDate: new Date().toISOString().split('T')[0],
+      note: '',
+    },
+  })
+
+  const partnerId = watch('partnerId')
+  const amount = watch('amount')
+  const method = watch('method')
 
   useEffect(() => {
     if (initialPartnerId) {
-      setPartnerId(initialPartnerId)
+      setValue('partnerId', initialPartnerId)
     } else if (partners.length > 0 && !partnerId) {
-      setPartnerId(partners[0].id)
+      setValue('partnerId', partners[0].id)
     }
-  }, [initialPartnerId, partners, partnerId])
+  }, [initialPartnerId, partners, partnerId, setValue])
 
   // Warung yang dipilih
   const selectedPartner = useMemo(() => {
@@ -62,20 +87,18 @@ export function PaymentRecordModal({
 
   // Simulasi FIFO real-time
   const fifoPreview = useMemo(() => {
-    return simulateFIFOAllocation(amount, partnerUnpaidInvoices)
+    return simulateFIFOAllocation(amount || 0, partnerUnpaidInvoices)
   }, [amount, partnerUnpaidInvoices])
 
-  const isOverDebt = totalDebt > 0 && amount > totalDebt
+  const isOverDebt = totalDebt > 0 && (amount || 0) > totalDebt
 
   if (!isOpen) return null
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!partnerId || amount <= 0) return
+  const onValidSubmit = async (data: PaymentRecordFormData) => {
     if (isOverDebt) {
       toast.show({
         title: 'Nominal Melebihi Piutang',
-        description: `Nominal pembayaran (${rupiah(amount)}) tidak boleh melebihi total utang (${rupiah(totalDebt)}).`,
+        description: `Nominal pembayaran (${rupiah(data.amount)}) tidak boleh melebihi total utang (${rupiah(totalDebt)}).`,
         type: 'error',
       })
       return
@@ -84,18 +107,19 @@ export function PaymentRecordModal({
     try {
       const payload: PaymentPayload = {
         client_request_id: clientRequestId,
-        partner_id: partnerId,
-        amount,
-        method,
-        paid_at: paidAtDate ? new Date(paidAtDate).toISOString() : new Date().toISOString(),
-        note: note.trim() || undefined,
+        partner_id: data.partnerId,
+        amount: data.amount,
+        method: data.method as PaymentMethod,
+        paid_at: data.paidAtDate ? new Date(data.paidAtDate).toISOString() : new Date().toISOString(),
+        note: data.note?.trim() || undefined,
       }
       await onSubmit(payload)
       toast.show({
         title: 'Pembayaran Dicatat',
-        description: `Pembayaran ${rupiah(amount)} berhasil dialokasikan.`,
+        description: `Pembayaran ${rupiah(data.amount)} berhasil dialokasikan.`,
         type: 'success',
       })
+      reset()
       onClose()
     } catch (err: unknown) {
       let desc = 'Terjadi kendala saat mencatat pembayaran. Silakan coba kembali.'
@@ -156,16 +180,14 @@ export function PaymentRecordModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto flex flex-col gap-4">
+        <form onSubmit={handleSubmit(onValidSubmit)} className="p-5 overflow-y-auto flex flex-col gap-4">
           {/* 1. Pilih Warung */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-bold text-ink">Pilih Warung Mitra</label>
             <select
-              value={partnerId}
-              onChange={(e) => {
-                setPartnerId(e.target.value)
-                setAmount(0)
-              }}
+              {...register('partnerId', {
+                onChange: () => setValue('amount', 0, { shouldValidate: true }),
+              })}
               className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink focus:outline-none focus:border-primary shadow-2xs"
             >
               {partners.map((p) => (
@@ -174,20 +196,27 @@ export function PaymentRecordModal({
                 </option>
               ))}
             </select>
+            {errors.partnerId?.message && (
+              <p className="text-xs text-danger font-semibold mt-0.5">{errors.partnerId.message}</p>
+            )}
           </div>
 
           {/* 2. Input Nominal Bayar */}
           <div className="flex flex-col gap-2">
             <MoneyInput
               label="Nominal Pembayaran (Rp)"
-              value={amount}
-              onChange={(val) => setAmount(val || 0)}
+              value={amount || 0}
+              onChange={(val) => setValue('amount', val || 0, { shouldValidate: true })}
               max={totalDebt > 0 ? totalDebt : undefined}
             />
 
+            {errors.amount?.message && (
+              <p className="text-xs text-danger font-semibold mt-0.5">{errors.amount.message}</p>
+            )}
+
             {isOverDebt && (
               <p className="text-xs text-danger font-semibold mt-0.5">
-                Nominal pembayaran ({rupiah(amount)}) melebihi total utang ({rupiah(totalDebt)}).
+                Nominal pembayaran ({rupiah(amount || 0)}) melebihi total utang ({rupiah(totalDebt)}).
               </p>
             )}
 
@@ -196,7 +225,7 @@ export function PaymentRecordModal({
               <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <button
                   type="button"
-                  onClick={() => setAmount(totalDebt)}
+                  onClick={() => setValue('amount', totalDebt, { shouldValidate: true })}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                     amount === totalDebt
                       ? 'bg-primary text-white shadow-2xs'
@@ -209,7 +238,7 @@ export function PaymentRecordModal({
                 {totalDebt > 50000 && (
                   <button
                     type="button"
-                    onClick={() => setAmount(Math.round(totalDebt / 2))}
+                    onClick={() => setValue('amount', Math.round(totalDebt / 2), { shouldValidate: true })}
                     className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-raised border border-line text-ink-soft hover:text-ink"
                   >
                     50% ({rupiah(Math.round(totalDebt / 2))})
@@ -231,7 +260,7 @@ export function PaymentRecordModal({
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setMethod(m.id as PaymentMethod)}
+                  onClick={() => setValue('method', m.id as PaymentMethod, { shouldValidate: true })}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
                     method === m.id
                       ? 'border-primary bg-primary text-white shadow-xs'
@@ -249,10 +278,12 @@ export function PaymentRecordModal({
             <label className="text-xs font-bold text-ink">Tanggal Pembayaran</label>
             <input
               type="date"
-              value={paidAtDate}
-              onChange={(e) => setPaidAtDate(e.target.value)}
+              {...register('paidAtDate')}
               className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink focus:outline-none focus:border-primary shadow-2xs"
             />
+            {errors.paidAtDate?.message && (
+              <p className="text-xs text-danger font-semibold mt-0.5">{errors.paidAtDate.message}</p>
+            )}
           </div>
 
           {/* 5. Catatan Opsional */}
@@ -260,8 +291,7 @@ export function PaymentRecordModal({
             <label className="text-xs font-bold text-ink">Catatan (opsional)</label>
             <input
               type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
+              {...register('note')}
               placeholder="mis. dititipkan lewat anaknya"
               className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-medium text-ink placeholder:text-ink-soft/70 focus:outline-none focus:border-primary shadow-2xs"
             />
@@ -294,7 +324,7 @@ export function PaymentRecordModal({
               type="submit"
               variant="primary"
               size="md"
-              disabled={isLoading || amount <= 0 || !partnerId || isOverDebt}
+              disabled={isLoading || !amount || amount <= 0 || !partnerId || isOverDebt}
               className="flex-1 rounded-xl h-11 text-xs font-bold shadow-xs"
             >
               {isLoading ? 'Menyimpan…' : 'Simpan Pembayaran'}
