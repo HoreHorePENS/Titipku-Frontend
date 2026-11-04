@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from '@/app/layouts/AppLayout'
 import PublicLayout from '@/app/layouts/PublicLayout'
+import ProtectedRoute from '@/app/ProtectedRoute'
 import Home from '@/routes/Home'
 import Visit from '@/routes/Visit'
 import Landing from '@/routes/Landing'
@@ -33,9 +34,13 @@ const devRoutes =
     : []
 
 export const router = createBrowserRouter([
-  // 1. Rute Terpusat dengan Shell Navigasi Utama (AppLayout)
+  // 1. Rute Terpusat dengan Shell Navigasi Utama (AppLayout) yang diproteksi login
   {
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: '/', element: <Home /> },
       { path: '/home', element: <Home /> },

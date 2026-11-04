@@ -26,12 +26,22 @@ export function setAuthToken(token: string | null): void {
   }
 }
 
-// Dev auto-login untuk environment pengembangan lokal
+// Dev auto-login untuk environment pengembangan lokal (khusus DEV dengan flag eksplisit)
 let loginPromise: Promise<string | null> | null = null
 
 async function ensureDevToken(): Promise<string | null> {
   const currentToken = getAuthToken()
   if (currentToken) return currentToken
+
+  const isDev = Boolean(import.meta.env.DEV)
+  const isAutoLoginEnabled = import.meta.env.VITE_DEV_AUTO_LOGIN === 'true'
+  const devEmail = import.meta.env.VITE_DEV_EMAIL
+  const devPassword = import.meta.env.VITE_DEV_PASSWORD
+
+  // Jangan pernah auto-login di build produksi atau jika flag / kredensial tidak aktif
+  if (!isDev || !isAutoLoginEnabled || !devEmail || !devPassword) {
+    return null
+  }
 
   // Mencegah multiple concurrent login request
   if (loginPromise) return loginPromise
@@ -42,8 +52,8 @@ async function ensureDevToken(): Promise<string | null> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: 'rina@keripikpisangrina.id',
-          password: 'password123',
+          email: devEmail,
+          password: devPassword,
         }),
       })
 
@@ -116,6 +126,9 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
   if (!response.ok) {
     if (response.status === 401) {
       setAuthToken(null)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('titipku:unauthorized'))
+      }
     }
 
     let errorDetail: ApiErrorDetail = {
