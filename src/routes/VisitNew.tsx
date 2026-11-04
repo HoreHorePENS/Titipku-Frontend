@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toast'
 import { ApiError } from '@/lib/api-client'
@@ -11,6 +13,7 @@ import { calculateVisitTotals } from '@/features/visit/calc'
 import { rupiah, formatJamWIB } from '@/lib/format'
 import { generateUUID } from '@/lib/uuid'
 import { useVisitDraft } from '@/features/visit/useVisitDraft'
+import { visitFormSchema, type VisitFormData } from '@/features/visit/schema'
 import type { VisitItemInput, CreatedVisitResult, PaymentMethod } from '@/features/visit/types'
 
 type StepState = 'input_stock' | 'summary_payment' | 'success'
@@ -20,15 +23,31 @@ export default function VisitNewRoute() {
   const navigate = useNavigate()
   const initialPartnerId = searchParams.get('partnerId') || searchParams.get('warung_id') || ''
 
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string>(initialPartnerId)
   const [currentStep, setCurrentStep] = useState<StepState>('input_stock')
-  const [receivedBy, setReceivedBy] = useState<string>('')
   const [createdVisit, setCreatedVisit] = useState<CreatedVisitResult | null>(null)
   const [activeClientRequestId, setActiveClientRequestId] = useState<string>(() => generateUUID())
 
   // Draf kunjungan persisten (Offline-First)
   const { draft, saveDraft, clearDraft } = useVisitDraft()
   const [hasPromptedDraft, setHasPromptedDraft] = useState(false)
+
+  // React Hook Form terintegrasi Zod
+  const {
+    watch,
+    setValue,
+    trigger,
+    reset,
+  } = useForm<VisitFormData>({
+    resolver: zodResolver(visitFormSchema),
+    defaultValues: {
+      partnerId: initialPartnerId,
+      receivedBy: '',
+      items: [],
+    },
+  })
+
+  const selectedPartnerId = watch('partnerId')
+  const formReceivedBy = watch('receivedBy')
 
   // Ambil daftar mitra & produk dari backend
   const { data: partnerOptions = [], isLoading: isPartnersLoading } = usePartnerOptions()
@@ -78,10 +97,17 @@ export default function VisitNewRoute() {
     })
   }, [customItems, products, prevStockMap])
 
+  // Sinkronisasi items ke RHF saat terinisialisasi
+  useEffect(() => {
+    if (items.length > 0) {
+      setValue('items', items)
+    }
+  }, [items, setValue])
+
   // Diterima oleh default ke kontak warung
   const effectiveReceivedBy =
-    receivedBy !== ''
-      ? receivedBy
+    formReceivedBy !== ''
+      ? formReceivedBy
       : selectedPartner
       ? selectedPartner.ownerName || selectedPartner.name
       : ''
@@ -90,6 +116,7 @@ export default function VisitNewRoute() {
     const next = [...items]
     next[index] = updated
     setCustomItems(next)
+    setValue('items', next)
   }
 
   // Akumulasi total
@@ -115,11 +142,14 @@ export default function VisitNewRoute() {
   // Reset form untuk kunjungan baru berikutnya
   const handleResetForNew = () => {
     clearDraft()
-    setSelectedPartnerId('')
+    reset({
+      partnerId: '',
+      receivedBy: '',
+      items: [],
+    })
     setCurrentStep('input_stock')
     setCreatedVisit(null)
     setCustomItems(null)
-    setReceivedBy('')
     setActiveClientRequestId(generateUUID())
     navigate('/kunjungan/baru')
   }
@@ -131,6 +161,18 @@ export default function VisitNewRoute() {
     method: PaymentMethod
   }) => {
     if (!selectedPartnerId) return
+
+    // Validasi skema Zod sebelum submit
+    setValue('receivedBy', effectiveReceivedBy)
+    const isValid = await trigger()
+    if (!isValid) {
+      toast.show({
+        title: 'Form Belum Lengkap',
+        description: 'Periksa kembali data stok dan nama penerima barang.',
+        type: 'error',
+      })
+      return
+    }
 
     try {
       const payloadItems = items.map((it) => ({
@@ -241,9 +283,10 @@ export default function VisitNewRoute() {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  setSelectedPartnerId(draft.partnerId)
+                  setValue('partnerId', draft.partnerId)
+                  setValue('receivedBy', draft.receivedBy || '')
+                  setValue('items', draft.items)
                   setCustomItems(draft.items)
-                  setReceivedBy(draft.receivedBy || '')
                   setCurrentStep(draft.step || 'input_stock')
                   setActiveClientRequestId(draft.clientRequestId)
                   setHasPromptedDraft(true)
@@ -290,9 +333,9 @@ export default function VisitNewRoute() {
                 key={p.id}
                 type="button"
                 onClick={() => {
-                  setSelectedPartnerId(p.id)
+                  setValue('partnerId', p.id)
+                  setValue('receivedBy', p.ownerName || p.name)
                   setCustomItems(null)
-                  setReceivedBy(p.ownerName || p.name)
                 }}
                 className="p-4 rounded-2xl bg-surface border border-line hover:border-primary/80 transition-all text-left flex items-center justify-between shadow-2xs group active:scale-[0.99]"
               >
@@ -350,7 +393,7 @@ export default function VisitNewRoute() {
           partner={selectedPartner}
           totals={totals}
           receivedBy={effectiveReceivedBy}
-          onReceivedByChange={setReceivedBy}
+          onReceivedByChange={(val) => setValue('receivedBy', val)}
           onBack={() => setCurrentStep('input_stock')}
           onSubmit={handleSubmitVisit}
           isSubmitting={createVisitMutation.isPending}
@@ -389,7 +432,7 @@ export default function VisitNewRoute() {
             variant="secondary"
             size="sm"
             onClick={() => {
-              setSelectedPartnerId('')
+              setValue('partnerId', '')
               setCustomItems(null)
             }}
             className="rounded-lg text-xs font-semibold h-8"
