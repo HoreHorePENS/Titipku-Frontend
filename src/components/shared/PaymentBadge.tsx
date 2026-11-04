@@ -1,29 +1,12 @@
 import { Badge, type BadgeSize } from '@/components/ui/Badge'
+import { PAYMENT_STATUS_MAP, type PaymentStatus } from './badge-constants'
 
-export type PaymentStatus = 'lunas' | 'sebagian' | 'belum_lunas'
+export type { PaymentStatus }
 
 export interface PaymentBadgeProps {
   status: PaymentStatus
   size?: BadgeSize
   className?: string
-}
-
-export const PAYMENT_STATUS_MAP: Record<
-  PaymentStatus,
-  { tone: 'success' | 'warning' | 'danger'; label: string }
-> = {
-  lunas: {
-    tone: 'success',
-    label: 'Lunas',
-  },
-  sebagian: {
-    tone: 'warning',
-    label: 'Sebagian',
-  },
-  belum_lunas: {
-    tone: 'danger',
-    label: 'Belum Lunas',
-  },
 }
 
 export function PaymentBadge({ status, size = 'sm', className = '' }: PaymentBadgeProps) {
@@ -35,3 +18,5 @@ export function PaymentBadge({ status, size = 'sm', className = '' }: PaymentBad
     </Badge>
   )
 }
+
+export default PaymentBadge

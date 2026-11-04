@@ -1,7 +1,9 @@
 import React, { forwardRef, useId } from 'react'
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
-  label: string
+  label?: string
+  hideLabel?: boolean
+  inputSize?: 'sm' | 'md' | 'lg'
   hint?: string
   error?: string
   prefix?: React.ReactNode
@@ -13,7 +15,9 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
-      label,
+      label = '',
+      hideLabel = false,
+      inputSize = 'lg',
       hint,
       error,
       prefix,
@@ -52,21 +56,30 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       ? 'bg-slate-50 dark:bg-slate-900/60 border-line cursor-default'
       : `${baseBorderClasses} ${borderFocusClasses} bg-surface`
 
-    return (
-      <div className="flex flex-col gap-1.5 w-full font-sans">
-        {/* Label Atas */}
-        <div className="flex items-center justify-between">
-          <label htmlFor={inputId} className="text-caption font-bold text-ink cursor-pointer">
-            {label}
-            {required && (
-              <span className="ml-1 text-ink-soft font-normal text-[11px]">(wajib)</span>
-            )}
-          </label>
-        </div>
+    const sizeClasses =
+      inputSize === 'sm'
+        ? 'h-9 min-h-[36px] px-3 rounded-lg text-sm'
+        : inputSize === 'md'
+        ? 'h-10 min-h-[40px] px-3.5 rounded-lg text-sm'
+        : 'h-14 min-h-[56px] px-3.5 rounded-[14px]'
 
-        {/* Kotak Input (Tinggi ~56px, Radius ~14px) */}
+    return (
+      <div className={`flex flex-col gap-1.5 w-full font-sans ${className}`}>
+        {/* Label Atas */}
+        {label && (
+          <div className={hideLabel ? 'sr-only' : 'flex items-center justify-between'}>
+            <label htmlFor={inputId} className="text-caption font-bold text-ink cursor-pointer">
+              {label}
+              {required && (
+                <span className="ml-1 text-ink-soft font-normal text-[11px]">(wajib)</span>
+              )}
+            </label>
+          </div>
+        )}
+
+        {/* Kotak Input */}
         <div
-          className={`flex items-center h-14 min-h-[56px] px-3.5 rounded-[14px] border transition-all duration-150 ${stateClasses}`}
+          className={`flex items-center border transition-all duration-150 ${sizeClasses} ${stateClasses}`}
         >
           {/* Prefix (misal: "Rp" atau icon) */}
           {prefix && (

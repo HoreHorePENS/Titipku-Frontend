@@ -5,7 +5,7 @@ import { Button } from './Button'
 describe('Button Component', () => {
   it('harus memiliki type="button" secara default untuk mencegah submit form tidak sengaja', () => {
     // Memeriksa output elemen React tanpa memerlukan DOM emulator
-    const element = React.createElement(Button, { children: 'Simpan' })
+    const element = React.createElement(Button, null, 'Simpan')
     expect(element.props.children).toBe('Simpan')
     // Type default button di-handle dalam komponen Button
   })

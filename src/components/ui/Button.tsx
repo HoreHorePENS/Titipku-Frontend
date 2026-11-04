@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react'
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'accent' | 'danger' | 'ghost'
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'outline-primary' | 'accent' | 'danger' | 'ghost'
 export type ButtonSize = 'lg' | 'md' | 'sm'
 
 interface BaseButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -34,6 +34,8 @@ const variantStyles: Record<ButtonVariant, string> = {
     'bg-primary-soft text-on-primary-soft hover:brightness-95 active:brightness-90 border border-transparent',
   outline:
     'bg-surface text-ink border border-line hover:bg-surface-raised active:bg-slate-100 dark:active:bg-slate-800',
+  'outline-primary':
+    'bg-surface text-primary border border-primary hover:bg-primary-soft active:brightness-95',
   accent:
     'bg-amber-50 dark:bg-accent-soft text-accent dark:text-on-accent border border-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900 active:brightness-90',
   danger:

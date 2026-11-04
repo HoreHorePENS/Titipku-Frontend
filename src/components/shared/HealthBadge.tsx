@@ -1,50 +1,7 @@
 import { Badge, type BadgeSize } from '@/components/ui/Badge'
+import { healthTier, HEALTH_TIER_MAP, type HealthTier } from './badge-constants'
 
-export type HealthTier = 'bagus' | 'pantau' | 'evaluasi'
-
-/**
- * Fungsi murni penentu tier kesehatan warung mitra.
- * Batas skor:
- * - >= 80  : 'bagus' (lingkaran hijau)
- * - 60 - 79: 'pantau' (kotak amber)
- * - < 60   : 'evaluasi' (segitiga merah)
- *
- * Skor di luar 0 - 100 atau NaN akan melempar Error.
- */
-export function healthTier(score: number): HealthTier {
-  if (typeof score !== 'number' || isNaN(score) || score < 0 || score > 100) {
-    throw new Error(`Skor kesehatan tidak valid: "${score}". Skor harus berupa angka antara 0 dan 100.`)
-  }
-
-  if (score >= 80) return 'bagus'
-  if (score >= 60) return 'pantau'
-  return 'evaluasi'
-}
-
-export const HEALTH_TIER_MAP: Record<
-  HealthTier,
-  {
-    tone: 'success' | 'warning' | 'danger'
-    label: string
-    range: string
-  }
-> = {
-  bagus: {
-    tone: 'success',
-    label: 'Bagus',
-    range: '80-100',
-  },
-  pantau: {
-    tone: 'warning',
-    label: 'Pantau',
-    range: '60-79',
-  },
-  evaluasi: {
-    tone: 'danger',
-    label: 'Evaluasi',
-    range: '<60',
-  },
-}
+export type { HealthTier }
 
 export interface HealthBadgeProps {
   score: number
@@ -59,27 +16,56 @@ export function HealthBadge({
   size = 'sm',
   className = '',
 }: HealthBadgeProps) {
-  let tier: HealthTier
+  let tier: HealthTier = 'evaluasi'
 
   try {
     tier = healthTier(score)
   } catch {
-    // Fallback aman untuk UI jika data backend corrupt/salah
-    return (
-      <Badge tone="neutral" size={size} className={className}>
-        Tidak Valid
-      </Badge>
-    )
+    tier = 'evaluasi'
   }
 
   const config = HEALTH_TIER_MAP[tier]
-  const text = showRange
-    ? `${config.label} · ${config.range}`
-    : `${config.label} · ${score}`
+
+  const shapeIcon = (() => {
+    switch (tier) {
+      case 'bagus':
+        return (
+          <span
+            className="inline-block w-2 h-2 rounded-full bg-current shrink-0"
+            aria-hidden="true"
+          />
+        )
+      case 'pantau':
+        return (
+          <span
+            className="inline-block w-2 h-2 rounded-xs bg-current shrink-0"
+            aria-hidden="true"
+          />
+        )
+      case 'evaluasi':
+        return (
+          <span
+            className="inline-block w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[7px] border-b-current shrink-0"
+            aria-hidden="true"
+          />
+        )
+    }
+  })()
 
   return (
-    <Badge tone={config.tone} size={size} className={className}>
-      {text}
+    <Badge
+      tone={config.tone}
+      size={size}
+      className={`inline-flex items-center gap-1.5 ${className}`}
+      aria-label={`Status kesehatan warung: ${config.label} (${score}/100)`}
+    >
+      {shapeIcon}
+      <span>{config.label}</span>
+      {showRange && (
+        <span className="opacity-75 font-normal text-[10px]">({config.range})</span>
+      )}
     </Badge>
   )
 }
+
+export default HealthBadge

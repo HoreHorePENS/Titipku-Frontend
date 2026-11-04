@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { toast, toastStore, ToastProvider } from './Toast'
+import { ToastProvider } from './Toast'
+import { toast, toastStore } from './toast-store'
 
 describe('Toast Store & Behavior', () => {
   beforeEach(() => {

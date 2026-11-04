@@ -1,4 +1,4 @@
-import { useDelayedLoading } from '@/components/ui/Skeleton'
+import { useDelayedLoading } from '@/components/ui/useDelayedLoading'
 import { ErrorState, type ErrorStateProps } from './ErrorState'
 
 export interface QueryLikeResult<TData = unknown, TError = unknown> {

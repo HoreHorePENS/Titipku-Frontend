@@ -15,7 +15,7 @@ import { CatalogSkeleton } from '@/features/catalog/components/CatalogSkeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { QueryState } from '@/components/shared/QueryState'
-import { toast } from '@/components/ui/Toast'
+import { toast } from '@/components/ui/toast-store'
 import { getContrastRatio, checkWcag } from '@/lib/contrast'
 
 // ============================================================================
