@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { loginUser, logoutUser, isAuthenticated } from './api'
+import { loginUser, registerUser, logoutUser, isAuthenticated } from './api'
 import { setAuthToken } from '@/lib/api-client'
 
 describe('Auth Feature API', () => {
@@ -33,6 +33,34 @@ describe('Auth Feature API', () => {
 
     const result = await loginUser({ email: 'rina@keripik.id', password: 'password123' })
     expect(result.access_token).toBe('valid-jwt-token-xyz')
+    expect(isAuthenticated()).toBe(true)
+  })
+
+  it('registerUser berhasil mendaftarkan usaha baru dan menyimpan token', async () => {
+    const mockResponse = {
+      data: {
+        access_token: 'new-account-jwt-token',
+        user: { id: 'usr-2', email: 'budi@example.com', full_name: 'Budi', role: 'owner' },
+        business: { id: 'biz-2', name: 'Keripik Renyah', owner_name: 'Budi' },
+      },
+    }
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockResponse,
+    } as unknown as Response)
+
+    expect(isAuthenticated()).toBe(false)
+
+    const result = await registerUser({
+      business_name: 'Keripik Renyah',
+      owner_name: 'Budi',
+      email: 'budi@example.com',
+      whatsapp: '081234567890',
+      password: 'password123',
+    })
+
+    expect(result.access_token).toBe('new-account-jwt-token')
     expect(isAuthenticated()).toBe(true)
   })
 
