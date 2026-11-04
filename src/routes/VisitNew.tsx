@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/Toast'
@@ -8,8 +8,9 @@ import { VisitSummaryStep, type PaymentChoice } from '@/features/visit/component
 import { VisitSuccessCard } from '@/features/visit/components/VisitSuccessCard'
 import { usePartnerOptions, useProducts, useVisits, useCreateVisit } from '@/features/visit/api'
 import { calculateVisitTotals } from '@/features/visit/calc'
-import { rupiah } from '@/lib/format'
+import { rupiah, formatJamWIB } from '@/lib/format'
 import { generateUUID } from '@/lib/uuid'
+import { useVisitDraft } from '@/features/visit/useVisitDraft'
 import type { VisitItemInput, CreatedVisitResult, PaymentMethod } from '@/features/visit/types'
 
 type StepState = 'input_stock' | 'summary_payment' | 'success'
@@ -23,7 +24,11 @@ export default function VisitNewRoute() {
   const [currentStep, setCurrentStep] = useState<StepState>('input_stock')
   const [receivedBy, setReceivedBy] = useState<string>('')
   const [createdVisit, setCreatedVisit] = useState<CreatedVisitResult | null>(null)
-  const [clientRequestId] = useState<string>(() => generateUUID())
+  const [activeClientRequestId, setActiveClientRequestId] = useState<string>(() => generateUUID())
+
+  // Draf kunjungan persisten (Offline-First)
+  const { draft, saveDraft, clearDraft } = useVisitDraft()
+  const [hasPromptedDraft, setHasPromptedDraft] = useState(false)
 
   // Ambil daftar mitra & produk dari backend
   const { data: partnerOptions = [], isLoading: isPartnersLoading } = usePartnerOptions()
@@ -92,13 +97,30 @@ export default function VisitNewRoute() {
     return calculateVisitTotals(items, selectedPartner?.receivable || 0)
   }, [items, selectedPartner])
 
+  // Simpan otomatis draf kunjungan ke localStorage persisten (debounce 400ms)
+  useEffect(() => {
+    if (!selectedPartnerId || items.length === 0 || currentStep === 'success') return
+    const timer = setTimeout(() => {
+      saveDraft({
+        partnerId: selectedPartnerId,
+        receivedBy: effectiveReceivedBy,
+        items,
+        step: currentStep,
+        clientRequestId: activeClientRequestId,
+      })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [selectedPartnerId, items, effectiveReceivedBy, currentStep, activeClientRequestId, saveDraft])
+
   // Reset form untuk kunjungan baru berikutnya
   const handleResetForNew = () => {
+    clearDraft()
     setSelectedPartnerId('')
     setCurrentStep('input_stock')
     setCreatedVisit(null)
     setCustomItems(null)
     setReceivedBy('')
+    setActiveClientRequestId(generateUUID())
     navigate('/kunjungan/baru')
   }
 
@@ -119,7 +141,7 @@ export default function VisitNewRoute() {
       }))
 
       const payload = {
-        client_request_id: clientRequestId,
+        client_request_id: activeClientRequestId,
         partner_id: selectedPartnerId,
         received_by: effectiveReceivedBy.trim() || selectedPartner?.ownerName || selectedPartner?.name,
         items: payloadItems,
@@ -134,6 +156,7 @@ export default function VisitNewRoute() {
       }
 
       const res = await createVisitMutation.mutateAsync(payload)
+      clearDraft()
       setCreatedVisit(res)
       setCurrentStep('success')
     } catch (err: unknown) {
@@ -158,7 +181,19 @@ export default function VisitNewRoute() {
             err.message.includes('Failed to fetch')))
       ) {
         title = 'Koneksi Terputus'
-        desc = 'Koneksi internet terputus. Data kunjungan Anda tetap aman di formulir.'
+        desc = 'Koneksi internet terputus. Data kunjungan Anda tetap aman tersimpan di HP.'
+        toast.show({
+          title,
+          description: desc,
+          type: 'error',
+          action: {
+            label: 'Coba Lagi',
+            onClick: () => {
+              handleSubmitVisit(paymentData)
+            },
+          },
+        })
+        return
       }
 
       toast.show({
@@ -185,6 +220,62 @@ export default function VisitNewRoute() {
         <p className="text-caption text-ink-soft -mt-2">
           Pilih warung mitra yang Anda kunjungi untuk mencatat sisa stok dan titip baru.
         </p>
+
+        {/* Banner Draf Kunjungan Persisten Offline-First */}
+        {draft && !hasPromptedDraft && (
+          <div className="p-4 rounded-2xl bg-accent-soft border border-accent/40 flex flex-col gap-2.5 animate-fadeIn">
+            <div className="flex items-center justify-between">
+              <span className="text-accent font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                <span>📋</span>
+                <span>Draf Kunjungan Tersimpan</span>
+              </span>
+              <span className="text-xs text-ink-soft font-mono">
+                {formatJamWIB(draft.updatedAt)} WIB
+              </span>
+            </div>
+            <p className="text-xs text-ink">
+              Ditemukan draf kunjungan lapangan yang belum diselesaikan ({draft.items.length} item produk). Lanjutkan draf?
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setSelectedPartnerId(draft.partnerId)
+                  setCustomItems(draft.items)
+                  setReceivedBy(draft.receivedBy || '')
+                  setCurrentStep(draft.step || 'input_stock')
+                  setActiveClientRequestId(draft.clientRequestId)
+                  setHasPromptedDraft(true)
+                  toast.show({
+                    title: 'Draf Dipulihkan',
+                    description: 'Melanjutkan draf kunjungan sebelumnya.',
+                    type: 'info',
+                  })
+                }}
+                className="text-xs font-bold px-3 py-1.5 h-8 rounded-lg"
+              >
+                Lanjutkan Draf
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  clearDraft()
+                  setHasPromptedDraft(true)
+                  toast.show({
+                    title: 'Draf Dihapus',
+                    description: 'Memulai kunjungan baru dari awal.',
+                    type: 'default',
+                  })
+                }}
+                className="text-xs font-bold px-3 py-1.5 h-8 rounded-lg"
+              >
+                Buang Draf
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isPartnersLoading ? (
           <div className="py-12 text-center text-caption text-ink-soft">Memuat daftar warung…</div>
