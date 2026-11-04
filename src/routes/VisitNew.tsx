@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
+import { toast } from '@/components/ui/Toast'
+import { ApiError } from '@/lib/api-client'
 import { ProductStockCard } from '@/features/visit/components/ProductStockCard'
 import { VisitSummaryStep, type PaymentChoice } from '@/features/visit/components/VisitSummaryStep'
 import { VisitSuccessCard } from '@/features/visit/components/VisitSuccessCard'
@@ -134,9 +136,36 @@ export default function VisitNewRoute() {
       const res = await createVisitMutation.mutateAsync(payload)
       setCreatedVisit(res)
       setCurrentStep('success')
-    } catch (err) {
-      console.error('Gagal mencatat kunjungan:', err)
-      alert('Gagal menyimpan kunjungan ke server. Silakan coba kembali.')
+    } catch (err: unknown) {
+      let title = 'Gagal Menyimpan Kunjungan'
+      let desc = 'Terjadi kendala saat menyimpan kunjungan. Silakan coba kembali.'
+
+      if (err instanceof ApiError) {
+        if (err.status === 409 && (err.code === 'STOCK_MISMATCH' || err.message?.includes('stock'))) {
+          desc = 'Perhitungan stok fisik tidak sesuai dengan catatan batch stok di server.'
+        } else if (err.code === 'IDEMPOTENCY_MISMATCH') {
+          desc = 'ID transaksi sudah digunakan dengan rincian berbeda.'
+        } else if (err.code === 'VALIDATION_ERROR') {
+          desc = 'Periksa kembali kelengkapan jumlah stok dan penerima kunjungan.'
+        } else if (err.message) {
+          desc = err.message
+        }
+      } else if (
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          (err.message.includes('fetch') ||
+            err.message.includes('network') ||
+            err.message.includes('Failed to fetch')))
+      ) {
+        title = 'Koneksi Terputus'
+        desc = 'Koneksi internet terputus. Data kunjungan Anda tetap aman di formulir.'
+      }
+
+      toast.show({
+        title,
+        description: desc,
+        type: 'error',
+      })
     }
   }
 

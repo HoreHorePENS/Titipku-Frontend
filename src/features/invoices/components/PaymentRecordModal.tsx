@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Button } from '@/components/ui/Button'
+import { toast } from '@/components/ui/Toast'
+import { ApiError } from '@/lib/api-client'
 import { rupiah } from '@/lib/format'
 import { generateUUID } from '@/lib/uuid'
 import { simulateFIFOAllocation } from '../calc'
@@ -63,11 +65,21 @@ export function PaymentRecordModal({
     return simulateFIFOAllocation(amount, partnerUnpaidInvoices)
   }, [amount, partnerUnpaidInvoices])
 
+  const isOverDebt = totalDebt > 0 && amount > totalDebt
+
   if (!isOpen) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!partnerId || amount <= 0) return
+    if (isOverDebt) {
+      toast.show({
+        title: 'Nominal Melebihi Piutang',
+        description: `Nominal pembayaran (${rupiah(amount)}) tidak boleh melebihi total utang (${rupiah(totalDebt)}).`,
+        type: 'error',
+      })
+      return
+    }
 
     try {
       const payload: PaymentPayload = {
@@ -79,9 +91,36 @@ export function PaymentRecordModal({
         note: note.trim() || undefined,
       }
       await onSubmit(payload)
+      toast.show({
+        title: 'Pembayaran Dicatat',
+        description: `Pembayaran ${rupiah(amount)} berhasil dialokasikan.`,
+        type: 'success',
+      })
       onClose()
-    } catch (err) {
-      console.error('Gagal mencatat pembayaran:', err)
+    } catch (err: unknown) {
+      let desc = 'Terjadi kendala saat mencatat pembayaran. Silakan coba kembali.'
+      if (err instanceof ApiError) {
+        if (err.status === 409 || err.code === 'PAYMENT_EXCEEDS_RECEIVABLE') {
+          desc = 'Nominal pembayaran melebihi sisa piutang warung pada sistem server.'
+        } else if (err.code === 'VALIDATION_ERROR') {
+          desc = 'Periksa kembali data pembayaran yang dimasukkan.'
+        } else if (err.message) {
+          desc = err.message
+        }
+      } else if (
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          (err.message.includes('fetch') ||
+            err.message.includes('network') ||
+            err.message.includes('Failed to fetch')))
+      ) {
+        desc = 'Koneksi internet terputus. Periksa jaringan Anda dan coba lagi.'
+      }
+      toast.show({
+        title: 'Gagal Mencatat Pembayaran',
+        description: desc,
+        type: 'error',
+      })
     }
   }
 
@@ -145,6 +184,12 @@ export function PaymentRecordModal({
               onChange={(val) => setAmount(val || 0)}
               max={totalDebt > 0 ? totalDebt : undefined}
             />
+
+            {isOverDebt && (
+              <p className="text-xs text-danger font-semibold mt-0.5">
+                Nominal pembayaran ({rupiah(amount)}) melebihi total utang ({rupiah(totalDebt)}).
+              </p>
+            )}
 
             {/* Quick chips nominal */}
             {totalDebt > 0 && (
@@ -249,7 +294,7 @@ export function PaymentRecordModal({
               type="submit"
               variant="primary"
               size="md"
-              disabled={isLoading || amount <= 0 || !partnerId}
+              disabled={isLoading || amount <= 0 || !partnerId || isOverDebt}
               className="flex-1 rounded-xl h-11 text-xs font-bold shadow-xs"
             >
               {isLoading ? 'Menyimpan…' : 'Simpan Pembayaran'}

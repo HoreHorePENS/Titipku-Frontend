@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
+import { toast } from '@/components/ui/Toast'
+import { ApiError } from '@/lib/api-client'
 import type { Partner, PartnerFormInput } from '../types'
 
 export interface PartnerFormModalProps {
@@ -71,9 +73,37 @@ export function PartnerFormModal({
         address: address.trim(),
         is_active: isActive,
       })
+      toast.show({
+        title: isEditMode ? 'Warung Diperbarui' : 'Warung Ditambahkan',
+        description: `Data warung ${name.trim()} berhasil disimpan.`,
+        type: 'success',
+      })
       onClose()
-    } catch (err) {
-      console.error('Gagal menyimpan warung:', err)
+    } catch (err: unknown) {
+      let desc = 'Terjadi kendala saat menyimpan data warung. Silakan coba kembali.'
+      if (err instanceof ApiError) {
+        if (err.status === 409 || err.code === 'WHATSAPP_TAKEN') {
+          desc = 'Nomor WhatsApp ini sudah terdaftar untuk warung lain. Gunakan nomor berbeda.'
+          setErrors((prev) => ({ ...prev, whatsapp: 'Nomor WhatsApp sudah digunakan' }))
+        } else if (err.code === 'VALIDATION_ERROR') {
+          desc = 'Periksa kembali kelengkapan formulir warung.'
+        } else if (err.message) {
+          desc = err.message
+        }
+      } else if (
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          (err.message.includes('fetch') ||
+            err.message.includes('network') ||
+            err.message.includes('Failed to fetch')))
+      ) {
+        desc = 'Koneksi internet terputus. Periksa jaringan Anda dan coba lagi.'
+      }
+      toast.show({
+        title: 'Gagal Menyimpan Warung',
+        description: desc,
+        type: 'error',
+      })
     }
   }
 
