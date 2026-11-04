@@ -1,7 +1,14 @@
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/Button'
-import { EmptyState } from '@/components/shared/EmptyState'
-import { ErrorState } from '@/components/shared/ErrorState'
+import {
+  PageContainer,
+  PageHeader,
+  StatCard,
+  StatCardGrid,
+  FilterBar,
+  EmptyState,
+  ErrorState,
+} from '@/components/shared'
 import { toast } from '@/components/ui/toast-store'
 import { rupiah } from '@/lib/format'
 import {
@@ -13,7 +20,6 @@ import {
   calculateCatalogStats,
   CatalogSkeleton,
   ProductCard,
-  ProductFilterTabs,
   ProductFormModal,
   type Product,
   type ProductStatusFilter,
@@ -81,7 +87,9 @@ export default function CatalogRoute() {
       })
       toast.show({
         title: nextStatus ? 'Produk Diaktifkan' : 'Produk Dinonaktifkan',
-        description: `"${product.name}" kini ${nextStatus ? 'aktif dan dapat dititipkan' : 'dinonaktifkan dari pilihan titip baru'}.`,
+        description: `"${product.name}" kini ${
+          nextStatus ? 'aktif dan dapat dititipkan' : 'dinonaktifkan dari pilihan titip baru'
+        }.`,
         type: 'success',
       })
     } catch {
@@ -96,26 +104,23 @@ export default function CatalogRoute() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-5 sm:gap-6 pb-24 md:pb-10">
-      {/* 1. Header Halaman */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3.5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-ink tracking-tight">Katalog Produk</h1>
-          <p className="text-xs sm:text-sm text-ink-soft mt-0.5">
-            Kelola produk titipan, harga konsinyasi, dan margin keuntungan warung mitra.
-          </p>
-        </div>
-
-        <Button
-          type="button"
-          variant="primary"
-          onClick={handleOpenCreate}
-          className="min-h-[48px] px-5 font-bold shadow-xs flex items-center justify-center gap-2 self-start sm:self-auto"
-        >
-          <span className="text-lg leading-none">+</span>
-          <span>Tambah Produk</span>
-        </Button>
-      </div>
+    <PageContainer>
+      {/* 1. Header Halaman Terstandarisasi */}
+      <PageHeader
+        title="Katalog Produk"
+        description="Kelola produk titipan, harga konsinyasi, dan margin keuntungan warung mitra."
+        actions={
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleOpenCreate}
+            className="min-h-[48px] px-5 font-bold shadow-xs flex items-center justify-center gap-2"
+          >
+            <span className="text-lg leading-none">+</span>
+            <span>Tambah Produk</span>
+          </Button>
+        }
+      />
 
       {/* 2. Loading State */}
       {isLoading && <CatalogSkeleton />}
@@ -132,47 +137,37 @@ export default function CatalogRoute() {
       {/* 4. Konten Utama Jika Sukses */}
       {!isLoading && !isError && (
         <>
-          {/* Ringkasan Statistik Dua Kotak */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-1 shadow-xs">
-              <span className="text-xs font-semibold text-ink-soft">Total SKU Produk</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-ink tabular-nums">{stats.total}</span>
-                <span className="text-xs text-primary font-bold">({stats.activeCount} aktif)</span>
-              </div>
-            </div>
+          {/* Ringkasan Statistik Kartu Terstandarisasi */}
+          <StatCardGrid columns={3}>
+            <StatCard
+              label="Total SKU Produk"
+              value={stats.total}
+              subValue={`(${stats.activeCount} aktif)`}
+            />
+            <StatCard
+              label="Rata-rata Margin"
+              value={rupiah(stats.averageMargin)}
+              subValue="/ pcs"
+              tone="primary"
+            />
+            <StatCard
+              label="Rata-rata Harga Titip"
+              value={rupiah(stats.averageConsignPrice)}
+            />
+          </StatCardGrid>
 
-            <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-1 shadow-xs">
-              <span className="text-xs font-semibold text-ink-soft">Rata-rata Margin</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-primary tabular-nums">
-                  {rupiah(stats.averageMargin)}
-                </span>
-                <span className="text-xs text-ink-soft font-medium">/ pcs</span>
-              </div>
-            </div>
-
-            <div className="col-span-2 sm:col-span-1 bg-surface border border-line rounded-2xl p-4 flex flex-col gap-1 shadow-xs">
-              <span className="text-xs font-semibold text-ink-soft">Rata-rata Harga Titip</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-black text-ink tabular-nums">
-                  {rupiah(stats.averageConsignPrice)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Baris Pencarian & Tab Status */}
-          <ProductFilterTabs
-            search={search}
+          {/* Bilah Penyaring Terpadu (Search + Tabs) */}
+          <FilterBar<ProductStatusFilter>
+            searchValue={search}
             onSearchChange={setSearch}
+            searchPlaceholder="Cari nama produk konsinyasi..."
             activeTab={activeTab}
             onTabChange={setActiveTab}
-            counts={{
-              all: stats.total,
-              active: stats.activeCount,
-              inactive: stats.inactiveCount,
-            }}
+            tabs={[
+              { value: 'all', label: 'Semua', count: stats.total },
+              { value: 'active', label: 'Aktif', count: stats.activeCount },
+              { value: 'inactive', label: 'Nonaktif', count: stats.inactiveCount },
+            ]}
           />
 
           {/* Daftar Produk / Empty State */}
@@ -188,7 +183,9 @@ export default function CatalogRoute() {
           ) : filteredProducts.length === 0 ? (
             <EmptyState
               title="Produk Tidak Ditemukan"
-              description={`Tidak ditemukan produk yang cocok dengan "${search}" pada filter ${activeTab === 'all' ? 'semua' : activeTab}.`}
+              description={`Tidak ditemukan produk yang cocok dengan "${search}" pada filter ${
+                activeTab === 'all' ? 'semua' : activeTab
+              }.`}
               action={{
                 label: 'Reset Pencarian',
                 onClick: () => {
@@ -221,6 +218,6 @@ export default function CatalogRoute() {
         initialData={editingProduct}
         isLoading={createProductMutation.isPending || updateProductMutation.isPending}
       />
-    </div>
+    </PageContainer>
   )
 }

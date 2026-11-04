@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/Button'
+import { PageContainer, PageHeader } from '@/components/shared'
 import { toast } from '@/components/ui/toast-store'
 import { ApiError } from '@/lib/api-client'
 import { ProductStockCard } from '@/features/visit/components/ProductStockCard'
@@ -255,17 +256,21 @@ export default function VisitNewRoute() {
     const availablePartners = partnerOptions.filter((p) => p.id !== 'all')
 
     return (
-      <div className="px-4 py-5 md:px-8 md:py-8 max-w-2xl mx-auto flex flex-col gap-5 font-sans">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-ink tracking-tight">Pilih Warung Mitra</h1>
-          <Button variant="secondary" size="sm" onClick={() => navigate('/kunjungan')} className="text-xs font-bold">
-            Batal
-          </Button>
-        </div>
-
-        <p className="text-caption text-ink-soft -mt-2">
-          Pilih warung mitra yang Anda kunjungi untuk mencatat sisa stok dan titip baru.
-        </p>
+      <PageContainer maxWidth="2xl">
+        <PageHeader
+          title="Pilih Warung Mitra"
+          description="Pilih warung mitra yang Anda kunjungi untuk mencatat sisa stok dan titip baru."
+          actions={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/kunjungan')}
+              className="text-xs font-bold"
+            >
+              Batal
+            </Button>
+          }
+        />
 
         {/* Banner Draf Kunjungan Persisten Offline-First */}
         {draft && !hasPromptedDraft && (
@@ -367,31 +372,27 @@ export default function VisitNewRoute() {
             ))}
           </div>
         )}
-      </div>
+      </PageContainer>
     )
   }
 
   // 2. Jika sukses tersimpan: Tampilkan layar sukses
   if (currentStep === 'success' && createdVisit) {
     return (
-      <div className="px-4 py-8 max-w-lg mx-auto">
+      <PageContainer maxWidth="2xl">
         <VisitSuccessCard visit={createdVisit} onNewVisit={handleResetForNew} />
-      </div>
+      </PageContainer>
     )
   }
 
   // 3. Tampilan Step Ringkasan & Pembayaran
   if (currentStep === 'summary_payment') {
     return (
-      <div className="px-4 py-5 md:px-8 md:py-8 max-w-3xl mx-auto flex flex-col gap-5 font-sans">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">Langkah 2 dari 2</span>
-            <h1 className="text-2xl font-extrabold text-ink tracking-tight mt-0.5">
-              Ringkasan & Pembayaran
-            </h1>
-          </div>
-        </div>
+      <PageContainer maxWidth="3xl">
+        <PageHeader
+          title="Ringkasan & Pembayaran"
+          description={`Langkah 2 dari 2 · Kunjungan ke ${selectedPartner.name}`}
+        />
 
         <VisitSummaryStep
           partner={selectedPartner}
@@ -402,13 +403,13 @@ export default function VisitNewRoute() {
           onSubmit={handleSubmitVisit}
           isSubmitting={createVisitMutation.isPending}
         />
-      </div>
+      </PageContainer>
     )
   }
 
   // 4. Tampilan Step 1: Input Stepper Stok per Produk
   return (
-    <div className="px-4 py-5 md:px-8 md:py-8 max-w-3xl mx-auto flex flex-col gap-5 font-sans pb-6">
+    <PageContainer maxWidth="3xl">
       {/* Header Warung Terpilih */}
       <div className="flex items-start justify-between gap-3 bg-surface rounded-2xl border border-line p-4 md:p-5 shadow-2xs">
         <div>
@@ -499,6 +500,6 @@ export default function VisitNewRoute() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

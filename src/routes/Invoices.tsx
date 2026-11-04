@@ -1,34 +1,59 @@
 import { useState, useMemo } from 'react'
 import { Button } from '@/components/ui/Button'
-import { InvoiceSummaryCards } from '@/features/invoices/components/InvoiceSummaryCards'
-import { InvoiceFilterTabs } from '@/features/invoices/components/InvoiceFilterTabs'
-import { InvoiceTableDesktop } from '@/features/invoices/components/InvoiceTableDesktop'
+import {
+  PageContainer,
+  PageHeader,
+  StatCard,
+  StatCardGrid,
+  FilterBar,
+} from '@/components/shared'
 import { InvoiceCardMobile } from '@/features/invoices/components/InvoiceCardMobile'
+import { InvoiceTableDesktop } from '@/features/invoices/components/InvoiceTableDesktop'
 import { PaymentRecordModal } from '@/features/invoices/components/PaymentRecordModal'
 import { useInvoices, useCreatePayment } from '@/features/invoices/api'
 import { usePartners } from '@/features/partner/api'
 import { calculateInvoicesMetrics, filterInvoices } from '@/features/invoices/calc'
 import { rupiah } from '@/lib/format'
-import type { Invoice, InvoiceStatus, PaymentPayload } from '@/features/invoices/types'
+import type { Invoice, InvoiceStatus, PaymentPayload, OverduePartner } from '@/features/invoices/types'
 
 export default function InvoicesRoute() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all')
   const [selectedPartnerIdFilter, setSelectedPartnerIdFilter] = useState<string>('')
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [modalInitialPartnerId, setModalInitialPartnerId] = useState<string>('')
 
-  // 1. Ambil data tagihan dan mitra dari backend
+  // State Modal Bayar
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [modalPartnerId, setModalPartnerId] = useState<string>('')
+
+  // Query Backend
   const { data: invoices = [], isLoading: isInvoicesLoading, isError: isInvoicesError, refetch } = useInvoices()
-  const { data: partners = [], isLoading: isPartnersLoading } = usePartners()
+  const { data: partners = [] } = usePartners()
   const createPaymentMutation = useCreatePayment()
 
-  // 2. Hitung metrik ringkasan (Belum lunas, masuk bulan ini, daftar menunggak)
-  const metrics = useMemo(() => {
-    return calculateInvoicesMetrics(invoices)
+  // Ringkasan Finansial
+  const metrics = useMemo(() => calculateInvoicesMetrics(invoices), [invoices])
+
+  // Hitung jumlah per status untuk badge tab
+  const counts = useMemo(() => {
+    let unpaid = 0
+    let partial = 0
+    let paid = 0
+
+    for (const inv of invoices) {
+      if (inv.status === 'unpaid') unpaid++
+      else if (inv.status === 'partial') partial++
+      else if (inv.status === 'paid') paid++
+    }
+
+    return {
+      all: invoices.length,
+      unpaid,
+      partial,
+      paid,
+    }
   }, [invoices])
 
-  // 3. Filter data berdasarkan tab status dan input pencarian
+  // Filter daftar tagihan
   const filteredInvoices = useMemo(() => {
     return filterInvoices(invoices, {
       search,
@@ -37,32 +62,19 @@ export default function InvoicesRoute() {
     })
   }, [invoices, search, statusFilter, selectedPartnerIdFilter])
 
-  // 4. Hitung jumlah per tab
-  const counts = useMemo(() => {
-    const list = selectedPartnerIdFilter
-      ? invoices.filter((i) => i.partnerId === selectedPartnerIdFilter)
-      : invoices
-
-    return {
-      all: list.length,
-      unpaid: list.filter((i) => i.status === 'unpaid').length,
-      partial: list.filter((i) => i.status === 'partial').length,
-      paid: list.filter((i) => i.status === 'paid').length,
-    }
-  }, [invoices, selectedPartnerIdFilter])
-
-  // 5. Handler Buka Modal Pembayaran
-  const handleOpenPayment = (partnerId = '') => {
-    setModalInitialPartnerId(partnerId)
+  // Buka modal pencatatan pembayaran
+  const handleOpenPayment = (partnerId?: string) => {
+    setModalPartnerId(partnerId || selectedPartnerIdFilter || '')
     setIsPaymentModalOpen(true)
   }
 
-  // 6. Handler Submit Pembayaran FIFO
+  // Submit pembayaran ke API
   const handleSubmitPayment = async (payload: PaymentPayload) => {
     await createPaymentMutation.mutateAsync(payload)
+    refetch()
   }
 
-  // 7. Handler Kirim Ulang via WhatsApp
+  // Kirim Ulang via WhatsApp
   const handleResendWA = (invoice: Invoice) => {
     const rawPhone = invoice.partnerWhatsApp?.replace(/\D/g, '') || ''
     let waPhone = rawPhone
@@ -72,19 +84,21 @@ export default function InvoicesRoute() {
 
     const origin = window.location.origin
     const invoiceUrl =
-      invoice.publicInvoiceUrl ||
-      `${origin}/n/${invoice.visitNumber || invoice.id}`
-
-    const messageText = `Halo ${invoice.partnerName},\n\nBerikut rincian nota tagihan konsinyasi ${invoice.visitNumber}:\n• Total Tagihan: ${rupiah(invoice.total)}\n• Sudah Dibayar: ${rupiah(invoice.paid)}\n• Sisa Belum Lunas: ${rupiah(invoice.remaining)}\n\nBuka nota digital lengkap di:\n${invoiceUrl}\n\nTerima kasih.`
-
-    const waLink = waPhone
-      ? `https://wa.me/${waPhone}?text=${encodeURIComponent(messageText)}`
-      : `https://wa.me/?text=${encodeURIComponent(messageText)}`
-
-    window.open(waLink, '_blank', 'noopener,noreferrer')
+      invoice.publicInvoiceUrl || `${origin}/n/${invoice.visitNumber || invoice.id}`
+    const text = encodeURIComponent(
+      `Halo ${invoice.partnerName}, berikut salinan Nota Titipan #${invoice.visitNumber}:\n${invoiceUrl}\nTerima kasih!`
+    )
+    window.open(`https://wa.me/${waPhone}?text=${text}`, '_blank', 'noopener,noreferrer')
   }
 
-  // 8. Handler Filter Cepat dari Banner Menunggak
+  // Buka Detail Nota
+  const handleViewDetail = (invoice: Invoice) => {
+    const origin = window.location.origin
+    const url = invoice.publicInvoiceUrl || `${origin}/n/${invoice.visitNumber || invoice.id}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  // Pilih mitra yang menunggak dari banner
   const handleSelectOverduePartner = (partnerId: string) => {
     const partner = partners.find((p) => p.id === partnerId)
     if (partner) {
@@ -96,85 +110,121 @@ export default function InvoicesRoute() {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-8 max-w-7xl mx-auto flex flex-col gap-6 font-sans pb-24 md:pb-12">
-      {/* Header Halaman */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-ink tracking-tight">
-            Tagihan & Piutang
-          </h1>
-          <p className="text-xs md:text-sm text-ink-soft mt-1">
-            Pantau nota konsinyasi, alokasi FIFO pelunasan otomatis, dan piutang warung mitra.
-          </p>
-        </div>
-
-        <Button
-          variant="primary"
-          size="md"
-          onClick={() => handleOpenPayment()}
-          className="rounded-xl px-5 font-bold shadow-xs flex items-center gap-2 shrink-0 self-start sm:self-auto"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-          <span>Catat Pembayaran</span>
-        </Button>
-      </div>
-
-      {/* Ringkasan Angka & Banner Menunggak > 14 Hari */}
-      <InvoiceSummaryCards
-        metrics={metrics}
-        onSelectPartner={handleSelectOverduePartner}
+    <PageContainer>
+      {/* 1. Header Halaman Terstandarisasi */}
+      <PageHeader
+        title="Tagihan & Piutang"
+        description="Pantau nota konsinyasi, alokasi FIFO pelunasan otomatis, dan piutang warung mitra."
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => handleOpenPayment()}
+            className="min-h-[48px] px-5 font-bold shadow-xs flex items-center gap-2"
+          >
+            <span className="text-lg leading-none">+</span>
+            <span>Catat Pembayaran</span>
+          </Button>
+        }
       />
 
-      {/* Filter Tabs & Search */}
-      <div className="flex flex-col gap-4">
-        {selectedPartnerIdFilter && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-raised border border-line text-xs self-start">
-            <span className="text-ink-soft">Filter mitra:</span>
-            <strong className="text-ink">
-              {partners.find((p) => p.id === selectedPartnerIdFilter)?.name || selectedPartnerIdFilter}
-            </strong>
-            <button
-              type="button"
-              onClick={() => setSelectedPartnerIdFilter('')}
-              className="ml-1 text-ink-soft hover:text-ink font-bold"
-              aria-label="Hapus filter mitra"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <InvoiceFilterTabs
-          search={search}
-          onSearchChange={setSearch}
-          activeStatus={statusFilter}
-          onStatusChange={setStatusFilter}
-          counts={counts}
+      {/* 2. Ringkasan Finansial (StatCardGrid) */}
+      <StatCardGrid columns={2}>
+        <StatCard
+          label="Belum Lunas"
+          value={rupiah(metrics.totalUnpaidAmount)}
+          tone="danger"
+          hint={`dari ${metrics.totalUnpaidPartnersCount} warung (${metrics.totalUnpaidInvoicesCount} nota)`}
         />
-      </div>
+        <StatCard
+          label="Sudah Masuk Bulan Ini"
+          value={rupiah(metrics.totalCollectedThisMonth)}
+          tone="success"
+          hint="Pelunasan tercatat periode berjalan"
+        />
+      </StatCardGrid>
 
-      {/* Konten Utama (Tabel di Desktop, Kartu di Mobile) */}
+      {/* 3. Banner Peringatan Menunggak > 14 Hari */}
+      {metrics.overduePartners.length > 0 && (
+        <div className="p-4 rounded-2xl bg-danger-soft/70 border border-danger/30 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs animate-in fade-in">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-danger animate-pulse shrink-0" />
+              <span className="text-xs font-bold text-danger uppercase tracking-wider">
+                Perhatian: {metrics.overduePartners.length} Warung Menunggak &gt; 14 Hari
+              </span>
+            </div>
+            <p className="text-xs text-ink-soft">
+              Segera prioritaskan kunjungan penagihan saat pengantaran barang berikutnya.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {metrics.overduePartners.map((op: OverduePartner) => (
+              <Button
+                key={op.partnerId}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleSelectOverduePartner(op.partnerId)}
+                className="text-xs font-bold border-danger/40 text-danger hover:bg-danger-soft min-h-[40px]"
+              >
+                Tagih {op.partnerName} ({rupiah(op.amount)}) →
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. Filter Tabs & Search Terpadu */}
+      <FilterBar<'all' | InvoiceStatus>
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Cari nomor nota, warung, atau nama penerima..."
+        activeTab={statusFilter}
+        onTabChange={setStatusFilter}
+        tabs={[
+          { value: 'all', label: 'Semua', count: counts.all },
+          { value: 'unpaid', label: 'Belum Lunas', count: counts.unpaid },
+          { value: 'partial', label: 'Sebagian', count: counts.partial },
+          { value: 'paid', label: 'Lunas', count: counts.paid },
+        ]}
+        extraActions={
+          selectedPartnerIdFilter ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-raised border border-line text-xs">
+              <span className="text-ink-soft">Filter mitra:</span>
+              <strong className="text-ink">
+                {partners.find((p) => p.id === selectedPartnerIdFilter)?.name || selectedPartnerIdFilter}
+              </strong>
+              <button
+                type="button"
+                onClick={() => setSelectedPartnerIdFilter('')}
+                className="ml-1 text-ink-soft hover:text-ink font-bold cursor-pointer"
+                aria-label="Hapus filter mitra"
+              >
+                ✕
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {/* 5. Konten Utama (Tabel di Desktop, Kartu di Mobile) */}
       {isInvoicesLoading ? (
         <div className="py-16 text-center text-xs text-ink-soft bg-surface rounded-2xl border border-line animate-pulse">
           Memuat daftar tagihan…
         </div>
       ) : isInvoicesError ? (
-        <div className="p-8 text-center bg-danger-soft rounded-2xl border border-danger/30 flex flex-col items-center gap-3">
+        <div className="p-8 text-center bg-danger-soft/40 rounded-2xl border border-danger/30 flex flex-col items-center gap-3">
           <p className="text-xs font-bold text-danger">Gagal memuat data tagihan dari server.</p>
-          <Button variant="secondary" size="sm" onClick={() => refetch()}>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs font-bold">
             Coba Lagi
           </Button>
         </div>
       ) : filteredInvoices.length === 0 ? (
-        <div className="p-12 text-center bg-surface rounded-2xl border border-line flex flex-col items-center gap-2">
-          <p className="text-sm font-bold text-ink">Tidak ada nota tagihan yang sesuai.</p>
-          <p className="text-xs text-ink-soft">
-            {search || statusFilter !== 'all' || selectedPartnerIdFilter
-              ? 'Coba ganti filter status atau kata kunci pencarian.'
-              : 'Belum ada kunjungan bertagihan yang tercatat.'}
-          </p>
+        <div className="py-16 text-center bg-surface rounded-2xl border border-line flex flex-col items-center justify-center p-6 text-xs text-ink-soft">
+          <p className="font-bold text-ink text-sm">Tidak ada tagihan yang cocok</p>
+          <p className="mt-1">Coba sesuaikan kata kunci pencarian atau filter status nota Anda.</p>
           {(search || statusFilter !== 'all' || selectedPartnerIdFilter) && (
             <Button
               variant="outline"
@@ -184,71 +234,49 @@ export default function InvoicesRoute() {
                 setStatusFilter('all')
                 setSelectedPartnerIdFilter('')
               }}
-              className="mt-2 text-xs"
+              className="mt-4 text-xs font-bold"
             >
-              Reset Filter
+              Reset Semua Filter
             </Button>
           )}
         </div>
       ) : (
         <>
-          {/* Tampilan Desktop: Tabel Padat */}
+          {/* Tampilan Desktop: Tabel Lebar */}
           <div className="hidden md:block">
             <InvoiceTableDesktop
               invoices={filteredInvoices}
               onPay={(inv) => handleOpenPayment(inv.partnerId)}
               onResendWA={handleResendWA}
-              onViewDetail={(inv) => {
-                const origin = window.location.origin
-                const url = inv.publicInvoiceUrl || `${origin}/n/${inv.visitNumber || inv.id}`
-                window.open(url, '_blank', 'noopener,noreferrer')
-              }}
+              onViewDetail={handleViewDetail}
             />
           </div>
 
-          {/* Tampilan Mobile: Kartu Responsif */}
-          <div className="flex md:hidden flex-col gap-3">
+          {/* Tampilan Mobile: Kartu Vertikal */}
+          <div className="flex flex-col gap-3 md:hidden">
             {filteredInvoices.map((inv) => (
               <InvoiceCardMobile
                 key={inv.id}
                 invoice={inv}
                 onPay={(item) => handleOpenPayment(item.partnerId)}
                 onResendWA={handleResendWA}
-                onViewDetail={(item) => {
-                  const origin = window.location.origin
-                  const url = item.publicInvoiceUrl || `${origin}/n/${item.visitNumber || item.id}`
-                  window.open(url, '_blank', 'noopener,noreferrer')
-                }}
+                onViewDetail={handleViewDetail}
               />
             ))}
           </div>
         </>
       )}
 
-      {/* Floating Action Button untuk Mobile */}
-      <div className="md:hidden fixed bottom-20 right-4 z-40">
-        <button
-          type="button"
-          onClick={() => handleOpenPayment()}
-          className="h-14 w-14 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary-hover active:scale-95 transition-all focus:outline-none focus:ring-4 focus:ring-primary/20"
-          aria-label="Catat Pembayaran Baru"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Modal / Bottom Sheet Catat Pembayaran FIFO */}
+      {/* Modal Catat Pembayaran */}
       <PaymentRecordModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        onSubmit={handleSubmitPayment}
-        invoices={invoices}
         partners={partners}
-        initialPartnerId={modalInitialPartnerId}
-        isLoading={createPaymentMutation.isPending || isPartnersLoading}
+        invoices={invoices}
+        initialPartnerId={modalPartnerId}
+        onSubmit={handleSubmitPayment}
+        isLoading={createPaymentMutation.isPending}
       />
-    </div>
+    </PageContainer>
   )
 }

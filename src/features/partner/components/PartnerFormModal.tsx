@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Modal } from '@/components/shared/Modal'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/toast-store'
@@ -104,124 +105,91 @@ export function PartnerFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs animate-fadeIn font-sans">
-      <div
-        className="relative w-full max-w-lg bg-surface rounded-2xl border border-line shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="partner-form-title"
-      >
-        {/* Header Modal */}
-        <div className="p-5 border-b border-line flex items-center justify-between bg-surface">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditMode ? 'Ubah Data Warung Mitra' : 'Tambah Warung Mitra Baru'}
+      description={
+        isEditMode
+          ? 'Perbarui rincian kontak atau alamat warung'
+          : 'Daftarkan warung baru untuk penitipan konsinyasi'
+      }
+      maxWidth="lg"
+      footer={
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading}
+            className="rounded-xl px-4 min-h-[48px]"
+          >
+            Batal
+          </Button>
+          <Button
+            type="submit"
+            form="partner-form"
+            variant="primary"
+            loading={isLoading}
+            disabled={isLoading}
+            className="rounded-xl px-5 min-h-[48px] font-bold"
+          >
+            {isEditMode ? 'Simpan Perubahan' : 'Tambah Warung'}
+          </Button>
+        </>
+      }
+    >
+      <form id="partner-form" onSubmit={handleSubmit(onValidSubmit)} className="flex flex-col gap-4">
+        <Input
+          label="Nama Warung"
+          placeholder="Contoh: Warung Bu Sri"
+          {...register('name')}
+          error={errors.name?.message}
+          required
+        />
+
+        <Input
+          label="Nama Pemilik / Penjaga"
+          placeholder="Contoh: Bu Sri Mulyani"
+          {...register('ownerName')}
+          error={errors.ownerName?.message}
+          required
+        />
+
+        <Input
+          label="Nomor WhatsApp"
+          placeholder="Contoh: 081234567890"
+          {...register('whatsapp')}
+          error={errors.whatsapp?.message}
+          required
+        />
+
+        <Input
+          label="Alamat / Daerah"
+          placeholder="Contoh: Jl. Merdeka No. 12, Pasar Anyar"
+          {...register('address')}
+          error={errors.address?.message}
+          required
+        />
+
+        <div className="flex items-center justify-between p-3.5 bg-surface-raised rounded-xl border border-line mt-1">
           <div>
-            <h2 id="partner-form-title" className="text-lg font-extrabold text-ink">
-              {isEditMode ? 'Ubah Data Warung Mitra' : 'Tambah Warung Mitra Baru'}
-            </h2>
-            <p className="text-xs text-ink-soft mt-0.5">
-              {isEditMode
-                ? 'Perbarui rincian kontak atau alamat warung'
-                : 'Daftarkan warung baru untuk penitipan konsinyasi'}
+            <p className="text-xs font-bold text-ink">Status Warung Aktif</p>
+            <p className="text-[11px] text-ink-soft">
+              Warung aktif dapat dipilih saat mencatat kunjungan baru
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-soft hover:bg-surface-raised hover:text-ink transition-colors"
-            aria-label="Tutup"
-          >
-            ✕
-          </button>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isActive}
+              onChange={(e) => setValue('isActive', e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-line-strong peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          </label>
         </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit(onValidSubmit)} className="p-5 overflow-y-auto flex flex-col gap-4">
-          <Input
-            label="Nama Warung"
-            placeholder="Contoh: Warung Bu Sri"
-            {...register('name')}
-            error={errors.name?.message}
-            required
-          />
-
-          <Input
-            label="Nama Pemilik / Penjaga"
-            placeholder="Contoh: Bu Sri"
-            {...register('ownerName')}
-            error={errors.ownerName?.message}
-            required
-          />
-
-          <Input
-            label="Nomor WhatsApp"
-            placeholder="Contoh: 081330124471"
-            {...register('whatsapp')}
-            error={errors.whatsapp?.message}
-            hint="Digunakan untuk pengiriman Nota Digital via WhatsApp"
-            type="tel"
-            required
-          />
-
-          <Input
-            label="Alamat Lengkap & Daerah"
-            placeholder="Contoh: Jl. Rungkut Asri Tengah No. 14, Rungkut, Surabaya"
-            {...register('address')}
-            error={errors.address?.message}
-            required
-          />
-
-          {isEditMode && (
-            <div className="flex items-center justify-between p-3 rounded-xl bg-surface-raised border border-line">
-              <div>
-                <span className="text-xs font-bold text-ink block">Status Kemitraan</span>
-                <span className="text-[11px] text-ink-soft">
-                  {isActive ? 'Warung aktif menerima titipan' : 'Warung sedang dinonaktifkan'}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setValue('isActive', !isActive, { shouldValidate: true })}
-                className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
-                  isActive ? 'bg-primary' : 'bg-ink-disabled'
-                }`}
-                role="switch"
-                aria-checked={isActive}
-              >
-                <span
-                  className={`w-5 h-5 rounded-full bg-white block transition-transform shadow-2xs ${
-                    isActive ? 'translate-x-6' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3 pt-3 border-t border-line mt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              onClick={onClose}
-              disabled={isLoading}
-              className="flex-1 rounded-xl h-11 text-xs font-bold"
-            >
-              Batal
-            </Button>
-
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={isLoading}
-              className="flex-1 rounded-xl h-11 text-xs font-bold shadow-xs"
-            >
-              {isLoading ? 'Menyimpan…' : isEditMode ? 'Simpan Perubahan' : 'Tambah Warung'}
-            </Button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }

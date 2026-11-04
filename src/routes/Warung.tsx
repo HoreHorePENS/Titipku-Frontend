@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
+import { PageContainer, PageHeader, FilterBar } from '@/components/shared'
 import { usePartners, useCreatePartner, useUpdatePartner } from '@/features/partner/api'
 import { useVisits } from '@/features/visit/api'
 import { filterPartners, calculatePartnerHealth } from '@/features/partner/calc'
-import { PartnerFilterTabs } from '@/features/partner/components/PartnerFilterTabs'
 import { PartnerCardMobile } from '@/features/partner/components/PartnerCardMobile'
 import { PartnerListItemDesktop } from '@/features/partner/components/PartnerListItemDesktop'
 import { PartnerDetailPanel } from '@/features/partner/components/PartnerDetailPanel'
@@ -110,34 +110,25 @@ export default function WarungRoute() {
   }
 
   return (
-    <div className="px-4 py-5 md:px-8 md:py-8 max-w-7xl mx-auto flex flex-col gap-5 md:gap-6 font-sans">
-      {/* --------------------------------------------------------------------
-          1. HEADER ATAS (Judul, Jumlah Warung & Tombol Tambah Warung)
-          -------------------------------------------------------------------- */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-ink tracking-tight">
-            Warung
-          </h1>
-          <p className="text-xs text-ink-soft mt-0.5">
-            {partners.length} warung mitra konsinyasi terdaftar
-          </p>
-        </div>
+    <PageContainer>
+      {/* 1. Header Halaman */}
+      <PageHeader
+        title="Warung"
+        description={`${partners.length} warung mitra konsinyasi terdaftar`}
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleOpenCreate}
+            className="flex items-center gap-1.5"
+          >
+            <span className="text-base leading-none">+</span>
+            <span>Tambah Warung</span>
+          </Button>
+        }
+      />
 
-        <Button
-          variant="primary"
-          size="md"
-          onClick={handleOpenCreate}
-          className="rounded-xl px-4 md:px-5 h-11 text-xs md:text-sm font-bold shadow-2xs flex items-center gap-1.5"
-        >
-          <span className="text-base leading-none">+</span>
-          <span>Tambah Warung</span>
-        </Button>
-      </div>
-
-      {/* --------------------------------------------------------------------
-          2. KONTEN (Loading, Error, Empty, atau Split View)
-          -------------------------------------------------------------------- */}
+      {/* 2. Konten Halaman */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-3">
@@ -169,74 +160,81 @@ export default function WarungRoute() {
           }}
         />
       ) : (
-        <>
-          {/* ================================================================
-              A. TAMPILAN DESKTOP (Split View: Daftar Kiri, Detail Kanan Sesuai Mockup)
-              ================================================================ */}
-          <div className="hidden md:grid md:grid-cols-12 gap-6 items-start">
-            {/* Panel Kiri: Kontrol Filter & Daftar Warung */}
-            <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-3.5">
-              <PartnerFilterTabs
-                search={search}
-                onSearchChange={setSearch}
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-                counts={counts}
-              />
+        /* Unified Responsive Master-Detail Layout:
+           - On mobile: shows list when no partner is explicitly selected; shows detail when selected.
+           - On desktop (md+): both list and detail are always displayed side-by-side. */
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          {/* Panel Kiri: Kontrol Filter & Daftar Warung */}
+          <div
+            className={`${
+              selectedPartnerId ? 'hidden md:flex' : 'flex'
+            } md:col-span-5 lg:col-span-4 flex-col gap-3.5`}
+          >
+            <FilterBar
+              searchValue={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Cari nama warung atau daerah..."
+              activeTab={activeTab}
+              onTabChange={(tab) => setActiveTab(tab as 'all' | HealthTier)}
+              tabs={[
+                { value: 'all', label: 'Semua', count: counts.all },
+                { value: 'bagus', label: 'Bagus', count: counts.bagus },
+                { value: 'pantau', label: 'Pantau', count: counts.pantau },
+                { value: 'evaluasi', label: 'Evaluasi', count: counts.evaluasi },
+              ]}
+            />
 
-              <div className="flex flex-col gap-2.5 max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
-                {filteredPartners.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-ink-soft bg-surface rounded-xl border border-line">
-                    Tidak ada warung yang cocok dengan filter.
-                  </div>
-                ) : (
-                  filteredPartners.map((partner) => (
-                    <PartnerListItemDesktop
-                      key={partner.id}
-                      partner={partner}
-                      visits={visits}
-                      isSelected={effectiveSelectedPartner?.id === partner.id}
-                      onClick={() => handleSelectPartner(partner.id)}
-                    />
-                  ))
-                )}
-
-                {zeroDebtCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setShowZeroDebt(!showZeroDebt)}
-                    className="w-full py-2.5 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-raised transition-all text-center mt-1"
-                  >
-                    {showZeroDebt
-                      ? 'Tampilkan semua warung'
-                      : `Tampilkan ${zeroDebtCount} warung tanpa utang`}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Panel Kanan: Rincian Lengkap Warung Terpilih */}
-            <div className="md:col-span-7 lg:col-span-8 flex flex-col">
-              {effectiveSelectedPartner ? (
-                <PartnerDetailPanel
-                  partner={effectiveSelectedPartner}
-                  visits={visits}
-                  onEdit={handleOpenEdit}
-                />
-              ) : (
-                <div className="p-12 text-center text-ink-soft bg-surface rounded-2xl border border-line">
-                  Pilih warung di panel sebelah kiri untuk melihat rincian stok dan utang.
+            <div className="flex flex-col gap-2.5 max-h-none md:max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
+              {filteredPartners.length === 0 ? (
+                <div className="p-6 text-center text-xs text-ink-soft bg-surface rounded-2xl border border-line">
+                  Tidak ada warung yang cocok dengan filter.
                 </div>
+              ) : (
+                filteredPartners.map((partner) => (
+                  <div key={partner.id}>
+                    {/* Tampilan kartu mobile */}
+                    <div className="md:hidden">
+                      <PartnerCardMobile
+                        partner={partner}
+                        visits={visits}
+                        isSelected={effectiveSelectedPartner?.id === partner.id}
+                        onClick={() => handleSelectPartner(partner.id)}
+                      />
+                    </div>
+                    {/* Tampilan baris desktop */}
+                    <div className="hidden md:block">
+                      <PartnerListItemDesktop
+                        partner={partner}
+                        visits={visits}
+                        isSelected={effectiveSelectedPartner?.id === partner.id}
+                        onClick={() => handleSelectPartner(partner.id)}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+
+              {zeroDebtCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowZeroDebt(!showZeroDebt)}
+                  className="w-full py-2.5 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink-soft hover:text-ink hover:bg-surface-raised transition-all text-center mt-1"
+                >
+                  {showZeroDebt
+                    ? 'Tampilkan semua warung'
+                    : `Tampilkan ${zeroDebtCount} warung tanpa utang`}
+                </button>
               )}
             </div>
           </div>
 
-          {/* ================================================================
-              B. TAMPILAN MOBILE (Mobile First: Daftar atau Layar Detail)
-              ================================================================ */}
-          <div className="md:hidden flex flex-col gap-4">
-            {selectedPartnerId && effectiveSelectedPartner ? (
-              // Tampilan Detail Warung di Layar Mobile
+          {/* Panel Kanan: Rincian Lengkap Warung Terpilih */}
+          <div
+            className={`${
+              selectedPartnerId ? 'flex' : 'hidden md:flex'
+            } md:col-span-7 lg:col-span-8 flex-col`}
+          >
+            {effectiveSelectedPartner ? (
               <PartnerDetailPanel
                 partner={effectiveSelectedPartner}
                 visits={visits}
@@ -247,48 +245,12 @@ export default function WarungRoute() {
                 }}
               />
             ) : (
-              // Tampilan Daftar Warung di Layar Mobile
-              <div className="flex flex-col gap-4">
-                <PartnerFilterTabs
-                  search={search}
-                  onSearchChange={setSearch}
-                  activeTab={activeTab}
-                  onTabChange={setActiveTab}
-                  counts={counts}
-                />
-
-                <div className="flex flex-col gap-3">
-                  {filteredPartners.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-ink-soft bg-surface rounded-2xl border border-line">
-                      Tidak ada warung yang sesuai dengan pencarian Anda.
-                    </div>
-                  ) : (
-                    filteredPartners.map((partner) => (
-                      <PartnerCardMobile
-                        key={partner.id}
-                        partner={partner}
-                        visits={visits}
-                        onClick={() => handleSelectPartner(partner.id)}
-                      />
-                    ))
-                  )}
-
-                  {zeroDebtCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setShowZeroDebt(!showZeroDebt)}
-                      className="w-full py-3 px-4 rounded-xl bg-surface border border-line text-xs font-bold text-ink hover:bg-surface-raised transition-all text-center mt-1 shadow-2xs"
-                    >
-                      {showZeroDebt
-                        ? 'Tampilkan semua warung'
-                        : `Tampilkan ${zeroDebtCount} warung tanpa utang`}
-                    </button>
-                  )}
-                </div>
+              <div className="p-12 text-center text-ink-soft bg-surface rounded-2xl border border-line">
+                Pilih warung di panel sebelah kiri untuk melihat rincian stok dan utang.
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
       {/* Modal Dialog Form Tambah / Ubah Warung */}
@@ -299,6 +261,6 @@ export default function WarungRoute() {
         initialData={editingPartner}
         isLoading={createPartnerMutation.isPending || updatePartnerMutation.isPending}
       />
-    </div>
+    </PageContainer>
   )
 }
