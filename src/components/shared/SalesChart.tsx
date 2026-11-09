@@ -7,46 +7,14 @@ import {
   selectXAxisTicks,
 } from './SalesChart.calc'
 
-// 30 hari data penjualan default (Oktober 2026 - Keripik Pisang Rina)
-const DEFAULT_SALES_DATA: DailySalesPoint[] = [
-  { date: '28 Sep', amount: 160_000 },
-  { date: '29 Sep', amount: 180_000 },
-  { date: '30 Sep', amount: 150_000 },
-  { date: '1 Okt', amount: 170_000 },
-  { date: '2 Okt', amount: 215_000 },
-  { date: '3 Okt', amount: 160_000 },
-  { date: '4 Okt', amount: 130_000 },
-  { date: '5 Okt', amount: 0 }, // Minggu libur
-  { date: '6 Okt', amount: 175_000 },
-  { date: '7 Okt', amount: 185_000 },
-  { date: '8 Okt', amount: 195_000 },
-  { date: '9 Okt', amount: 170_000 },
-  { date: '10 Okt', amount: 235_000 },
-  { date: '11 Okt', amount: 190_000 },
-  { date: '12 Okt', amount: 0 }, // Minggu libur
-  { date: '13 Okt', amount: 180_000 },
-  { date: '14 Okt', amount: 200_000 },
-  { date: '15 Okt', amount: 170_000 },
-  { date: '16 Okt', amount: 210_000 },
-  { date: '17 Okt', amount: 255_000 },
-  { date: '18 Okt', amount: 200_000 },
-  { date: '19 Okt', amount: 0 }, // Minggu libur
-  { date: '20 Okt', amount: 185_000 },
-  { date: '21 Okt', amount: 230_000 },
-  { date: '22 Okt', amount: 285_000 },
-  { date: '23 Okt', amount: 350_000 },
-  { date: '24 Okt', amount: 430_000 },
-  { date: '25 Okt', amount: 205_000 },
-  { date: '26 Okt', amount: 0 }, // Minggu libur
-  { date: '27 Okt', amount: 215_000 },
-]
-
 export interface SalesChartProps {
-  data?: DailySalesPoint[]
+  /** Titik penjualan harian dari data kunjungan asli (boleh semua nol). */
+  data: DailySalesPoint[]
   className?: string
 }
 
-export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesChartProps) {
+export function SalesChart({ data, className = '' }: SalesChartProps) {
+  const hasSales = data.some((point) => point.amount > 0)
   const { points, pathD, maxAmount, midAmount } = useMemo(
     () => calculateChartPoints(data, DEFAULT_DIMENSIONS),
     [data]
@@ -59,6 +27,11 @@ export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesC
 
   return (
     <div className={`w-full flex flex-col pt-3 overflow-hidden ${className}`}>
+      {!hasSales && (
+        <p className="text-body text-ink-soft mb-2">
+          Belum ada penjualan 30 hari terakhir. Grafik terisi otomatis setelah kamu mencatat kunjungan.
+        </p>
+      )}
       <div className="w-full h-44">
         <svg
           viewBox={`0 0 ${width} ${height}`}
@@ -71,7 +44,7 @@ export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesC
             x="46"
             y={topY + 4}
             textAnchor="end"
-            className="text-[11px] fill-current text-ink-soft font-sans tabular-nums select-none"
+            className="text-caption fill-current text-ink-soft font-sans tabular-nums select-none"
           >
             {formatYTick(maxAmount)}
           </text>
@@ -79,7 +52,7 @@ export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesC
             x="46"
             y={midY + 4}
             textAnchor="end"
-            className="text-[11px] fill-current text-ink-soft font-sans tabular-nums select-none"
+            className="text-caption fill-current text-ink-soft font-sans tabular-nums select-none"
           >
             {formatYTick(midAmount)}
           </text>
@@ -87,7 +60,7 @@ export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesC
             x="46"
             y={baseY + 4}
             textAnchor="end"
-            className="text-[11px] fill-current text-ink-soft font-sans tabular-nums select-none"
+            className="text-caption fill-current text-ink-soft font-sans tabular-nums select-none"
           >
             0
           </text>
@@ -154,7 +127,7 @@ export function SalesChart({ data = DEFAULT_SALES_DATA, className = '' }: SalesC
               x={tick.x}
               y={baseY + 23}
               textAnchor={tick.anchor}
-              className="text-[11px] fill-current text-ink-soft font-sans select-none"
+              className="text-caption fill-current text-ink-soft font-sans select-none"
             >
               {tick.date}
             </text>

@@ -1,69 +1,63 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  loadNotifications,
-  NOTIFICATIONS_STORAGE_KEY,
-  INITIAL_NOTIFICATIONS,
-} from './notification-store'
+import { describe, it, expect } from 'vitest'
+import { buildNotifications, formatTimeAgo } from './notification-store'
+import { mapProposal, type RawProposal } from '@/features/stores/proposals-api'
 
-describe('Notification Store & Red Dot Indicator', () => {
-  let mockStorage: Record<string, string> = {}
+const NOW = new Date('2026-11-09T12:00:00Z').getTime()
 
-  beforeEach(() => {
-    mockStorage = {}
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, val: string) => {
-        mockStorage[key] = val
-      },
-      removeItem: (key: string) => {
-        delete mockStorage[key]
-      },
-      clear: () => {
-        mockStorage = {}
-      },
-    })
+function proposal(overrides: Partial<RawProposal>) {
+  return mapProposal({
+    id: 'p',
+    direction: 'store_to_penitip',
+    status: 'pending',
+    message: null,
+    shelf_location: null,
+    estimated_capacity: null,
+    created_at: '2026-11-09T11:00:00Z',
+    responded_at: null,
+    store: { id: 's', name: 'Warung Siti', category: 'warung', address: 'a', whatsapp: '62', photo_url: null, owner_name: 'Siti', latitude: 0, longitude: 0 },
+    business: { id: 'b', name: 'Keripik Rina', owner_name: 'Rina', whatsapp: null, address: null },
+    items: [],
+    ...overrides,
+  })
+}
+
+describe('notifikasi diturunkan dari proposal asli', () => {
+  it('akun baru tanpa proposal tidak punya notifikasi (tidak ada data contoh)', () => {
+    expect(buildNotifications([], 'penitip', new Set(), NOW)).toEqual([])
+    expect(buildNotifications([], 'pemilik_toko', new Set(), NOW)).toEqual([])
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
+  it('penitip: tawaran masuk pending bisa langsung ditindaklanjuti', () => {
+    const [notif] = buildNotifications([proposal({ id: 'o1' })], 'penitip', new Set(), NOW)
+    expect(notif).toMatchObject({ type: 'offer_incoming', actionable: true, isRead: false, proposalId: 'o1' })
+    expect(notif.message).toContain('Warung Siti')
   })
 
-  it('menginisialisasi notifikasi default untuk penitip dan pemilik toko', () => {
-    const list = loadNotifications()
-    expect(list.length).toBe(INITIAL_NOTIFICATIONS.length)
-    expect(mockStorage[NOTIFICATIONS_STORAGE_KEY]).toBeDefined()
-
-    const penitipNotifs = list.filter((n) => n.role === 'penitip')
-    expect(penitipNotifs.length).toBeGreaterThan(0)
-    // Cek ada notifikasi unread (memicu titik merah pada lonceng)
-    const hasUnread = penitipNotifs.some((n) => !n.isRead)
-    expect(hasUnread).toBe(true)
+  it('pemilik toko: pengajuan masuk & tawaran yang diterima', () => {
+    const list = buildNotifications(
+      [
+        proposal({ id: 'r1', direction: 'penitip_to_store' }),
+        proposal({ id: 'o2', status: 'accepted', responded_at: '2026-11-09T11:30:00Z' }),
+      ],
+      'pemilik_toko',
+      new Set(),
+      NOW
+    )
+    expect(list.map((n) => n.type)).toEqual(['accepted', 'request_incoming'])
   })
 
-  it('memuat notifikasi kustom dari storage', () => {
-    const custom = [
-      {
-        id: 'n-custom-1',
-        role: 'penitip' as const,
-        title: 'Tawaran Baru',
-        message: 'Toko Maju Bersama mengajak titip barang.',
-        timeAgo: '1 mnt lalu',
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        type: 'offer_incoming' as const,
-      },
-    ]
-    mockStorage[NOTIFICATIONS_STORAGE_KEY] = JSON.stringify(custom)
-
-    const list = loadNotifications()
-    expect(list.length).toBe(1)
-    expect(list[0].id).toBe('n-custom-1')
-    expect(list[0].isRead).toBe(false)
+  it('tidak memberi notifikasi untuk tawaran sendiri yang masih pending atau dibatalkan', () => {
+    expect(buildNotifications([proposal({}), proposal({ status: 'cancelled' })], 'pemilik_toko', new Set(), NOW)).toEqual([])
   })
 
-  it('fallback ke data awal saat JSON corrupt', () => {
-    mockStorage[NOTIFICATIONS_STORAGE_KEY] = 'CORRUPTED_{{{'
-    const list = loadNotifications()
-    expect(list.length).toBe(INITIAL_NOTIFICATIONS.length)
+  it('status baca per proposal+status', () => {
+    const [notif] = buildNotifications([proposal({ id: 'o1' })], 'penitip', new Set(['o1:pending']), NOW)
+    expect(notif.isRead).toBe(true)
+  })
+
+  it('formatTimeAgo', () => {
+    expect(formatTimeAgo('2026-11-09T11:59:40Z', NOW)).toBe('Baru saja')
+    expect(formatTimeAgo('2026-11-09T11:00:00Z', NOW)).toBe('1 jam lalu')
+    expect(formatTimeAgo('2026-11-08T12:00:00Z', NOW)).toBe('Kemarin')
   })
 })

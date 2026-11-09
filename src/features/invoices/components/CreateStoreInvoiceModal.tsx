@@ -34,7 +34,8 @@ export function CreateStoreInvoiceModal({
   const notesTextareaId = useId()
 
   const acceptedRequests = requests.filter((r) => r.status === 'accepted')
-  const selectablePenitip = acceptedRequests.length > 0 ? acceptedRequests : requests
+  // Nota hanya untuk penitip yang sudah menjadi mitra aktif toko.
+  const selectablePenitip = acceptedRequests
 
   const [step, setStep] = useState<StepState>('calculate')
   const [selectedPenitipId, setSelectedPenitipId] = useState<string>(
@@ -149,7 +150,7 @@ export function CreateStoreInvoiceModal({
     const newRecord = createStoreDigitalInvoice({
       partnerId: activePenitip.id,
       partnerName: `${activePenitip.producerBusinessName} (${activePenitip.producerOwnerName})`,
-      partnerWhatsApp: activePenitip.producerWhatsapp,
+      partnerWhatsApp: activePenitip.producerWhatsapp ?? undefined,
       businessName: storeName,
       receivedBy: storeName,
       status: paymentStatus,
@@ -224,7 +225,7 @@ export function CreateStoreInvoiceModal({
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-xs hover:bg-slate-800 transition-all min-h-[44px]"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 text-white font-semibold text-caption hover:bg-slate-800 transition-all min-h-[44px]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -237,17 +238,17 @@ export function CreateStoreInvoiceModal({
         <div className="flex flex-col gap-4 py-2 font-sans">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Nomor Nota:</span>
-              <span className="text-xs font-mono font-bold text-slate-900">{createdInvoice.number}</span>
+              <span className="text-caption text-slate-500">Nomor Nota:</span>
+              <span className="text-caption font-mono font-bold text-slate-900">{createdInvoice.number}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Mitra Penitip:</span>
-              <span className="text-xs font-bold text-slate-900">{createdInvoice.partnerName}</span>
+              <span className="text-caption text-slate-500">Mitra Penitip:</span>
+              <span className="text-caption font-bold text-slate-900">{createdInvoice.partnerName}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Status Pembayaran:</span>
+              <span className="text-caption text-slate-500">Status Pembayaran:</span>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                className={`text-caption font-bold px-2 py-0.5 rounded-full ${
                   createdInvoice.status === 'paid'
                     ? 'bg-emerald-100 text-emerald-800'
                     : 'bg-amber-100 text-amber-800'
@@ -257,11 +258,11 @@ export function CreateStoreInvoiceModal({
               </span>
             </div>
             <div className="border-t border-slate-200 pt-2 mt-1 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-700">Total Penjualan:</span>
-              <span className="text-base font-extrabold text-slate-900">{formatRupiah(createdInvoice.total)}</span>
+              <span className="text-caption font-semibold text-slate-700">Total Penjualan:</span>
+              <span className="text-title-3 font-bold text-slate-900">{formatRupiah(createdInvoice.total)}</span>
             </div>
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-caption text-slate-500">
             Penitip dapat melihat bukti nota ini di menu <strong>Bukti Nota</strong> pada akun mereka secara langsung tanpa perlu nota kertas manual.
           </p>
         </div>
@@ -303,37 +304,37 @@ export function CreateStoreInvoiceModal({
           {/* Ringkasan Hasil Penjualan */}
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Mitra Penitip:</span>
-              <span className="text-xs font-bold text-slate-900">
+              <span className="text-caption text-slate-500">Mitra Penitip:</span>
+              <span className="text-caption font-bold text-slate-900">
                 {activePenitip?.producerBusinessName} ({activePenitip?.producerOwnerName})
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">Total Barang Terjual:</span>
-              <span className="text-xs font-bold text-slate-900">{totals.totalSold} bungkus / pcs</span>
+              <span className="text-caption text-slate-500">Total Barang Terjual:</span>
+              <span className="text-caption font-bold text-slate-900">{totals.totalSold} bungkus / pcs</span>
             </div>
             {totals.totalReturned > 0 && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500">Total Barang Retur:</span>
-                <span className="text-xs font-semibold text-rose-700">{totals.totalReturned} bks</span>
+                <span className="text-caption text-slate-500">Total Barang Retur:</span>
+                <span className="text-caption font-semibold text-rose-700">{totals.totalReturned} bks</span>
               </div>
             )}
             <div className="border-t border-slate-200 pt-2 mt-1 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Total Modal / Tagihan Terjual:</span>
-              <span className="text-lg font-extrabold text-slate-900">{formatRupiah(totals.todayTotal)}</span>
+              <span className="text-caption font-bold text-slate-700">Total Modal / Tagihan Terjual:</span>
+              <span className="text-title-2 font-bold text-slate-900">{formatRupiah(totals.todayTotal)}</span>
             </div>
           </div>
 
           {/* Pilihan Status Pembayaran */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={paymentStatusSelectId} className="text-xs font-semibold text-slate-700">
+            <label htmlFor={paymentStatusSelectId} className="text-caption font-semibold text-slate-700">
               Status Pembayaran ke Penitip
             </label>
             <select
               id={paymentStatusSelectId}
               value={paymentStatus}
               onChange={(e) => setPaymentStatus(e.target.value as PaymentStatus)}
-              className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
+              className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-caption font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
             >
               <option value="paid">Lunas (Langsung Dibayarkan Hari Ini)</option>
               <option value="unpaid">Belum Lunas (Dicatat Sebagai Tagihan / Piutang Penitip)</option>
@@ -342,14 +343,14 @@ export function CreateStoreInvoiceModal({
 
           {paymentStatus === 'paid' && (
             <div className="flex flex-col gap-1.5">
-              <label htmlFor={paymentMethodSelectId} className="text-xs font-semibold text-slate-700">
+              <label htmlFor={paymentMethodSelectId} className="text-caption font-semibold text-slate-700">
                 Metode Pembayaran
               </label>
               <select
                 id={paymentMethodSelectId}
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as 'cash' | 'transfer' | 'qris')}
-                className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
+                className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-caption font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
               >
                 <option value="cash">Tunai (Cash)</option>
                 <option value="transfer">Transfer Bank</option>
@@ -360,7 +361,7 @@ export function CreateStoreInvoiceModal({
 
           {/* Catatan Tambahan */}
           <div className="flex flex-col gap-1.5">
-            <label htmlFor={notesTextareaId} className="text-xs font-semibold text-slate-700">
+            <label htmlFor={notesTextareaId} className="text-caption font-semibold text-slate-700">
               Catatan Tambahan (Opsional)
             </label>
             <textarea
@@ -369,7 +370,7 @@ export function CreateStoreInvoiceModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Contoh: Penjualan laku lancar selama akhir pekan."
               rows={2}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 resize-none"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-caption text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900 resize-none"
             />
           </div>
         </div>
@@ -387,13 +388,13 @@ export function CreateStoreInvoiceModal({
       maxWidth="2xl"
       footer={
         <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-          <div className="text-xs text-slate-600 flex items-center gap-3">
+          <div className="text-caption text-slate-600 flex items-center gap-3">
             <span>
               Terjual: <strong className="text-slate-900">{totals.totalSold} bks</strong>
             </span>
             <span>•</span>
             <span>
-              Total: <strong className="text-slate-900 font-extrabold">{formatRupiah(totals.todayTotal)}</strong>
+              Total: <strong className="text-slate-900 font-bold">{formatRupiah(totals.todayTotal)}</strong>
             </span>
           </div>
 
@@ -418,18 +419,18 @@ export function CreateStoreInvoiceModal({
         {/* Pilihan Mitra Penitip jika belum dipilih khusus */}
         {selectablePenitip.length > 1 && !initialPenitip && (
           <div className="flex flex-col gap-1.5 pb-2 border-b border-slate-200">
-            <label htmlFor={partnerSelectId} className="text-xs font-semibold text-slate-700">
+            <label htmlFor={partnerSelectId} className="text-caption font-semibold text-slate-700">
               Pilih Mitra Produsen / Penitip:
             </label>
             <select
               id={partnerSelectId}
               value={selectedPenitipId}
               onChange={(e) => handleSelectPenitip(e.target.value)}
-              className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-xs font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
+              className="w-full h-11 px-3.5 rounded-xl bg-white border border-slate-200 text-caption font-semibold text-slate-900 focus:outline-none focus:border-slate-900"
             >
               {selectablePenitip.map((pen) => (
                 <option key={pen.id} value={pen.id}>
-                  {pen.producerBusinessName} ({pen.producerOwnerName}) — {pen.producerCity}
+                  {pen.producerBusinessName} ({pen.producerOwnerName}) — {pen.producerAddress || 'Alamat belum diisi'}
                 </option>
               ))}
             </select>
@@ -438,20 +439,20 @@ export function CreateStoreInvoiceModal({
 
         {/* Info Singkat Penitip yang Sedang Dihitung */}
         {activePenitip && (
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-caption">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-900">{activePenitip.producerBusinessName}</span>
               <span className="text-slate-400">·</span>
               <span className="text-slate-600">{activePenitip.producerOwnerName}</span>
             </div>
-            <span className="text-slate-500 font-medium">{activePenitip.producerCity}</span>
+            <span className="text-slate-500 font-medium">{activePenitip.producerAddress || 'Alamat belum diisi'}</span>
           </div>
         )}
 
         {/* Daftar Kartu Produk (ProductStockCard dengan Stepper Sisa di Rak, Retur, Titip Baru) */}
         <div className="flex flex-col gap-3">
           {items.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
+            <div className="p-6 text-center text-caption text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
               Tidak ada produk yang terdaftar untuk mitra penitip ini.
             </div>
           ) : (

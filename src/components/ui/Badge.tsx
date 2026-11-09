@@ -33,12 +33,12 @@ const toneStyles: Record<BadgeTone, string> = {
 const sizeStyles: Record<BadgeSize, { badge: string; text: string; icon: string }> = {
   sm: {
     badge: 'h-6 px-2 py-0.5 gap-1.5',
-    text: 'text-[12px] leading-none',
+    text: 'text-caption leading-none',
     icon: 'w-2 h-2',
   },
   md: {
     badge: 'h-7 px-2.5 py-1 gap-1.5',
-    text: 'text-[13px] leading-none',
+    text: 'text-label leading-none',
     icon: 'w-2.5 h-2.5',
   },
 }

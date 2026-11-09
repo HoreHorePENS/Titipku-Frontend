@@ -1,216 +1,100 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useMemo } from 'react'
+import { useProposalAction, useProposals, type Proposal } from './proposals-api'
 
 export interface ConsignmentRequestItem {
   id: string
   productName: string
-  category: string
+  photoUrl: string | null
   qty: number
-  unit: string
-  consignPrice: number // Modal harga titip
-  suggestedRetailPrice: number // Saran harga jual konsumen
+  consignPrice: number
+  suggestedRetailPrice: number
+  shelfLifeDays: number
 }
 
+/**
+ * Penitip yang berhubungan dengan toko yang sedang login:
+ * - pengajuan titip dari penitip (semua status kecuali dibatalkan), dan
+ * - tawaran toko yang sudah diterima penitip (menjadi mitra aktif).
+ */
 export interface ConsignmentRequest {
   id: string
-  producerUserId?: string
-  producerRole: 'penitip'
+  /** 'request' = pengajuan dari penitip; 'offer' = tawaran toko yang diterima. */
+  origin: 'request' | 'offer'
+  producerBusinessId: string
   producerBusinessName: string
   producerOwnerName: string
-  producerWhatsapp: string
-  producerCity: string
+  producerWhatsapp: string | null
+  producerAddress: string | null
   submittedAt: string
+  respondedAt: string | null
   status: 'pending' | 'accepted' | 'rejected'
-  note?: string
+  note: string | null
   items: ConsignmentRequestItem[]
 }
 
-const STORAGE_KEY = 'titipku_store_consignment_requests_v2'
+export function toConsignmentRequest(proposal: Proposal): ConsignmentRequest {
+  return {
+    id: proposal.id,
+    origin: proposal.direction === 'penitip_to_store' ? 'request' : 'offer',
+    producerBusinessId: proposal.business.id,
+    producerBusinessName: proposal.business.name,
+    producerOwnerName: proposal.business.ownerName,
+    producerWhatsapp: proposal.business.whatsapp,
+    producerAddress: proposal.business.address,
+    submittedAt: proposal.createdAt,
+    respondedAt: proposal.respondedAt,
+    status: proposal.status as ConsignmentRequest['status'],
+    note: proposal.message,
+    items: proposal.items.map((item) => ({
+      id: item.productId,
+      productName: item.name,
+      photoUrl: item.photoUrl,
+      qty: item.qty,
+      consignPrice: item.consignPrice,
+      suggestedRetailPrice: item.retailPrice,
+      shelfLifeDays: item.shelfLifeDays,
+    })),
+  }
+}
 
-const INITIAL_REQUESTS: ConsignmentRequest[] = [
-  {
-    id: 'req-001',
-    producerUserId: 'user-pnt-001',
-    producerRole: 'penitip',
-    producerBusinessName: 'Keripik Pisang Rina',
-    producerOwnerName: 'Ibu Rina Rahmawati',
-    producerWhatsapp: '081234567890',
-    producerCity: 'Surabaya Timur',
-    submittedAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), // 45 menit lalu
-    status: 'pending',
-    note: 'Halo Bu, kami ingin menitipkan keripik pisang aneka rasa varian cokelat dan keju untuk etalase depan kasir. Kemasan standing pouch rapi, tahan 3 bulan.',
-    items: [
-      {
-        id: 'item-1',
-        productName: 'Keripik Pisang Cokelat 150g',
-        category: 'Snack / Keripik',
-        qty: 15,
-        unit: 'bungkus',
-        consignPrice: 12000,
-        suggestedRetailPrice: 15000,
-      },
-      {
-        id: 'item-2',
-        productName: 'Keripik Pisang Keju Gurih 150g',
-        category: 'Snack / Keripik',
-        qty: 15,
-        unit: 'bungkus',
-        consignPrice: 12000,
-        suggestedRetailPrice: 15000,
-      },
-    ],
-  },
-  {
-    id: 'req-002',
-    producerUserId: 'user-pnt-002',
-    producerRole: 'penitip',
-    producerBusinessName: 'Kue Basah & Snack Bu Mimin',
-    producerOwnerName: 'Ibu Mimin Sunarti',
-    producerWhatsapp: '085712345678',
-    producerCity: 'Surabaya Selatan',
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 jam lalu
-    status: 'pending',
-    note: 'Mohon izin titip kue lapis legit mini dan risoles frozen siap goreng. Jika ada sisa sore hari bisa diretur penuh.',
-    items: [
-      {
-        id: 'item-3',
-        productName: 'Lapis Legit Mini Potong (Isi 10)',
-        category: 'Kue Basah',
-        qty: 10,
-        unit: 'mika',
-        consignPrice: 16000,
-        suggestedRetailPrice: 20000,
-      },
-      {
-        id: 'item-4',
-        productName: 'Risoles Mayo Daging (Pack 5 pcs)',
-        category: 'Frozen Food',
-        qty: 8,
-        unit: 'pack',
-        consignPrice: 18000,
-        suggestedRetailPrice: 22000,
-      },
-    ],
-  },
-  {
-    id: 'req-003',
-    producerUserId: 'user-pnt-003',
-    producerRole: 'penitip',
-    producerBusinessName: 'Sambal Bu Rudy Asli',
-    producerOwnerName: 'Pak Rudy',
-    producerWhatsapp: '081398765432',
-    producerCity: 'Surabaya Pusat',
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(), // Kemarin
-    status: 'accepted',
-    note: 'Produk botol bersegel aluminium foil rapi. Sangat diminati pembeli dan tahan 6 bulan di suhu ruangan.',
-    items: [
-      {
-        id: 'item-5',
-        productName: 'Sambal Bawang Botol 130g',
-        category: 'Sambal & Saus',
-        qty: 12,
-        unit: 'botol',
-        consignPrice: 25000,
-        suggestedRetailPrice: 30000,
-      },
-    ],
-  },
-  {
-    id: 'req-004',
-    producerUserId: 'user-pnt-004',
-    producerRole: 'penitip',
-    producerBusinessName: 'Mak Siti Peyek & Keripik Tempe',
-    producerOwnerName: 'Ibu Siti Aminah',
-    producerWhatsapp: '081298877665',
-    producerCity: 'Surabaya Barat',
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 jam lalu
-    status: 'pending',
-    note: 'Peyek kacang tanah renyah daun jeruk kemasan toples mini dan keripik tempe gurih khas Malang. Dijamin gurih tanpa pengawet.',
-    items: [
-      {
-        id: 'item-6',
-        productName: 'Peyek Kacang Renyah Daun Jeruk 200g',
-        category: 'Snack Tradisional',
-        qty: 10,
-        unit: 'toples',
-        consignPrice: 15000,
-        suggestedRetailPrice: 18500,
-      },
-      {
-        id: 'item-7',
-        productName: 'Keripik Tempe Aneka Rasa 120g',
-        category: 'Snack / Keripik',
-        qty: 12,
-        unit: 'bungkus',
-        consignPrice: 9000,
-        suggestedRetailPrice: 12000,
-      },
-    ],
-  },
-  {
-    id: 'req-005',
-    producerUserId: 'user-pnt-005',
-    producerRole: 'penitip',
-    producerBusinessName: 'Bakpia Pathok Ibu Tien',
-    producerOwnerName: 'Mas Bambang Wicaksono',
-    producerWhatsapp: '087811223344',
-    producerCity: 'Surabaya Utara',
-    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2 hari lalu
-    status: 'rejected',
-    note: 'Bakpia basah isi kacang hijau kupas dan keju lembut.',
-    items: [
-      {
-        id: 'item-8',
-        productName: 'Bakpia Basah Kacang Hijau (Kotak Isi 10)',
-        category: 'Kue & Oleh-oleh',
-        qty: 10,
-        unit: 'kotak',
-        consignPrice: 20000,
-        suggestedRetailPrice: 25000,
-      },
-    ],
-  },
-]
+function isStoreSideEntry(proposal: Proposal): boolean {
+  if (proposal.status === 'cancelled') return false
+  if (proposal.direction === 'penitip_to_store') return true
+  return proposal.status === 'accepted'
+}
 
-export function useConsignmentRequests() {
-  const [requests, setRequests] = useState<ConsignmentRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {
-      // Ignore
-    }
-    return INITIAL_REQUESTS
-  })
+/** Pengajuan & mitra penitip untuk pemilik toko (data asli). */
+export function useConsignmentRequests(enabled = true) {
+  const query = useProposals(enabled)
+  const action = useProposalAction()
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(requests))
-    } catch {
-      // Ignore
-    }
-  }, [requests])
-
-  const updateRequestStatus = useCallback(
-    (requestId: string, status: 'accepted' | 'rejected') => {
-      setRequests((prev) =>
-        prev.map((req) => (req.id === requestId ? { ...req, status } : req))
-      )
-    },
-    []
+  const requests = useMemo(
+    () => (query.data ?? []).filter(isStoreSideEntry).map(toConsignmentRequest),
+    [query.data]
   )
-
-  const pendingCount = requests.filter((r) => r.status === 'pending').length
-  const acceptedCount = requests.filter((r) => r.status === 'accepted').length
-  const rejectedCount = requests.filter((r) => r.status === 'rejected').length
 
   return {
     requests,
-    pendingCount,
-    acceptedCount,
-    rejectedCount,
-    updateRequestStatus,
+    pendingCount: requests.filter((r) => r.status === 'pending').length,
+    acceptedCount: requests.filter((r) => r.status === 'accepted').length,
+    rejectedCount: requests.filter((r) => r.status === 'rejected').length,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+    updateRequestStatus: (requestId: string, status: 'accepted' | 'rejected') =>
+      action.mutateAsync({ id: requestId, action: status === 'accepted' ? 'accept' : 'reject' }),
+    isUpdating: action.isPending,
+    updatingId: action.isPending ? action.variables?.id : undefined,
   }
+}
+
+export const REQUEST_STATUS_LABEL: Record<ConsignmentRequest['status'], string> = {
+  pending: 'Menunggu persetujuan',
+  accepted: 'Mitra aktif',
+  rejected: 'Ditolak',
+}
+
+export function formatRequestDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }

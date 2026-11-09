@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
+import { apiClient, resolveMediaUrl } from '@/lib/api-client'
 import type { Product, ProductFormInput } from './types'
 
 export interface RawProductResponse {
@@ -19,6 +19,7 @@ export function mapProductResponse(raw: RawProductResponse): Product {
     id: raw.id,
     name: raw.name,
     photoPath: raw.photo_path,
+    photoUrl: resolveMediaUrl(raw.photo_path),
     consignPrice: raw.consign_price,
     retailPrice: raw.retail_price,
     shelfLifeDays: raw.shelf_life_days,
@@ -56,7 +57,6 @@ export function useCreateProduct() {
         method: 'POST',
         body: JSON.stringify({
           name: payload.name,
-          photo_path: payload.photo_path || '',
           consign_price: payload.consign_price,
           retail_price: payload.retail_price,
           shelf_life_days: payload.shelf_life_days,
@@ -84,7 +84,6 @@ export function useUpdateProduct() {
         method: 'PUT',
         body: JSON.stringify({
           name: data.name,
-          photo_path: data.photo_path || '',
           consign_price: data.consign_price,
           retail_price: data.retail_price,
           shelf_life_days: data.shelf_life_days,
@@ -111,6 +110,36 @@ export function useSetProductActive() {
       const res = await apiClient<{ data: RawProductResponse }>(`/v1/products/${id}/status`, {
         method: 'PATCH',
         body: JSON.stringify({ is_active: isActive }),
+      })
+      return mapProductResponse(res.data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['catalog-products'] })
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+}
+
+/**
+ * Unggah (file terkompresi) atau hapus (null) foto produk.
+ * Foto disimpan terpisah dari data produk agar hanya pemilik produk yang bisa mengubahnya.
+ */
+export function useSetProductPhoto() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: Blob | null }) => {
+      if (!file) {
+        const res = await apiClient<{ data: RawProductResponse }>(`/v1/products/${id}/photo`, {
+          method: 'DELETE',
+        })
+        return mapProductResponse(res.data)
+      }
+      const form = new FormData()
+      form.append('file', file, 'foto-produk.webp')
+      const res = await apiClient<{ data: RawProductResponse }>(`/v1/products/${id}/photo`, {
+        method: 'PUT',
+        body: form,
       })
       return mapProductResponse(res.data)
     },

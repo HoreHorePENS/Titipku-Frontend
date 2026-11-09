@@ -1,13 +1,21 @@
-import { useState, useEffect } from 'react'
-import { PageContainer } from '@/components/shared'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { PageContainer, PageHeader } from '@/components/shared'
+import { ApiErrorState } from '@/components/shared/ApiErrorState'
+import { EmptyState } from '@/components/shared/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { PhotoPicker } from '@/components/ui/PhotoPicker'
+import { KEEP_PHOTO, type PhotoDraft } from '@/components/ui/photo-draft'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { toast } from '@/components/ui/toast-store'
+import { describeApiError } from '@/lib/api-errors'
+import { describePhotoError } from '@/lib/photo-errors'
 import {
   useMyStore,
   useUpdateMyStore,
   useSetMyStoreActive,
+  useSetMyStorePhoto,
   getCategoryMeta,
   STORE_CATEGORIES_META,
   LocationPickerMap,
@@ -15,142 +23,342 @@ import {
   ConsignmentRequestCard,
   ConsignmentRequestDetailModal,
   useConsignmentRequests,
+  type Store,
   type StoreCategory,
   type ConsignmentRequest,
 } from '@/features/stores'
 
-export default function MyStoreRoute() {
-  const { data: store, isLoading, isError, refetch } = useMyStore()
+const DESCRIPTION_MAX = 1000
+
+const STORE_FIELD_MESSAGES: Record<string, string> = {
+  name: 'Nama toko minimal 2 dan maksimal 120 karakter.',
+  address: 'Alamat toko minimal 3 dan maksimal 300 karakter.',
+  whatsapp: 'Nomor WhatsApp belum benar. Contoh: 0812 3456 7890',
+  description: 'Catatan produk maksimal 1000 karakter.',
+  latitude: 'Titik lokasi belum benar. Pilih ulang di peta.',
+  longitude: 'Titik lokasi belum benar. Pilih ulang di peta.',
+}
+
+interface StoreFormState {
+  name: string
+  category: StoreCategory
+  description: string
+  address: string
+  whatsapp: string
+  lat: number
+  lng: number
+}
+
+function toFormState(store: Store): StoreFormState {
+  return {
+    name: store.name,
+    category: store.category,
+    description: store.description ?? '',
+    address: store.address,
+    whatsapp: store.whatsapp,
+    lat: store.latitude,
+    lng: store.longitude,
+  }
+}
+
+function StoreProfileCard({ store, onEdit }: { store: Store; onEdit: () => void }) {
+  const meta = getCategoryMeta(store.category)
+  return (
+    <div className="flex flex-col gap-5">
+      <section className="p-5 bg-white rounded-2xl border border-line flex flex-col gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-24 aspect-[4/3] rounded-xl overflow-hidden border border-line bg-slate-50 shrink-0 flex items-center justify-center text-slate-400">
+            {store.photoUrl ? (
+              <img src={store.photoUrl} alt={`Foto ${store.name}`} className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={meta.svgPath} />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-caption font-semibold px-2 py-0.5 rounded-md border border-line text-ink-soft">{meta.label}</span>
+              <span className="text-caption font-semibold px-2 py-0.5 rounded-md border border-line text-ink-soft">
+                {store.isActive ? 'Tampil di peta' : 'Disembunyikan'}
+              </span>
+            </div>
+            <h2 className="text-title-2 text-ink mt-1">{store.name}</h2>
+            <p className="text-body text-ink-soft">{store.address}</p>
+          </div>
+        </div>
+
+        <div className="p-3.5 rounded-xl border border-line bg-slate-50">
+          <p className="text-label text-ink">Produk yang dicari tokomu</p>
+          <p className="text-body text-ink-soft mt-0.5">
+            {store.description || 'Belum diisi. Ceritakan produk apa yang cocok dititipkan agar penitip yakin tokomu sesuai.'}
+          </p>
+        </div>
+
+        {!store.photoUrl && (
+          <p className="text-body text-ink-soft">
+            Tokomu belum punya foto. Toko berfoto lebih mudah dikenali penitip.{' '}
+            <button type="button" onClick={onEdit} className="font-semibold text-ink underline underline-offset-2">
+              Tambah foto
+            </button>
+          </p>
+        )}
+
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-line">
+          <div>
+            <dt className="text-caption text-ink-soft">WhatsApp</dt>
+            <dd className="text-body font-mono text-ink">{store.whatsapp}</dd>
+          </div>
+          <div>
+            <dt className="text-caption text-ink-soft">Titik koordinat</dt>
+            <dd className="text-body font-mono text-ink">
+              {store.latitude.toFixed(6)}, {store.longitude.toFixed(6)}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="p-5 bg-white rounded-2xl border border-line flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-title-3 text-ink">Posisi toko di peta</h2>
+            <p className="text-caption text-ink-soft">Begini tokomu terlihat oleh penitip di Peta Toko.</p>
+          </div>
+          <button type="button" onClick={onEdit} className="text-label text-ink underline underline-offset-2 min-h-[44px]">
+            Ubah titik lokasi
+          </button>
+        </div>
+        <StoreLocationPreviewMap
+          latitude={store.latitude}
+          longitude={store.longitude}
+          storeName={store.name}
+          category={store.category}
+          address={store.address}
+          height="h-[320px] sm:h-[420px]"
+          className="w-full"
+        />
+      </section>
+    </div>
+  )
+}
+
+function StoreEditForm({ store, onDone }: { store: Store; onDone: () => void }) {
   const updateMutation = useUpdateMyStore()
-  const setActiveMutation = useSetMyStoreActive()
+  const photoMutation = useSetMyStorePhoto()
+  const [form, setForm] = useState<StoreFormState>(() => toFormState(store))
+  const [photoDraft, setPhotoDraft] = useState<PhotoDraft>(KEEP_PHOTO)
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<string, string>>>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const isSaving = updateMutation.isPending || photoMutation.isPending
 
-  // State Tab Halaman: 'profile' (Profil & Lokasi) atau 'requests' (Daftar Permintaan Titip)
-  const [activeTab, setActiveTab] = useState<'profile' | 'requests'>('profile')
+  const set = <K extends keyof StoreFormState>(key: K, value: StoreFormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }))
 
-  // Hook Permintaan Titip Barang
-  const { requests, pendingCount, updateRequestStatus } = useConsignmentRequests()
-  const [selectedRequest, setSelectedRequest] = useState<ConsignmentRequest | null>(null)
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-
-  const handleQuickApprove = (req: ConsignmentRequest) => {
-    updateRequestStatus(req.id, 'accepted')
-    toast.show({
-      title: 'Permintaan Titipan Disetujui',
-      description: `Permintaan titipan dari ${req.producerBusinessName} berhasil disetujui.`,
-      type: 'success',
-    })
-  }
-
-  const handleQuickReject = (req: ConsignmentRequest) => {
-    updateRequestStatus(req.id, 'rejected')
-    toast.show({
-      title: 'Permintaan Ditolak',
-      description: `Permintaan dari ${req.producerBusinessName} telah ditolak.`,
-      type: 'info',
-    })
-  }
-
-  // State Form Edit Profil
-  const [isEditing, setIsEditing] = useState(false)
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState<StoreCategory>('warung')
-  const [description, setDescription] = useState('')
-  const [acceptedProductsNote, setAcceptedProductsNote] = useState('')
-  const [address, setAddress] = useState('')
-  const [whatsapp, setWhatsapp] = useState('')
-  const [photoUrl, setPhotoUrl] = useState('')
-  const [lat, setLat] = useState(-7.2575)
-  const [lng, setLng] = useState(112.7521)
-
-  useEffect(() => {
-    if (store) {
-      const savedNote = localStorage.getItem(`titipku_store_accepted_products_${store.id}`)
-      const savedPhoto = localStorage.getItem(`titipku_store_photo_${store.id}`)
-
-      setName(store.name)
-      setCategory(store.category)
-      setDescription(store.description || '')
-      setAcceptedProductsNote(savedNote || 'Menerima aneka jajanan pasar, aneka keripik kemasan, dan produk makanan ringan tahan minimal 3 hari.')
-      setAddress(store.address)
-      setWhatsapp(store.whatsapp)
-      setPhotoUrl(savedPhoto || store.photoUrl || '')
-      setLat(store.latitude)
-      setLng(store.longitude)
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setFormError(null)
+    setFieldErrors({})
+    try {
+      await updateMutation.mutateAsync({
+        name: form.name.trim(),
+        category: form.category,
+        description: form.description.trim() || undefined,
+        address: form.address.trim(),
+        whatsapp: form.whatsapp.trim(),
+        latitude: form.lat,
+        longitude: form.lng,
+      })
+    } catch (err) {
+      const friendly = describeApiError<string>(err, {
+        fieldMap: Object.fromEntries(Object.keys(STORE_FIELD_MESSAGES).map((key) => [key, key])),
+        fieldMessages: STORE_FIELD_MESSAGES,
+      })
+      setFieldErrors(friendly.fieldErrors)
+      setFormError(friendly.message)
+      return
     }
-  }, [store])
+
+    try {
+      if (photoDraft.kind === 'new') await photoMutation.mutateAsync(photoDraft.blob)
+      if (photoDraft.kind === 'remove') await photoMutation.mutateAsync(null)
+    } catch (err) {
+      // Data toko sudah tersimpan; hanya foto yang gagal.
+      setFormError(`Data toko tersimpan, tetapi foto belum terunggah. ${describePhotoError(err)}`)
+      return
+    }
+
+    toast.show({ title: 'Profil toko disimpan', description: 'Data, foto, dan titik lokasi tokomu sudah diperbarui.', type: 'success' })
+    onDone()
+  }
+
+  return (
+    <form onSubmit={handleSave} noValidate className="p-5 bg-white rounded-2xl border border-line-strong flex flex-col gap-4">
+      <div className="flex items-center justify-between pb-2 border-b border-line">
+        <div>
+          <h2 className="text-title-3 text-ink">Ubah data toko</h2>
+          <p className="text-caption text-ink-soft">Perubahan berlaku setelah kamu menyimpan.</p>
+        </div>
+        <button type="button" onClick={onDone} className="text-label text-ink-soft hover:text-ink min-h-[44px]">
+          Batal
+        </button>
+      </div>
+
+      <PhotoPicker label="Foto toko" savedUrl={store.photoUrl ?? null} draft={photoDraft} onDraftChange={setPhotoDraft} placeholder="store" disabled={isSaving} />
+
+      <Input label="Nama toko" value={form.name} onChange={(e) => set('name', e.target.value)} error={fieldErrors.name} required inputSize="md" />
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="store-category" className="text-label text-ink">Kategori toko</label>
+        <select
+          id="store-category"
+          value={form.category}
+          onChange={(e) => set('category', e.target.value as StoreCategory)}
+          className="w-full px-3.5 h-10 rounded-lg border border-line-strong bg-white text-[16px] focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
+        >
+          {Object.values(STORE_CATEGORIES_META).map((cat) => (
+            <option key={cat.key} value={cat.key}>{cat.label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="store-description" className="text-label text-ink">
+          Produk yang dicari tokomu <span className="text-ink-soft font-normal">(opsional)</span>
+        </label>
+        <textarea
+          id="store-description"
+          rows={3}
+          maxLength={DESCRIPTION_MAX}
+          value={form.description}
+          onChange={(e) => set('description', e.target.value)}
+          placeholder="Contoh: Menerima keripik kemasan, kue kering, dan minuman botol. Tidak menerima produk beku."
+          aria-describedby="store-description-hint"
+          className="w-full px-3.5 py-2.5 rounded-xl border border-line-strong text-[16px] leading-normal resize-none focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
+        />
+        <span id="store-description-hint" className="text-caption text-ink-soft">
+          {fieldErrors.description ?? `Dibaca penitip sebelum mengajukan titip-jual. ${form.description.length}/${DESCRIPTION_MAX}`}
+        </span>
+      </div>
+
+      <Input label="Alamat toko lengkap" value={form.address} onChange={(e) => set('address', e.target.value)} error={fieldErrors.address} required inputSize="md" />
+      <Input label="Nomor WhatsApp" type="tel" inputMode="tel" value={form.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} error={fieldErrors.whatsapp} required inputSize="md" />
+
+      <div className="pt-3 border-t border-line">
+        <LocationPickerMap
+          latitude={form.lat}
+          longitude={form.lng}
+          onChangeLocation={(lat, lng) => setForm((prev) => ({ ...prev, lat, lng }))}
+          category={form.category}
+          error={fieldErrors.latitude ?? fieldErrors.longitude}
+        />
+      </div>
+
+      {formError && (
+        <p role="alert" className="p-3 rounded-xl border border-red-200 bg-red-50 text-body text-red-800">{formError}</p>
+      )}
+
+      <div className="flex items-center justify-end gap-2 pt-3 border-t border-line">
+        <Button type="button" variant="outline" onClick={onDone} className="rounded-xl">Batal</Button>
+        <Button type="submit" variant="primary" loading={isSaving} disabled={isSaving} className="rounded-xl">
+          {isSaving ? 'Menyimpan…' : 'Simpan perubahan'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function StoreRequestsTab() {
+  const navigate = useNavigate()
+  const requestsQuery = useConsignmentRequests()
+  const [selected, setSelected] = useState<ConsignmentRequest | null>(null)
+  const { requests, updateRequestStatus, isUpdating, updatingId } = requestsQuery
+
+  const respond = async (request: ConsignmentRequest, status: 'accepted' | 'rejected') => {
+    try {
+      await updateRequestStatus(request.id, status)
+      toast.show(
+        status === 'accepted'
+          ? { title: 'Pengajuan disetujui', description: `${request.producerBusinessName} kini mitra tokomu.`, type: 'success' }
+          : { title: 'Pengajuan ditolak', description: `Pengajuan dari ${request.producerBusinessName} sudah ditolak.`, type: 'info' }
+      )
+    } catch (err) {
+      toast.show({ title: 'Pengajuan belum bisa diproses', description: describeApiError(err).message, type: 'error' })
+    }
+  }
+
+  if (requestsQuery.isLoading) {
+    return (
+      <div className="flex flex-col gap-2.5" aria-busy="true" aria-label="Memuat pengajuan">
+        <Skeleton variant="rect" className="h-24 w-full rounded-2xl" />
+        <Skeleton variant="rect" className="h-24 w-full rounded-2xl" />
+      </div>
+    )
+  }
+  if (requestsQuery.isError) {
+    return <ApiErrorState error={requestsQuery.error} onRetry={() => requestsQuery.refetch()} title="Pengajuan belum bisa dimuat" />
+  }
+  if (requests.length === 0) {
+    return (
+      <EmptyState
+        size="inline"
+        title="Belum ada pengajuan titipan"
+        description="Saat penitip menemukan tokomu di peta dan mengajukan titip-jual, pengajuannya muncul di sini. Kamu juga bisa menawari penitip lebih dulu."
+        action={{ label: 'Tawari penitip', onClick: () => navigate('/') }}
+      />
+    )
+  }
+
+  return (
+    <>
+      <ul className="flex flex-col gap-2.5">
+        {requests.map((request) => (
+          <li key={request.id}>
+            <ConsignmentRequestCard
+              request={request}
+              onClick={setSelected}
+              onApprove={(r) => respond(r, 'accepted')}
+              onReject={(r) => respond(r, 'rejected')}
+              busy={updatingId === request.id}
+            />
+          </li>
+        ))}
+      </ul>
+      <ConsignmentRequestDetailModal
+        request={selected}
+        isOpen={selected !== null}
+        onClose={() => setSelected(null)}
+        onUpdateStatus={updateRequestStatus}
+        isUpdating={isUpdating}
+      />
+    </>
+  )
+}
+
+export default function MyStoreRoute() {
+  const { data: store, isLoading, isError, error, refetch } = useMyStore()
+  const setActiveMutation = useSetMyStoreActive()
+  const { pendingCount } = useConsignmentRequests()
+  const [activeTab, setActiveTab] = useState<'profile' | 'requests'>('profile')
+  const [isEditing, setIsEditing] = useState(false)
 
   const handleToggleActive = async () => {
     if (!store) return
     try {
       await setActiveMutation.mutateAsync(!store.isActive)
       toast.show({
-        title: store.isActive ? 'Toko Dinonaktifkan' : 'Toko Diaktifkan',
-        description: store.isActive
-          ? 'Toko Anda disembunyikan sementara dari peta titip jual.'
-          : 'Toko Anda kini terlihat kembali di peta bagi para produsen penitip.',
+        title: store.isActive ? 'Toko disembunyikan' : 'Toko ditampilkan',
+        description: store.isActive ? 'Tokomu disembunyikan sementara dari peta.' : 'Tokomu kini terlihat lagi oleh penitip di peta.',
         type: 'success',
       })
-    } catch (err: unknown) {
-      toast.show({
-        title: 'Gagal Mengubah Status',
-        description: err instanceof Error ? err.message : 'Terjadi kendala teknis.',
-        type: 'error',
-      })
+    } catch (err) {
+      toast.show({ title: 'Status toko belum bisa diubah', description: describeApiError(err).message, type: 'error' })
     }
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim() || !address.trim() || !whatsapp.trim()) {
-      toast.show({
-        title: 'Form Belum Lengkap',
-        description: 'Nama toko, alamat, dan nomor WhatsApp wajib diisi.',
-        type: 'error',
-      })
-      return
-    }
-
-    try {
-      if (store?.id) {
-        localStorage.setItem(`titipku_store_accepted_products_${store.id}`, acceptedProductsNote)
-        localStorage.setItem(`titipku_store_photo_${store.id}`, photoUrl)
-      }
-
-      await updateMutation.mutateAsync({
-        name: name.trim(),
-        category,
-        description: description.trim() || undefined,
-        address: address.trim(),
-        whatsapp: whatsapp.trim(),
-        photo_url: photoUrl.trim() || undefined,
-        latitude: lat,
-        longitude: lng,
-      })
-
-      toast.show({
-        title: 'Profil Toko Disimpan',
-        description: 'Informasi dan titik lokasi toko Anda berhasil diperbarui.',
-        type: 'success',
-      })
-      setIsEditing(false)
-    } catch (err: unknown) {
-      toast.show({
-        title: 'Gagal Menyimpan',
-        description: err instanceof Error ? err.message : 'Terjadi kesalahan.',
-        type: 'error',
-      })
-    }
-  }
-
-  const handleOpenRequestDetail = (req: ConsignmentRequest) => {
-    setSelectedRequest(req)
-    setIsDetailModalOpen(true)
   }
 
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="py-6 flex flex-col gap-4">
+        <div className="py-6 flex flex-col gap-4" aria-busy="true" aria-label="Memuat data toko">
           <Skeleton className="h-10 w-48 rounded-xl" />
           <Skeleton className="h-64 w-full rounded-2xl" />
         </div>
@@ -161,93 +369,40 @@ export default function MyStoreRoute() {
   if (isError || !store) {
     return (
       <PageContainer>
-        <div className="py-12 text-center flex flex-col items-center gap-3">
-          <h2 className="text-base font-bold text-slate-900">Data Toko Belum Ditemukan</h2>
-          <p className="text-xs text-slate-500 max-w-sm">
-            Akun Anda terdaftar sebagai pemilik toko namun data toko belum lengkap.
-          </p>
-          <Button size="sm" variant="outline" onClick={() => refetch()}>
-            Muat Ulang
-          </Button>
-        </div>
+        <ApiErrorState error={error} onRetry={() => refetch()} title="Data toko belum bisa dimuat" size="page" />
       </PageContainer>
     )
   }
 
-  const meta = getCategoryMeta(store.category)
+  const tabClass = (tab: 'profile' | 'requests') =>
+    `py-2 text-label rounded-lg flex items-center justify-center gap-2 min-h-[44px] ${
+      activeTab === tab ? 'bg-white text-ink shadow-xs border border-line' : 'text-ink-soft hover:text-ink'
+    }`
 
   return (
     <PageContainer maxWidth="full" className="px-4 md:px-8">
-      <div className="flex flex-col gap-6 py-4 w-full font-sans">
-        {/* Header Toko Saya Minimalis */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold mb-1 border border-slate-200">
-              <span>Manajemen Toko Mitra</span>
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Toko Saya</h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Kelola profil gerai, titik peta lokasi, dan permohonan titip barang dari produsen.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant={store.isActive ? 'outline' : 'primary'}
-              size="sm"
-              onClick={handleToggleActive}
-              loading={setActiveMutation.isPending}
-              className="text-xs font-semibold rounded-xl min-h-[44px]"
-            >
-              {store.isActive ? 'Sembunyikan dari Peta' : 'Tampilkan di Peta'}
-            </Button>
-
-            {activeTab === 'profile' && !isEditing && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-                className="text-xs font-semibold rounded-xl min-h-[44px]"
-              >
-                Edit Profil
+      <div className="flex flex-col gap-6 py-4 w-full">
+        <PageHeader
+          title="Toko Saya"
+          description="Kelola profil, foto, titik lokasi, dan pengajuan titip dari penitip."
+          actions={
+            <>
+              <Button variant={store.isActive ? 'outline' : 'primary'} size="sm" onClick={handleToggleActive} loading={setActiveMutation.isPending} className="rounded-xl min-h-[44px]">
+                {store.isActive ? 'Sembunyikan dari peta' : 'Tampilkan di peta'}
               </Button>
-            )}
-          </div>
-        </div>
+              {activeTab === 'profile' && !isEditing && (
+                <Button variant="primary" size="sm" onClick={() => setIsEditing(true)} className="rounded-xl min-h-[44px]">
+                  Ubah profil
+                </Button>
+              )}
+            </>
+          }
+        />
 
-        {/* Tab Switcher: Profil & Lokasi vs Permintaan Titip */}
-        <div
-          className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200"
-          role="tablist"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'profile'}
-            onClick={() => {
-              setActiveTab('profile')
-            }}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[44px] ${
-              activeTab === 'profile'
-                ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            <span>Profil &amp; Lokasi Toko</span>
+        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-line" role="tablist">
+          <button type="button" role="tab" aria-selected={activeTab === 'profile'} onClick={() => setActiveTab('profile')} className={tabClass('profile')}>
+            Profil & lokasi
           </button>
-
           <button
             type="button"
             role="tab"
@@ -256,390 +411,26 @@ export default function MyStoreRoute() {
               setActiveTab('requests')
               setIsEditing(false)
             }}
-            className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-2 min-h-[44px] ${
-              activeTab === 'requests'
-                ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
+            className={tabClass('requests')}
           >
-            <svg
-              className="w-4 h-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <polyline points="16 11 18 13 22 9"></polyline>
-            </svg>
-            <span>Daftar Penitip &amp; Titipan</span>
+            Pengajuan & mitra
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white text-[10px] font-bold">
+              <span className="px-1.5 rounded-full bg-slate-900 text-white text-caption" aria-label={`${pendingCount} menunggu`}>
                 {pendingCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* ------------------------------------------------------------------
-            KONTEN TAB 1: PROFIL & LOKASI TOKO
-            ------------------------------------------------------------------ */}
-        {activeTab === 'profile' && (
-          <div className="flex flex-col gap-5">
-            {!isEditing ? (
-              <>
-                {/* Card Data Profil Toko */}
-                <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3.5">
-                      {store.photoUrl ? (
-                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-200 shrink-0 shadow-2xs">
-                          <img
-                            src={store.photoUrl}
-                            alt={store.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 shrink-0">
-                          <svg
-                            className="w-6 h-6"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d={meta.svgPath}></path>
-                          </svg>
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                            {meta.label}
-                          </span>
-                          <span
-                            className={`text-xs font-semibold px-2 py-0.5 rounded-md border ${
-                              store.isActive
-                                ? 'bg-slate-900 text-white border-slate-900'
-                                : 'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}
-                          >
-                            {store.isActive ? 'Aktif di Peta' : 'Disembunyikan'}
-                          </span>
-                        </div>
-                        <h2 className="text-lg font-bold text-slate-900 mt-1">{store.name}</h2>
-                        <p className="text-xs text-slate-500 mt-0.5">{store.address}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Catatan Produk yang Dapat Dititipkan */}
-                  <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex flex-col gap-1">
-                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                      <span className="text-emerald-700 font-bold">*</span>
-                      Catatan Produk yang Dapat Dititipkan:
-                    </span>
-                    <p className="text-slate-700 leading-relaxed pl-3.5">
-                      {acceptedProductsNote || store.description || 'Menerima aneka jajanan pasar, aneka keripik kemasan, dan produk makanan ringan tahan minimal 3 hari.'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
-                    <div>
-                      <span className="text-slate-500 block font-medium">Nomor WhatsApp:</span>
-                      <span className="font-semibold text-slate-900">{store.whatsapp}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block font-medium">Titik Koordinat:</span>
-                      <span className="font-semibold text-slate-900">
-                        {store.latitude.toFixed(6)}, {store.longitude.toFixed(6)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Peta Lokasi Toko Fisik (Read-Only / Pin Statis) */}
-                <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                        <svg
-                          className="w-4 h-4 text-slate-700"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                          <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <span>Peta Posisi Toko</span>
-                      </h3>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        Titik lokasi toko Anda sebagaimana terlihat oleh produsen penitip barang.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(true)}
-                      className="text-xs text-slate-900 font-semibold hover:underline cursor-pointer"
-                    >
-                      Ubah Titik Lokasi
-                    </button>
-                  </div>
-
-                  {/* Komponen Peta Read-Only (Pin Statis tidak bisa digeser) Full Width */}
-                  <StoreLocationPreviewMap
-                    latitude={store.latitude}
-                    longitude={store.longitude}
-                    storeName={store.name}
-                    category={store.category}
-                    address={store.address}
-                    height="h-[360px] sm:h-[440px] md:h-[520px]"
-                    className="w-full"
-                  />
-                </div>
-              </>
-            ) : (
-              /* Form Edit Data Toko & LocationPickerMap */
-              <form
-                onSubmit={handleSave}
-                className="p-5 bg-white rounded-2xl border border-slate-300 shadow-xs flex flex-col gap-4"
-              >
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-900">Perbarui Data &amp; Lokasi Toko</h3>
-                    <p className="text-xs text-slate-500">
-                      Ubah detail gerai dan sesuaikan pin lokasi toko di peta.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="text-xs text-slate-500 hover:text-slate-900 font-semibold cursor-pointer min-h-[44px] flex items-center"
-                  >
-                    Batal
-                  </button>
-                </div>
-
-                <Input
-                  label="Nama Toko"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Kategori Toko</label>
-                  <select
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-slate-900"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as StoreCategory)}
-                  >
-                    {Object.values(STORE_CATEGORIES_META).map((cat) => (
-                      <option key={cat.key} value={cat.key}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <Input
-                  label="Deskripsi Singkat Toko"
-                  placeholder="Contoh: Menerima jajanan pasar, aneka keripik, dan minuman botol."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-
-                <Input
-                  label="Alamat Toko Lengkap"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  required
-                />
-
-                <Input
-                  label="Nomor WhatsApp"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  required
-                />
-
-                {/* Upload Foto Profil Toko (Bukan URL) */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-semibold text-slate-700">Foto Profil Toko</label>
-                  <div className="flex items-center gap-4">
-                    {photoUrl ? (
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shrink-0 shadow-2xs">
-                        <img src={photoUrl} alt="Preview Foto Toko" className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
-                        <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                          <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                          <polyline points="21 15 16 10 5 21"></polyline>
-                        </svg>
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-1.5">
-                      <label className="cursor-pointer inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors shadow-2xs min-h-[40px]">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                          <polyline points="17 8 12 3 7 8"></polyline>
-                          <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <span>Pilih &amp; Upload Foto Toko</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="sr-only"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const reader = new FileReader()
-                              reader.onloadend = () => {
-                                setPhotoUrl(reader.result as string)
-                              }
-                              reader.readAsDataURL(file)
-                            }
-                          }}
-                        />
-                      </label>
-                      {photoUrl && (
-                        <button
-                          type="button"
-                          onClick={() => setPhotoUrl('')}
-                          className="text-[11px] text-rose-600 hover:underline self-start font-medium"
-                        >
-                          Hapus Foto
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Catatan Produk yang Dapat Dititipkan */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
-                    <span className="text-emerald-700 font-bold">*</span>
-                    Catatan Produk yang Dapat Dititipkan
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Contoh: Menerima produk jajanan pasar basah tahan 2-3 hari, aneka keripik kemasan kedap udara, dan minuman herbal botol. Tidak menerima produk beku/frozen."
-                    value={acceptedProductsNote}
-                    onChange={(e) => setAcceptedProductsNote(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-900 resize-none leading-relaxed"
-                  />
-                  <span className="text-[11px] text-slate-500">
-                    Produsen penitip akan membaca catatan kriteria ini untuk memastikan warung Anda cocok dengan produk mereka.
-                  </span>
-                </div>
-
-                {/* Komponen Peta Interaktif Lengkap (Bisa geser pin, klik peta, GPS deteksi, input manual) */}
-                <div className="pt-2 border-t border-slate-100">
-                  <LocationPickerMap
-                    latitude={lat}
-                    longitude={lng}
-                    onChangeLocation={(newLat, newLng) => {
-                      setLat(newLat)
-                      setLng(newLng)
-                    }}
-                    category={category}
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="md"
-                    onClick={() => setIsEditing(false)}
-                    className="rounded-xl font-semibold min-h-[44px]"
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    loading={updateMutation.isPending}
-                    disabled={updateMutation.isPending}
-                    className="rounded-xl font-semibold min-h-[44px]"
-                  >
-                    Simpan Perubahan
-                  </Button>
-                </div>
-              </form>
-            )}
-          </div>
+        {activeTab === 'profile' ? (
+          isEditing ? (
+            <StoreEditForm store={store} onDone={() => setIsEditing(false)} />
+          ) : (
+            <StoreProfileCard store={store} onEdit={() => setIsEditing(true)} />
+          )
+        ) : (
+          <StoreRequestsTab />
         )}
-
-        {/* ------------------------------------------------------------------
-            KONTEN TAB 2: DAFTAR PERMINTAAN TITIP BARANG (BAR-SHAPED ITEMS)
-            ------------------------------------------------------------------ */}
-        {activeTab === 'requests' && (
-          <div className="flex flex-col gap-4">
-            <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">
-                  Daftar Pengajuan Titipan Produsen
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Klik pada baris permintaan di bawah untuk melihat rincian barang, harga modal, dan
-                  menyetujui permohonan.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                <span className="text-xs text-slate-500 font-medium">Total:</span>
-                <span className="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                  {requests.length} Permintaan
-                </span>
-              </div>
-            </div>
-
-            {requests.length === 0 ? (
-              <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center flex flex-col items-center gap-2">
-                <p className="text-sm font-bold text-slate-800">Belum Ada Permintaan Titipan</p>
-                <p className="text-xs text-slate-500 max-w-sm">
-                  Ketika produsen UMKM menemukan toko Anda di peta dan mengajukan titip-jual, daftar
-                  permohonan akan muncul di sini.
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2.5">
-                {requests.map((request) => (
-                  <ConsignmentRequestCard
-                    key={request.id}
-                    request={request}
-                    onClick={handleOpenRequestDetail}
-                    onApprove={handleQuickApprove}
-                    onReject={handleQuickReject}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Modal Pop-up Rincian Permintaan Titip */}
-        <ConsignmentRequestDetailModal
-          request={selectedRequest}
-          isOpen={isDetailModalOpen}
-          onClose={() => setIsDetailModalOpen(false)}
-          onUpdateStatus={updateRequestStatus}
-        />
       </div>
     </PageContainer>
   )

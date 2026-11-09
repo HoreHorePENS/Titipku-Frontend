@@ -13,7 +13,6 @@ export interface RegisterStoreInput {
   whatsapp: string
   latitude: number
   longitude: number
-  photo_url?: string
 }
 
 export interface RegisterInput {

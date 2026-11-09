@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Modal } from '@/components/shared/Modal'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { toast } from '@/components/ui/toast-store'
-import { formatRupiah } from '@/lib/format'
+import { describeApiError } from '@/lib/api-errors'
+import { rupiah } from '@/lib/format'
 import { useCatalogProducts } from '@/features/catalog/api'
-import { useConsignToStore } from '../api'
+import { useCreateConsignmentRequest } from '../proposals-api'
 import { getCategoryMeta } from '../constants'
 import type { Store } from '../types'
 
@@ -16,241 +16,174 @@ interface ConsignModalProps {
   onClose: () => void
 }
 
+const NOTE_MAX = 1000
+
+const REQUEST_ERROR_MESSAGES: Record<string, string> = {
+  PROPOSAL_PENDING: 'Masih ada pengajuan atau tawaran dengan toko ini yang menunggu jawaban.',
+  ALREADY_PARTNERS: 'Toko ini sudah menjadi mitramu. Catat kunjungan untuk menitipkan barang.',
+  STORE_INACTIVE: 'Toko ini sedang tidak menerima titipan. Coba toko lain di peta.',
+  NOT_FOUND: 'Ada produk yang sudah tidak aktif. Muat ulang halaman lalu pilih lagi.',
+}
+
+/** Penitip mengajukan titip-jual ke toko. Toko menyetujui dulu sebelum menjadi mitra. */
 export function ConsignModal({ store, isOpen, onClose }: ConsignModalProps) {
   const navigate = useNavigate()
   const { data: products = [], isLoading: isLoadingProducts } = useCatalogProducts(true)
-  const consignMutation = useConsignToStore()
-
-  const [selectedItems, setSelectedItems] = useState<Record<string, number>>({})
+  const createRequest = useCreateConsignmentRequest()
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [note, setNote] = useState('')
+  const [formError, setFormError] = useState<string | null>(null)
 
   if (!store) return null
-
   const meta = getCategoryMeta(store.category)
 
-  const handleQtyChange = (productId: string, qty: number) => {
-    setSelectedItems((prev) => {
-      const copy = { ...prev }
-      if (qty <= 0) {
-        delete copy[productId]
-      } else {
-        copy[productId] = qty
-      }
-      return copy
+  const setQty = (productId: string, qty: number) =>
+    setQuantities((prev) => {
+      const next = { ...prev }
+      if (qty <= 0 || Number.isNaN(qty)) delete next[productId]
+      else next[productId] = Math.min(qty, 100000)
+      return next
     })
+
+  const selected = Object.entries(quantities)
+  const totalUnits = selected.reduce((sum, [, qty]) => sum + qty, 0)
+  const totalValue = selected.reduce((sum, [id, qty]) => sum + (products.find((p) => p.id === id)?.consignPrice ?? 0) * qty, 0)
+
+  const handleClose = () => {
+    setFormError(null)
+    onClose()
   }
 
-  const totalUnits = Object.values(selectedItems).reduce((sum, q) => sum + q, 0)
-
-  const totalValue = Object.entries(selectedItems).reduce((sum, [pId, qty]) => {
-    const prod = products.find((p) => p.id === pId)
-    return sum + (prod ? prod.consignPrice * qty : 0)
-  }, 0)
-
   const handleSubmit = async () => {
+    setFormError(null)
     try {
-      const itemsPayload = Object.entries(selectedItems)
-        .filter(([, qty]) => qty > 0)
-        .map(([productId, qty]) => {
-          const prod = products.find((p) => p.id === productId)
-          return {
-            productId,
-            qty,
-            consignPrice: prod?.consignPrice || 0,
-          }
-        })
-
-      await consignMutation.mutateAsync({
+      await createRequest.mutateAsync({
         storeId: store.id,
-        storeName: store.name,
-        ownerName: store.name,
-        whatsapp: store.whatsapp,
-        address: store.address,
-        items: itemsPayload.length > 0 ? itemsPayload : undefined,
-        note: note.trim() || undefined,
+        message: note,
+        items: selected.map(([productId, qty]) => ({ productId, qty })),
       })
-
       toast.show({
-        title: 'Berhasil Menitipkan Barang',
-        description: `Toko "${store.name}" telah ditambahkan ke mitra konsinyasi Anda${
-          itemsPayload.length > 0 ? ` dengan ${totalUnits} pcs barang titipan awal.` : '.'
-        }`,
+        title: 'Pengajuan terkirim',
+        description: `${store.name} akan meninjau pengajuanmu. Kamu akan mendapat kabar saat disetujui.`,
         type: 'success',
       })
-
-      setSelectedItems({})
+      setQuantities({})
       setNote('')
       onClose()
-      navigate('/warung')
-    } catch (err: unknown) {
-      toast.show({
-        title: 'Gagal Menitipkan Barang',
-        description: err instanceof Error ? err.message : 'Terjadi kendala saat menghubungkan toko.',
-        type: 'error',
-      })
+    } catch (err) {
+      setFormError(describeApiError(err, { codeMessages: REQUEST_ERROR_MESSAGES }).message)
     }
   }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Titipkan Barang ke Toko"
-      className="max-w-lg"
-    >
-      <div className="flex flex-col gap-4 font-sans text-slate-900">
-        {/* Info Toko Terpilih Minimalis */}
-        <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-800 shrink-0 shadow-2xs">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d={meta.svgPath}></path>
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white text-slate-700 border border-slate-200">
-                {meta.label}
-              </span>
-              {store.hasConsigned && (
-                <span className="text-[10px] font-semibold text-slate-900 bg-slate-200 px-2 py-0.5 rounded-md">
-                  Mitra Aktif
-                </span>
-              )}
-            </div>
-            <h3 className="text-sm font-bold text-slate-900 mt-1 truncate">{store.name}</h3>
-            <p className="text-xs text-slate-500 truncate">{store.address}</p>
-            {store.description && (
-              <div className="mt-1.5 p-2 bg-white rounded-lg border border-slate-200 text-[11px] text-slate-700">
-                <span className="font-bold text-slate-900 block text-[10px] uppercase text-emerald-800">
-                  *Kriteria Produk yang Cocok Dititipkan:
-                </span>
-                <span className="text-slate-600 leading-normal">{store.description}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Pemilihan Produk dari Katalog */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Pilih Produk untuk Dititipkan
-            </label>
-            <span className="text-xs text-slate-500">
-              {Object.keys(selectedItems).length} produk dipilih
-            </span>
-          </div>
-
-          {isLoadingProducts ? (
-            <div className="p-6 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-              Memuat katalog produk Anda...
-            </div>
-          ) : products.length === 0 ? (
-            <div className="p-5 text-center bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center gap-2">
-              <p className="text-xs text-slate-600 max-w-xs">
-                Anda belum memiliki produk aktif di katalog. Tambahkan produk Anda terlebih dahulu untuk mulai menitipkan barang.
-              </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => navigate('/produk')}
-                className="text-xs font-semibold mt-1"
-              >
-                + Tambah Produk Sekarang
-              </Button>
-            </div>
-          ) : (
-            <div className="max-h-56 overflow-y-auto flex flex-col gap-2 pr-1 divide-y divide-slate-100">
-              {products.map((product) => {
-                const currentQty = selectedItems[product.id] || 0
-
-                return (
-                  <div
-                    key={product.id}
-                    className="pt-2 pb-1 flex items-center justify-between gap-3"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-slate-900 truncate">{product.name}</h4>
-                      <p className="text-[11px] text-slate-500">
-                        Harga titip: <span className="font-semibold text-slate-900">{formatRupiah(product.consignPrice)}</span>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleQtyChange(product.id, Math.max(0, currentQty - 1))}
-                        disabled={currentQty === 0}
-                        className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 font-bold flex items-center justify-center hover:bg-slate-200 disabled:opacity-40 transition-all cursor-pointer"
-                      >
-                        -
-                      </button>
-
-                      <input
-                        type="number"
-                        min="0"
-                        value={currentQty || ''}
-                        placeholder="0"
-                        onChange={(e) => handleQtyChange(product.id, parseInt(e.target.value) || 0)}
-                        className="w-12 text-center py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() => handleQtyChange(product.id, currentQty + 1)}
-                        className="w-7 h-7 rounded-lg bg-slate-900 text-white font-bold flex items-center justify-center hover:bg-slate-800 transition-all cursor-pointer"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        <Input
-          label="Catatan Tambahan (Opsional)"
-          placeholder="Misal: Titip di rak depan, penagihan per minggu"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-
-        {totalUnits > 0 && (
-          <div className="p-3 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-500 block">Total Unit Titip:</span>
-              <span className="text-xs font-bold text-slate-900">{totalUnits} pcs barang</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[11px] text-slate-500 block">Estimasi Nilai Titipan:</span>
-              <span className="text-sm font-bold text-slate-900">{formatRupiah(totalValue)}</span>
-            </div>
-          </div>
+    <Modal isOpen={isOpen} onClose={handleClose} title="Ajukan titip-jual" description={`${store.name} · ${meta.label}`} maxWidth="lg">
+      <div className="flex flex-col gap-4 text-ink">
+        <p className="text-body text-ink-soft">{store.address}</p>
+        {store.description && (
+          <p className="p-3 rounded-xl border border-line bg-slate-50 text-body">
+            <span className="text-label block">Produk yang dicari toko</span>
+            {store.description}
+          </p>
         )}
 
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 rounded-xl font-semibold"
-            onClick={onClose}
-          >
-            Batal
-          </Button>
+        {store.hasConsigned ? (
+          <div className="flex flex-col gap-3">
+            <p className="text-body">Toko ini sudah menjadi mitramu. Titipkan barang dengan mencatat kunjungan.</p>
+            <Button variant="primary" className="rounded-xl" onClick={() => navigate('/kunjungan/baru')}>
+              Catat kunjungan
+            </Button>
+          </div>
+        ) : (
+          <>
+            <section>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-title-3">Produk yang ingin dititipkan</h3>
+                <span className="text-caption text-ink-soft">{selected.length} dipilih</span>
+              </div>
+              {isLoadingProducts ? (
+                <p className="p-4 text-center text-body text-ink-soft rounded-xl border border-line">Memuat produkmu…</p>
+              ) : products.length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-line-strong text-center flex flex-col items-center gap-2">
+                  <p className="text-body text-ink-soft">Kamu belum punya produk aktif. Tambahkan produk agar toko tahu apa yang akan dititipkan.</p>
+                  <Button size="sm" variant="outline" className="rounded-xl" onClick={() => navigate('/produk')}>
+                    Tambah produk
+                  </Button>
+                </div>
+              ) : (
+                <ul className="max-h-56 overflow-y-auto flex flex-col divide-y divide-line pr-1">
+                  {products.map((product) => {
+                    const qty = quantities[product.id] ?? 0
+                    return (
+                      <li key={product.id} className="py-2 flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-body font-semibold truncate">{product.name}</p>
+                          <p className="text-caption text-ink-soft">Harga titip <span className="font-mono">{rupiah(product.consignPrice)}</span></p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button type="button" aria-label={`Kurangi ${product.name}`} disabled={qty === 0} onClick={() => setQty(product.id, qty - 1)} className="w-11 h-11 rounded-lg border border-line text-title-3 disabled:opacity-40">−</button>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            aria-label={`Jumlah ${product.name}`}
+                            value={qty || ''}
+                            placeholder="0"
+                            onChange={(e) => setQty(product.id, parseInt(e.target.value, 10))}
+                            className="w-14 h-11 text-center rounded-lg border border-line text-[16px] font-semibold"
+                          />
+                          <button type="button" aria-label={`Tambah ${product.name}`} onClick={() => setQty(product.id, qty + 1)} className="w-11 h-11 rounded-lg bg-slate-900 text-white text-title-3">+</button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
 
-          <Button
-            type="button"
-            variant="primary"
-            className="flex-1 rounded-xl font-semibold"
-            loading={consignMutation.isPending}
-            disabled={consignMutation.isPending}
-            onClick={handleSubmit}
-          >
-            {totalUnits > 0 ? 'Titipkan Sekarang' : 'Jadikan Toko Mitra'}
-          </Button>
-        </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="consign-note" className="text-label">
+                Pesan untuk toko <span className="text-ink-soft font-normal">(opsional)</span>
+              </label>
+              <textarea
+                id="consign-note"
+                rows={3}
+                maxLength={NOTE_MAX}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Contoh: Kemasan standing pouch, tahan 3 bulan. Bisa antar setiap Senin."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-line-strong text-[16px] leading-normal resize-none focus:outline-none focus:ring-2 focus:ring-focus-ring/30"
+              />
+            </div>
+
+            {totalUnits > 0 && (
+              <p className="p-3 rounded-xl bg-slate-50 border border-line text-body flex justify-between">
+                <span>{totalUnits} pcs</span>
+                <span>Perkiraan nilai titip <span className="font-mono font-semibold">{rupiah(totalValue)}</span></span>
+              </p>
+            )}
+
+            {formError && (
+              <p role="alert" className="p-3 rounded-xl border border-red-200 bg-red-50 text-body text-red-800">
+                {formError}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 pt-3 border-t border-line">
+              <Button variant="outline" className="flex-1 rounded-xl" onClick={handleClose}>
+                Batal
+              </Button>
+              <Button
+                variant="primary"
+                className="flex-1 rounded-xl"
+                loading={createRequest.isPending}
+                disabled={createRequest.isPending || !store.isActive}
+                onClick={handleSubmit}
+              >
+                {createRequest.isPending ? 'Mengirim…' : 'Kirim pengajuan'}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </Modal>
   )

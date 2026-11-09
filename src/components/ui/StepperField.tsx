@@ -22,7 +22,7 @@ export function StepperField({
     >
       {/* Kolom Kiri: Label dan Keterangan/Error */}
       <div className="flex flex-col gap-0.5 min-w-0 pr-2">
-        <span className="text-[16px] font-bold text-ink truncate leading-tight">
+        <span className="text-title-3 text-ink truncate">
           {label}
         </span>
         {error ? (

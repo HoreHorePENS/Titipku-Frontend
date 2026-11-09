@@ -11,7 +11,7 @@ interface StoreFeedGridProps {
 function StoreFeedSkeleton() {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
-      <Skeleton variant="rect" className="aspect-square w-full" />
+      <Skeleton variant="rect" className="aspect-[4/3] w-full rounded-none" />
       <div className="p-3 flex flex-col gap-2">
         <Skeleton variant="text" className="w-16 h-3" />
         <Skeleton variant="text" className="w-full h-4" />
@@ -50,8 +50,8 @@ export function StoreFeedGrid({ stores, isLoading, onConsign }: StoreFeedGridPro
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
         </div>
-        <p className="text-sm font-bold text-slate-900">Tidak Ada Toko Ditemukan</p>
-        <p className="text-xs text-slate-500 mt-1 max-w-xs">
+        <p className="text-body font-bold text-slate-900">Tidak Ada Toko Ditemukan</p>
+        <p className="text-caption text-slate-500 mt-1 max-w-xs">
           Coba ubah kata kunci pencarian atau filter kategori untuk menemukan toko lainnya.
         </p>
       </div>

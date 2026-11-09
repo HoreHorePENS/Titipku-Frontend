@@ -16,7 +16,7 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-caption font-sans border-collapse">
           <thead>
-            <tr className="border-b border-line text-[11px] font-bold text-ink-soft tracking-wider bg-surface">
+            <tr className="border-b border-line text-caption font-bold text-ink-soft tracking-wider bg-surface">
               <th className="py-3 px-4 w-[28%]">WARUNG</th>
               <th className="py-3 px-3 text-right">TERJUAL</th>
               <th className="py-3 px-3 text-right">RETUR</th>
@@ -82,7 +82,7 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
                       </td>
 
                       {/* Tagihan */}
-                      <td className="py-3 px-4 text-right font-extrabold text-ink tabular-nums">
+                      <td className="py-3 px-4 text-right font-bold text-ink tabular-nums">
                         <Money amount={visit.total} showPrefix={false} />
                       </td>
 
@@ -100,7 +100,7 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
                       <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                         <Link
                           to={notaLink}
-                          className="font-mono text-xs font-semibold text-primary hover:underline"
+                          className="font-mono text-caption font-semibold text-primary hover:underline"
                         >
                           {visit.number}
                         </Link>

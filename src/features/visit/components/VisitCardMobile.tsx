@@ -23,7 +23,7 @@ export function VisitCardMobile({ visit, onSelect }: VisitCardMobileProps) {
     >
       {/* Baris Atas: Nama Warung & Status Badge */}
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-bold text-ink leading-snug">
+        <h3 className="text-title-3 text-ink">
           {visit.partnerName}
           {visit.partnerArea && (
             <span className="font-normal text-ink-soft"> · {visit.partnerArea}</span>
@@ -38,16 +38,16 @@ export function VisitCardMobile({ visit, onSelect }: VisitCardMobileProps) {
         <Link
           to={notaLink}
           onClick={(e) => e.stopPropagation()}
-          className="text-xs font-semibold text-primary hover:underline pb-0.5"
+          className="text-caption font-semibold text-primary hover:underline pb-0.5"
         >
           Lihat nota
         </Link>
 
         <div className="text-right">
-          <div className="text-base font-extrabold text-ink tabular-nums">
+          <div className="text-title-3 font-bold text-ink tabular-nums">
             <Money amount={visit.total} />
           </div>
-          <p className="text-xs text-ink-soft mt-0.5 font-normal">terjual {sold} bks</p>
+          <p className="text-caption text-ink-soft mt-0.5 font-normal">terjual {sold} bks</p>
         </div>
       </div>
     </div>

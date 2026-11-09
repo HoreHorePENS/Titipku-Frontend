@@ -86,13 +86,13 @@ export function Modal({
         <div className="flex items-start justify-between p-4 sm:p-5 border-b border-line bg-page/50 shrink-0">
           <div className="min-w-0 flex-1 pr-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 id="modal-title" className="text-lg font-bold text-ink leading-snug">
+              <h2 id="modal-title" className="text-title-2 text-ink">
                 {title}
               </h2>
               {badge && <div className="shrink-0">{badge}</div>}
             </div>
             {description && (
-              <p className="text-xs text-ink-soft mt-1 leading-relaxed">
+              <p className="text-caption text-ink-soft mt-1 leading-relaxed">
                 {description}
               </p>
             )}

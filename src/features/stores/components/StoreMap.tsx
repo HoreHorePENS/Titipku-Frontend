@@ -155,7 +155,7 @@ export function StoreMap({
         {userLocation && (
           <Marker position={[userLocation.lat, userLocation.lng]} icon={createUserIcon()}>
             <Popup className="custom-popup">
-              <div className="p-1 text-center font-medium text-xs text-slate-800">
+              <div className="p-1 text-center font-medium text-caption text-slate-800">
                 Lokasi Anda
               </div>
             </Popup>
@@ -179,28 +179,28 @@ export function StoreMap({
               <Popup className="titipku-map-popup">
                 <div className="p-3 min-w-[220px] max-w-[260px] flex flex-col gap-2 font-sans">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                    <span className="text-caption font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                       {meta.label}
                     </span>
 
                     {store.hasConsigned ? (
-                      <span className="text-[10px] font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
+                      <span className="text-caption font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
                         Mitra Aktif
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-caption text-slate-500">
                         Bisa Dititipi
                       </span>
                     )}
                   </div>
 
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900 leading-snug">{store.name}</h4>
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-0.5">{store.address}</p>
+                    <h4 className="text-title-3 text-slate-900">{store.name}</h4>
+                    <p className="text-caption text-slate-500 line-clamp-2 mt-0.5">{store.address}</p>
                   </div>
 
                   {store.description && (
-                    <p className="text-[11px] text-slate-600 line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <p className="text-caption text-slate-600 line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                       "{store.description}"
                     </p>
                   )}
@@ -212,7 +212,7 @@ export function StoreMap({
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all border border-slate-200"
+                      className="px-2.5 py-1.5 text-caption font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all border border-slate-200"
                       title="Hubungi via WhatsApp"
                     >
                       WhatsApp
@@ -221,7 +221,7 @@ export function StoreMap({
                     <Button
                       size="sm"
                       variant="primary"
-                      className="flex-1 text-xs font-semibold py-1.5 h-auto rounded-xl"
+                      className="flex-1 text-caption font-semibold py-1.5 h-auto rounded-xl"
                       onClick={() => onConsignClick?.(store)}
                     >
                       {store.hasConsigned ? 'Tambah Barang' : 'Titip Barang'}
@@ -252,7 +252,7 @@ export function StoreMap({
       </div>
 
       {/* Info Badge Jumlah Toko */}
-      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs border border-slate-200 px-3 py-1 rounded-xl shadow-xs text-xs font-semibold text-slate-800 flex items-center gap-2">
+      <div className="absolute bottom-3 left-3 z-10 bg-white/95 backdrop-blur-xs border border-slate-200 px-3 py-1 rounded-xl shadow-xs text-caption font-semibold text-slate-800 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-slate-900"></span>
         <span>{stores.length} Toko Tersedia</span>
       </div>

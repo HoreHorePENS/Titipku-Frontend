@@ -56,7 +56,7 @@ export default function VisitRoute() {
               value={selectedPartner}
               onChange={(e) => setSelectedPartner(e.target.value)}
               aria-label="Pilih warung"
-              className="h-10 px-3 pr-8 rounded-xl bg-surface border border-line text-xs font-semibold text-ink appearance-none focus:outline-none focus:border-primary shadow-2xs cursor-pointer"
+              className="h-10 px-3 pr-8 rounded-xl bg-surface border border-line text-caption font-semibold text-ink appearance-none focus:outline-none focus:border-primary shadow-2xs cursor-pointer"
             >
               {partnerOptions.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -70,7 +70,7 @@ export default function VisitRoute() {
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
               aria-label="Rentang tanggal"
-              className="h-10 px-3 pr-8 rounded-xl bg-surface border border-line text-xs font-semibold text-ink appearance-none focus:outline-none focus:border-primary shadow-2xs cursor-pointer"
+              className="h-10 px-3 pr-8 rounded-xl bg-surface border border-line text-caption font-semibold text-ink appearance-none focus:outline-none focus:border-primary shadow-2xs cursor-pointer"
             >
               <option value="all">Semua tanggal</option>
               <option value="7-hari">7 hari terakhir</option>
@@ -104,7 +104,7 @@ export default function VisitRoute() {
           <div className="flex flex-col gap-5 md:hidden">
             {groupedVisits.map((group) => (
               <div key={group.dateKey} className="flex flex-col gap-2.5">
-                <h2 className="text-xs font-bold text-ink-soft tracking-wider px-1 pt-1">
+                <h2 className="text-label text-ink-soft tracking-wider px-1 pt-1">
                   {group.dateHeaderMobile}
                 </h2>
                 <div className="flex flex-col gap-3">

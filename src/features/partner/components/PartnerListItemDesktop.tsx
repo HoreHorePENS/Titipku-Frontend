@@ -50,10 +50,10 @@ export function PartnerListItemDesktop({
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-extrabold text-ink truncate leading-tight">
+          <h3 className="text-title-3 text-ink truncate">
             {partner.name}
           </h3>
-          <p className="text-[11px] text-ink-soft truncate mt-0.5">
+          <p className="text-caption text-ink-soft truncate mt-0.5">
             {partner.address ? partner.address.split(',')[0] : 'Mitra'} · terakhir {lastVisitDate}
           </p>
         </div>
@@ -61,17 +61,17 @@ export function PartnerListItemDesktop({
         <StatusBadge status={health.label} className="shrink-0 scale-95 origin-top-right" />
       </div>
 
-      <div className="flex items-center justify-between text-xs pt-1 border-t border-line/40">
-        <span className="text-[11px] text-ink-soft truncate">
+      <div className="flex items-center justify-between text-caption pt-1 border-t border-line/40">
+        <span className="text-caption text-ink-soft truncate">
           {partner.ownerName || 'Mitra'}
         </span>
 
         {partner.receivable > 0 ? (
-          <span className="text-xs font-bold text-danger tabular-nums shrink-0">
+          <span className="text-caption font-bold text-danger tabular-nums shrink-0">
             {rupiah(partner.receivable)}
           </span>
         ) : (
-          <span className="text-[11px] font-semibold text-success shrink-0">Lunas</span>
+          <span className="text-caption font-semibold text-success shrink-0">Lunas</span>
         )}
       </div>
     </div>

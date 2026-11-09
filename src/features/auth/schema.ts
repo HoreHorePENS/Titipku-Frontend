@@ -3,7 +3,6 @@ import {
   ADDRESS_MAX,
   ADDRESS_MIN,
   AUTH_MESSAGES as M,
-  PHOTO_URL_MAX,
   PASSWORD_MAX_BYTES,
   STORE_CATEGORIES,
   charLength,
@@ -36,7 +35,6 @@ export const registerSchema = z
     storeName: z.string().optional(),
     storeCategory: z.string().optional(),
     storeAddress: z.string().optional(),
-    storePhotoUrl: z.string().optional(),
     storeLat: z.number().optional(),
     storeLng: z.number().optional(),
     ownerName: z
@@ -80,9 +78,6 @@ export const registerSchema = z
         ctx.addIssue({ code: 'custom', message: M.storeCategoryInvalid, path: ['storeCategory'] })
       }
 
-      if ((data.storePhotoUrl ?? '').trim().length > PHOTO_URL_MAX) {
-        ctx.addIssue({ code: 'custom', message: M.storePhotoUrlLength, path: ['storePhotoUrl'] })
-      }
       if (typeof data.storeLat === 'number' && (data.storeLat < -90 || data.storeLat > 90)) {
         ctx.addIssue({ code: 'custom', message: M.storeLocationInvalid, path: ['storeLat'] })
       }
@@ -134,7 +129,6 @@ export function toRegisterPayload(data: RegisterFormData): RegisterInput {
           category: data.storeCategory?.trim() || 'lainnya',
           address: normalizeName(data.storeAddress ?? ''),
           whatsapp,
-          photo_url: data.storePhotoUrl?.trim() || undefined,
           latitude: lat,
           longitude: lng,
         }

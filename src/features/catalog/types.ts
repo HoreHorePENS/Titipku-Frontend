@@ -2,6 +2,8 @@ export interface Product {
   id: string
   name: string
   photoPath?: string | null
+  /** URL lengkap foto produk (siap dipakai di <img>), atau null. */
+  photoUrl?: string | null
   consignPrice: number
   retailPrice: number
   shelfLifeDays: number
@@ -12,7 +14,6 @@ export interface Product {
 
 export interface ProductFormInput {
   name: string
-  photo_path?: string
   consign_price: number
   retail_price: number
   shelf_life_days: number

@@ -43,7 +43,7 @@ function createStaticStoreIcon(category: string, storeName: string) {
   const meta = getCategoryMeta(category)
   const html = `
     <div class="relative flex flex-col items-center cursor-default group">
-      <div class="px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-bold shadow-md whitespace-nowrap mb-1 border border-white">
+      <div class="px-2.5 py-1 rounded-md bg-slate-900 text-white text-caption font-bold shadow-md whitespace-nowrap mb-1 border border-white">
         ${storeName}
       </div>
       <div class="w-11 h-11 rounded-full bg-slate-950 text-white flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-slate-900/20">
@@ -103,15 +103,15 @@ export function StoreLocationPreviewMap({
         {/* Pin statis (tidak bisa digeser/drag, hanya preview lokasi) */}
         <Marker position={position} icon={pinIcon} draggable={false}>
           <Popup className="custom-store-popup">
-            <div className="p-1 text-slate-900 font-sans text-xs flex flex-col gap-1 min-w-[180px]">
-              <span className="font-bold text-sm text-slate-950">{storeName}</span>
-              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit border border-slate-200">
+            <div className="p-1 text-slate-900 font-sans text-caption flex flex-col gap-1 min-w-[180px]">
+              <span className="font-bold text-body text-slate-950">{storeName}</span>
+              <span className="text-caption font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded w-fit border border-slate-200">
                 {meta.label}
               </span>
               {address && (
-                <span className="text-[11px] text-slate-600 leading-tight mt-1">{address}</span>
+                <span className="text-caption text-slate-600 leading-tight mt-1">{address}</span>
               )}
-              <span className="text-[10px] text-slate-400 font-mono mt-0.5">
+              <span className="text-caption text-slate-400 font-mono mt-0.5">
                 {validLat.toFixed(6)}, {validLng.toFixed(6)}
               </span>
             </div>
@@ -121,7 +121,7 @@ export function StoreLocationPreviewMap({
 
       {/* Badge Keterangan Melayang di Sudut Kiri Atas Peta */}
       <div className="absolute top-3 left-3 z-10 pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-800 shadow-xs flex items-center gap-2">
+        <div className="bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-slate-200 text-caption font-semibold text-slate-800 shadow-xs flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-slate-900"></span>
           <span>Lokasi Fisik Toko di Peta Titipku</span>
         </div>
@@ -129,7 +129,7 @@ export function StoreLocationPreviewMap({
 
       {/* Badge Koordinat Melayang di Sudut Kanan Bawah */}
       <div className="absolute bottom-3 right-3 z-10 pointer-events-none">
-        <div className="bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 text-[11px] font-mono font-medium text-slate-700 shadow-xs">
+        <div className="bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-lg border border-slate-200 text-caption font-mono font-medium text-slate-700 shadow-xs">
           {validLat.toFixed(6)}, {validLng.toFixed(6)}
         </div>
       </div>

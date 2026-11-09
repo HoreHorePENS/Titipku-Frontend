@@ -265,7 +265,7 @@ export default function VisitNewRoute() {
               variant="secondary"
               size="sm"
               onClick={() => navigate('/kunjungan')}
-              className="text-xs font-bold"
+              className="text-caption font-bold"
             >
               Batal
             </Button>
@@ -276,15 +276,15 @@ export default function VisitNewRoute() {
         {draft && !hasPromptedDraft && (
           <div className="p-4 rounded-2xl bg-accent-soft border border-accent/40 flex flex-col gap-2.5 animate-fadeIn">
             <div className="flex items-center justify-between">
-              <span className="text-accent font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-accent font-bold text-caption uppercase tracking-wider flex items-center gap-1.5">
                 <span>📋</span>
                 <span>Draf Kunjungan Tersimpan</span>
               </span>
-              <span className="text-xs text-ink-soft font-mono">
+              <span className="text-caption text-ink-soft font-mono">
                 {formatJamWIB(draft.updatedAt)} WIB
               </span>
             </div>
-            <p className="text-xs text-ink">
+            <p className="text-caption text-ink">
               Ditemukan draf kunjungan lapangan yang belum diselesaikan ({draft.items.length} item produk). Lanjutkan draf?
             </p>
             <div className="flex items-center gap-2 pt-1">
@@ -305,7 +305,7 @@ export default function VisitNewRoute() {
                     type: 'info',
                   })
                 }}
-                className="text-xs font-bold px-3 py-1.5 h-8 rounded-lg"
+                className="text-caption font-bold px-3 py-1.5 h-8 rounded-lg"
               >
                 Lanjutkan Draf
               </Button>
@@ -321,7 +321,7 @@ export default function VisitNewRoute() {
                     type: 'default',
                   })
                 }}
-                className="text-xs font-bold px-3 py-1.5 h-8 rounded-lg"
+                className="text-caption font-bold px-3 py-1.5 h-8 rounded-lg"
               >
                 Buang Draf
               </Button>
@@ -349,10 +349,10 @@ export default function VisitNewRoute() {
                 className="p-4 rounded-2xl bg-surface border border-line hover:border-primary/80 transition-all text-left flex items-center justify-between shadow-2xs group active:scale-[0.99]"
               >
                 <div>
-                  <h2 className="text-base font-bold text-ink group-hover:text-primary transition-colors">
+                  <h2 className="text-title-3 text-ink group-hover:text-primary transition-colors">
                     {p.name}
                   </h2>
-                  <p className="text-xs text-ink-soft mt-0.5">
+                  <p className="text-caption text-ink-soft mt-0.5">
                     {p.ownerName ? `Pemilik: ${p.ownerName}` : ''}{' '}
                     {p.area ? `· ${p.area}` : ''}
                   </p>
@@ -360,13 +360,13 @@ export default function VisitNewRoute() {
 
                 <div className="text-right">
                   {p.receivable && p.receivable > 0 ? (
-                    <span className="text-xs font-bold text-danger block tabular-nums">
+                    <span className="text-caption font-bold text-danger block tabular-nums">
                       Piutang: {rupiah(p.receivable)}
                     </span>
                   ) : (
-                    <span className="text-xs font-semibold text-success block">Lunas</span>
+                    <span className="text-caption font-semibold text-success block">Lunas</span>
                   )}
-                  <span className="text-xs text-primary font-bold mt-1 inline-block">Pilih →</span>
+                  <span className="text-caption text-primary font-bold mt-1 inline-block">Pilih →</span>
                 </div>
               </button>
             ))}
@@ -413,11 +413,11 @@ export default function VisitNewRoute() {
       {/* Header Warung Terpilih */}
       <div className="flex items-start justify-between gap-3 bg-surface rounded-2xl border border-line p-4 md:p-5 shadow-2xs">
         <div>
-          <span className="text-xs font-bold text-primary uppercase tracking-wider">Langkah 1 dari 2</span>
-          <h1 className="text-xl md:text-2xl font-extrabold text-ink tracking-tight mt-0.5">
+          <span className="text-caption font-bold text-primary uppercase tracking-wider">Langkah 1 dari 2</span>
+          <h1 className="text-title-1 text-ink mt-0.5">
             {selectedPartner.name}
           </h1>
-          <p className="text-xs text-ink-soft mt-0.5">
+          <p className="text-caption text-ink-soft mt-0.5">
             {selectedPartner.ownerName ? `Penjaga: ${selectedPartner.ownerName}` : ''}{' '}
             {selectedPartner.area ? `· ${selectedPartner.area}` : ''}
           </p>
@@ -426,8 +426,8 @@ export default function VisitNewRoute() {
         <div className="flex items-center gap-3">
           {selectedPartner.receivable && selectedPartner.receivable > 0 ? (
             <div className="text-right hidden sm:block">
-              <span className="text-[11px] text-ink-soft block font-medium">Piutang Lama</span>
-              <span className="text-xs font-bold text-danger tabular-nums">
+              <span className="text-caption text-ink-soft block font-medium">Piutang Lama</span>
+              <span className="text-caption font-bold text-danger tabular-nums">
                 {rupiah(selectedPartner.receivable)}
               </span>
             </div>
@@ -440,7 +440,7 @@ export default function VisitNewRoute() {
               setValue('partnerId', '')
               setCustomItems(null)
             }}
-            className="rounded-lg text-xs font-semibold h-8"
+            className="rounded-lg text-caption font-semibold h-8"
           >
             Ganti Warung
           </Button>
@@ -473,12 +473,12 @@ export default function VisitNewRoute() {
       <div className="fixed bottom-0 left-0 md:left-[84px] right-0 p-4 bg-surface/95 backdrop-blur-md border-t border-line shadow-lg z-40">
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <span className="text-xs text-ink-soft block font-medium">Estimasi Terjual:</span>
+            <span className="text-caption text-ink-soft block font-medium">Estimasi Terjual:</span>
             <div className="flex items-center gap-2">
-              <span className="text-lg md:text-xl font-extrabold text-ink tabular-nums">
+              <span className="text-title-2 md:text-title-1 font-bold text-ink tabular-nums">
                 {rupiah(totals.todayTotal)}
               </span>
-              <span className="text-xs text-ink-soft">({totals.totalSold} bks)</span>
+              <span className="text-caption text-ink-soft">({totals.totalSold} bks)</span>
             </div>
           </div>
 
@@ -487,7 +487,7 @@ export default function VisitNewRoute() {
             size="lg"
             onClick={() => setCurrentStep('summary_payment')}
             disabled={totals.hasInvalidItems}
-            className="rounded-xl px-6 h-12 text-sm font-bold shadow-xs flex items-center gap-1.5"
+            className="rounded-xl px-6 h-12 text-body font-bold shadow-xs flex items-center gap-1.5"
           >
             <span>Lanjut Pembayaran</span>
             <span>→</span>
@@ -495,7 +495,7 @@ export default function VisitNewRoute() {
         </div>
 
         {totals.hasInvalidItems && (
-          <div className="max-w-3xl mx-auto mt-2 text-center text-danger text-xs font-semibold animate-fadeIn">
+          <div className="max-w-3xl mx-auto mt-2 text-center text-danger text-caption font-semibold animate-fadeIn">
             ⚠ Perbaiki kartu produk yang melebihi stok kemarin sebelum melanjutkan.
           </div>
         )}

@@ -10,27 +10,27 @@ interface StoreFeedCardProps {
 
 function StoreAvatar({ store }: { store: Store }) {
   const [imgError, setImgError] = useState(false)
+  const meta = getCategoryMeta(store.category)
 
   if (store.photoUrl && !imgError) {
     return (
       <img
         src={store.photoUrl}
-        alt={store.name}
+        alt={`Foto ${store.name}`}
+        loading="lazy"
         className="w-full h-full object-cover"
         onError={() => setImgError(true)}
       />
     )
   }
 
-  const initials = store.name
-    .split(' ')
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
-
+  // Placeholder ringan: latar netral + ikon kategori kecil (bukan kotak gelap berinisial).
   return (
-    <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center">
-      <span className="text-2xl font-bold tracking-tight">{initials}</span>
+    <div className="w-full h-full bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-400">
+      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={meta.svgPath} />
+      </svg>
+      <span className="text-caption">Belum ada foto</span>
     </div>
   )
 }
@@ -48,11 +48,11 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs hover:shadow-sm transition-shadow flex flex-col">
       {/* Foto Profil Toko */}
-      <div className="aspect-square w-full overflow-hidden relative">
+      <div className="aspect-[4/3] w-full overflow-hidden relative border-b border-line">
         <StoreAvatar store={store} />
         {/* Badge Status */}
         <span
-          className={`absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+          className={`absolute top-2 right-2 text-caption font-semibold px-2 py-0.5 rounded-full border ${
             store.isActive
               ? 'bg-white text-slate-800 border-slate-200'
               : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -62,7 +62,7 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
         </span>
         {/* Badge Sudah Bermitra */}
         {store.hasConsigned && (
-          <span className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white border border-slate-800">
+          <span className="absolute top-2 left-2 text-caption font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white border border-slate-800">
             Mitra
           </span>
         )}
@@ -71,13 +71,13 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
       {/* Info Toko */}
       <div className="p-3 flex flex-col gap-2 flex-1">
         <div>
-          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+          <span className="text-caption font-semibold text-slate-500 uppercase tracking-wide">
             {categoryMeta.label}
           </span>
-          <h3 className="text-sm font-bold text-slate-900 leading-tight line-clamp-1 mt-0.5">
+          <h3 className="text-title-3 text-slate-900 line-clamp-1 mt-0.5">
             {store.name}
           </h3>
-          <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{store.address}</p>
+          <p className="text-caption text-slate-500 line-clamp-1 mt-0.5">{store.address}</p>
         </div>
 
         {/* Tombol Aksi */}
@@ -86,10 +86,10 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
             variant={store.hasConsigned ? 'outline' : 'primary'}
             size="sm"
             onClick={() => onConsign(store)}
-            className="flex-1 text-xs font-semibold rounded-xl min-h-[44px]"
+            className="flex-1 text-caption font-semibold rounded-xl min-h-[44px]"
             disabled={!store.isActive && !store.hasConsigned}
           >
-            {store.hasConsigned ? 'Sudah Bermitra' : 'Titipkan'}
+            {store.hasConsigned ? 'Sudah bermitra' : 'Ajukan titip'}
           </Button>
           <button
             type="button"

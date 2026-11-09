@@ -59,9 +59,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const sizeClasses =
       inputSize === 'sm'
-        ? 'h-9 min-h-[36px] px-3 rounded-lg text-sm'
+        ? 'h-9 min-h-[36px] px-3 rounded-lg text-body'
         : inputSize === 'md'
-        ? 'h-10 min-h-[40px] px-3.5 rounded-lg text-sm'
+        ? 'h-10 min-h-[40px] px-3.5 rounded-lg text-body'
         : 'h-14 min-h-[56px] px-3.5 rounded-[14px]'
 
     return (
@@ -72,7 +72,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <label htmlFor={inputId} className="text-caption font-bold text-ink cursor-pointer">
               {label}
               {required && (
-                <span className="ml-1 text-ink-soft font-normal text-[11px]">(wajib)</span>
+                <span className="ml-1 text-ink-soft font-normal text-caption">(wajib)</span>
               )}
             </label>
           </div>

@@ -29,7 +29,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
       <div className="p-4 border-b border-line bg-surface flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-extrabold text-ink leading-snug">{item.productName}</h3>
+            <h3 className="text-title-3 text-ink">{item.productName}</h3>
           </div>
           <p className="text-caption text-ink-soft mt-0.5">
             Harga titip: <span className="font-bold text-ink tabular-nums">{rupiah(item.consignPrice)}</span> / bks
@@ -37,11 +37,11 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-surface-raised border border-line text-xs font-bold text-ink tabular-nums">
+          <span className="inline-flex items-center px-3 py-1 rounded-lg bg-surface-raised border border-line text-caption font-bold text-ink tabular-nums">
             Stok kemarin: {item.prevStock} bks
           </span>
           {calc.isValid && calc.sold > 0 && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-extrabold tabular-nums">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-caption font-bold tabular-nums">
               Terjual {calc.sold} bks
             </span>
           )}
@@ -50,7 +50,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
 
       {/* 2. Peringatan Error Instan (Bila Sisa + Retur > Stok Kemarin) */}
       {!calc.isValid && (
-        <div className="px-4 py-2.5 bg-danger/10 border-b border-danger/30 flex items-center gap-2 text-danger text-xs font-semibold animate-fadeIn">
+        <div className="px-4 py-2.5 bg-danger/10 border-b border-danger/30 flex items-center gap-2 text-danger text-caption font-semibold animate-fadeIn">
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
@@ -69,10 +69,10 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           <div className="flex items-center justify-between gap-3 md:block md:h-11">
             <div className="flex flex-col justify-center">
               <div className="flex items-center justify-between md:justify-start gap-1">
-                <span className="text-sm font-bold text-ink">Sisa di rak</span>
+                <span className="text-body font-bold text-ink">Sisa di rak</span>
                 <span className="text-caption text-ink-soft hidden md:inline ml-auto">Hasil hitung</span>
               </div>
-              <p className="text-[11px] text-ink-soft mt-0.5 truncate">Barang masih ada di rak warung</p>
+              <p className="text-caption text-ink-soft mt-0.5 truncate">Barang masih ada di rak warung</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
@@ -101,7 +101,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
             <button
               type="button"
               onClick={() => onChange({ ...item, remaining: 0 })}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-caption font-semibold transition-all ${
                 item.remaining === 0
                   ? 'bg-ink text-surface'
                   : 'bg-surface-raised border border-line text-ink-soft hover:text-ink'
@@ -113,7 +113,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
               <button
                 type="button"
                 onClick={() => onChange({ ...item, remaining: item.prevStock })}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`px-2.5 py-1 rounded-lg text-caption font-semibold transition-all ${
                   item.remaining === item.prevStock
                     ? 'bg-ink text-surface'
                     : 'bg-surface-raised border border-line text-ink-soft hover:text-ink'
@@ -130,10 +130,10 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           <div className="flex items-center justify-between gap-3 md:block md:h-11">
             <div className="flex flex-col justify-center">
               <div className="flex items-center justify-between md:justify-start gap-1">
-                <span className="text-sm font-bold text-ink">Retur</span>
+                <span className="text-body font-bold text-ink">Retur</span>
                 <span className="text-caption text-ink-soft hidden md:inline ml-auto">Ditarik</span>
               </div>
-              <p className="text-[11px] text-ink-soft mt-0.5 truncate">Barang rusak / mendekati basi</p>
+              <p className="text-caption text-ink-soft mt-0.5 truncate">Barang rusak / mendekati basi</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
@@ -161,7 +161,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
             <button
               type="button"
               onClick={() => onChange({ ...item, returned: 0 })}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg text-caption font-semibold transition-all ${
                 item.returned === 0
                   ? 'bg-ink text-surface'
                   : 'bg-surface-raised border border-line text-ink-soft hover:text-ink'
@@ -177,10 +177,10 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           <div className="flex items-center justify-between gap-3 md:block md:h-11">
             <div className="flex flex-col justify-center">
               <div className="flex items-center justify-between md:justify-start gap-1">
-                <span className="text-sm font-bold text-ink">Titip baru</span>
+                <span className="text-body font-bold text-ink">Titip baru</span>
                 <span className="text-caption text-ink-soft hidden md:inline ml-auto">Stok tambahan</span>
               </div>
-              <p className="text-[11px] text-ink-soft mt-0.5 truncate">Barang segar ditambahkan hari ini</p>
+              <p className="text-caption text-ink-soft mt-0.5 truncate">Barang segar ditambahkan hari ini</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
@@ -207,7 +207,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
             <button
               type="button"
               onClick={() => onChange({ ...item, newDrop: 0 })}
-              className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95 ${
+              className={`px-2 py-0.5 rounded-lg text-caption font-semibold transition-all active:scale-95 ${
                 item.newDrop === 0
                   ? 'bg-ink text-surface'
                   : 'bg-surface-raised border border-line text-ink-soft hover:text-ink'
@@ -220,7 +220,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
                 key={idx}
                 type="button"
                 onClick={() => onChange({ ...item, newDrop: sug.amount })}
-                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all active:scale-95 ${
+                className={`px-2 py-0.5 rounded-lg text-caption font-semibold transition-all active:scale-95 ${
                   item.newDrop === sug.amount
                     ? 'bg-primary text-white shadow-2xs'
                     : 'bg-surface-raised border border-line text-ink hover:border-primary/50'
@@ -234,7 +234,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
       </div>
 
       {/* 4. Footer Pratinjau Perhitungan Instan */}
-      <div className="px-4 py-3 bg-surface-raised/40 border-t border-line flex items-center justify-between text-xs">
+      <div className="px-4 py-3 bg-surface-raised/40 border-t border-line flex items-center justify-between text-caption">
         <div className="flex items-center gap-3 text-ink-soft">
           <span>
             Terjual: <strong className="text-ink tabular-nums">{calc.sold} bks</strong>
@@ -247,7 +247,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
 
         <div className="text-right">
           <span className="text-ink-soft mr-1.5">Subtotal:</span>
-          <span className="font-extrabold text-ink tabular-nums text-sm">
+          <span className="font-bold text-ink tabular-nums text-body">
             {rupiah(calc.subtotal)}
           </span>
         </div>

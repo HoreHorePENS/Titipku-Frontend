@@ -30,6 +30,7 @@ import {
   generate30DaysSales,
 } from '@/features/dashboard/calc'
 import { rupiah, tanggalWIB } from '@/lib/format'
+import { useDebouncedValue } from '@/lib/use-debounced-value'
 import type { Store } from '@/features/stores'
 
 // ─── Komponen Dashboard Pemilik Toko ────────────────────────────────────────
@@ -45,16 +46,14 @@ function PemilikTokoDashboard({
   const { data: store, isLoading, isError, refetch } = useMyStore()
   const setActiveMutation = useSetMyStoreActive()
 
-  // Hook Bisnis Produsen Penitip & Fitur Tawaran Dua Arah
-  const {
-    businesses,
-    sendOfferToPenitip,
-    cancelOffer,
-    pendingOffersCount,
-  } = usePenitipBusinesses()
+  // Katalog produsen penitip (data asli) & tawaran dua arah
+  const [producerSearch, setProducerSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(producerSearch)
+  const producers = usePenitipBusinesses(debouncedSearch)
+  const { businesses, pendingOffersCount } = producers
 
-  // Permintaan titipan masuk dari sisi produsen
-  const { requests, pendingCount: incomingRequestsCount } = useConsignmentRequests()
+  // Pengajuan titip masuk dari penitip (data asli)
+  const { pendingCount: incomingRequestsCount } = useConsignmentRequests()
 
   const [selectedPenitip, setSelectedPenitip] = useState<PenitipBusiness | null>(null)
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false)
@@ -109,14 +108,14 @@ function PemilikTokoDashboard({
     <PageContainer maxWidth="full">
       <PageHeader
         title={`Selamat datang, ${userName}`}
-        description={`${store?.name || 'Toko Mitra Titipku'} · ${todayFormatted}`}
+        description={`${store?.name || 'Tokomu'} · ${todayFormatted}`}
         actions={
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <Button
               variant="outline"
               size="md"
               onClick={() => setIsCreateInvoiceOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
               <span className="font-bold">+</span>
               <span>Buat Nota Penjualan</span>
@@ -125,11 +124,11 @@ function PemilikTokoDashboard({
               variant="outline"
               size="md"
               onClick={() => navigate('/penitip')}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
               <span>Permohonan Masuk</span>
               {incomingRequestsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white text-[10px] font-bold">
+                <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white text-caption font-bold">
                   {incomingRequestsCount}
                 </span>
               )}
@@ -138,7 +137,7 @@ function PemilikTokoDashboard({
               variant="primary"
               size="md"
               onClick={() => navigate('/toko-saya')}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
               <span>Kelola Toko Saya</span>
             </Button>
@@ -176,14 +175,14 @@ function PemilikTokoDashboard({
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-sm font-bold text-slate-900">
+                  <h2 className="text-title-3 text-slate-900">
                     {store?.name || 'Toko Anda'}
                   </h2>
-                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
+                  <span className="text-caption font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
                     {categoryMeta?.label || 'Toko Mitra'}
                   </span>
                   <span
-                    className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                    className={`text-caption font-semibold px-2.5 py-0.5 rounded-full border ${
                       store?.isActive
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
@@ -192,10 +191,10 @@ function PemilikTokoDashboard({
                     {store?.isActive ? '● Menerima Titipan di Peta' : '○ Tutup Sementara'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                <p className="text-caption text-slate-500 line-clamp-1 mt-0.5">
                   {store?.address || 'Alamat toko belum diatur'}
                 </p>
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                <p className="text-caption text-slate-400 font-mono mt-0.5">
                   Koordinat: {store?.latitude.toFixed(4)}, {store?.longitude.toFixed(4)}
                 </p>
               </div>
@@ -207,7 +206,7 @@ function PemilikTokoDashboard({
                 size="sm"
                 onClick={handleToggleActive}
                 loading={setActiveMutation.isPending}
-                className="text-xs font-semibold rounded-xl min-h-[44px]"
+                className="text-caption font-semibold rounded-xl min-h-[44px]"
               >
                 {store?.isActive ? 'Tutup Titipan Sementara' : 'Buka & Terima Titipan'}
               </Button>
@@ -219,19 +218,19 @@ function PemilikTokoDashboard({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-900 text-white">
+                  <span className="text-caption font-semibold px-2 py-0.5 rounded bg-slate-900 text-white">
                     Marketplace Konsinyasi
                   </span>
                   {pendingOffersCount > 0 && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                      {pendingOffersCount} Tawaran Anda Dikirim
+                    <span className="text-caption font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                      {pendingOffersCount} tawaran menunggu jawaban
                     </span>
                   )}
                 </div>
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="text-title-3 text-slate-900">
                   Jelajahi Produsen UMKM &amp; Penitip
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-caption text-slate-500 mt-0.5">
                   Pilih produsen UMKM potensial di sekitar Anda dan tawarkan toko Anda untuk menitipkan barang dagangan mereka (kemitraan dua arah).
                 </p>
               </div>
@@ -241,9 +240,9 @@ function PemilikTokoDashboard({
                   variant="outline"
                   size="sm"
                   onClick={() => navigate('/penitip')}
-                  className="text-xs font-semibold rounded-xl min-h-[44px]"
+                  className="text-caption font-semibold rounded-xl min-h-[44px]"
                 >
-                  Daftar Pengajuan Masuk ({requests.length}) →
+                  Pengajuan masuk ({incomingRequestsCount})
                 </Button>
               </div>
             </div>
@@ -251,8 +250,14 @@ function PemilikTokoDashboard({
             {/* Grid Card Kotak Penitip (1 Baris Geser) */}
             <PenitipFeedGrid
               businesses={businesses}
+              isLoading={producers.isLoading}
+              error={producers.isError ? producers.error : null}
+              onRetry={() => producers.refetch()}
+              search={producerSearch}
+              onSearchChange={setProducerSearch}
               onOffer={handleOpenOffer}
               onViewDetail={handleOpenDetail}
+              onCompleteProfile={() => navigate('/toko-saya')}
             />
           </section>
         </div>
@@ -267,7 +272,8 @@ function PemilikTokoDashboard({
           setIsOfferModalOpen(false)
           setSelectedPenitip(null)
         }}
-        onSendOffer={sendOfferToPenitip}
+        onSendOffer={producers.sendOfferToPenitip}
+        isSending={producers.isSendingOffer}
       />
 
       {/* Modal Detail Profil Bisnis Penitip */}
@@ -279,14 +285,16 @@ function PemilikTokoDashboard({
           setSelectedPenitip(null)
         }}
         onOffer={handleOpenOffer}
-        onCancelOffer={cancelOffer}
+        onCancelOffer={producers.cancelOffer}
+        isCancelling={producers.isCancelling}
+        onOpenRequests={() => navigate('/penitip')}
       />
 
       {/* Modal Buat Nota Penjualan Digital Langsung dari Toko */}
       <CreateStoreInvoiceModal
         isOpen={isCreateInvoiceOpen}
         onClose={() => setIsCreateInvoiceOpen(false)}
-        storeName={store?.name || 'Toko Mitra Titipku'}
+        storeName={store?.name || 'Tokomu'}
       />
     </PageContainer>
   )
@@ -374,7 +382,7 @@ function PenitipMarketplace({
               variant="outline"
               size="md"
               onClick={() => navigate('/peta')}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
               <span>Peta Toko</span>
             </Button>
@@ -382,9 +390,9 @@ function PenitipMarketplace({
               variant="primary"
               size="md"
               onClick={() => handleStartVisit()}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
-              <span className="text-sm leading-none font-bold">+</span>
+              <span className="text-body leading-none font-bold">+</span>
               <span>Catat Kunjungan</span>
             </Button>
           </div>
@@ -399,8 +407,8 @@ function PenitipMarketplace({
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Jelajahi Toko Mitra</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-title-3 text-slate-900">Jelajahi Toko Mitra</h2>
+              <p className="text-caption text-slate-500 mt-0.5">
                 Temukan warung & toko yang siap menerima titip-jual produk UMKM Anda
               </p>
             </div>
@@ -408,7 +416,7 @@ function PenitipMarketplace({
               variant="outline"
               size="sm"
               onClick={() => navigate('/peta')}
-              className="text-xs font-semibold rounded-xl shrink-0 self-start sm:self-auto min-h-[44px]"
+              className="text-caption font-semibold rounded-xl shrink-0 self-start sm:self-auto min-h-[44px]"
             >
               Buka Peta →
             </Button>
@@ -434,7 +442,7 @@ function PenitipMarketplace({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari nama toko atau alamat..."
-                className="w-full pl-9 pr-4 py-2.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 placeholder:text-slate-400 min-h-[44px]"
+                className="w-full pl-9 pr-4 py-2.5 text-body text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900 placeholder:text-slate-400 min-h-[44px]"
               />
             </div>
 
@@ -445,7 +453,7 @@ function PenitipMarketplace({
                   key={cat.key}
                   type="button"
                   onClick={() => setSelectedCategory(cat.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-colors min-h-[36px] ${
+                  className={`px-3 py-1.5 rounded-lg text-caption font-semibold whitespace-nowrap border transition-colors min-h-[36px] ${
                     selectedCategory === cat.key
                       ? 'bg-slate-900 text-white border-slate-900'
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
@@ -480,8 +488,8 @@ function PenitipMarketplace({
                   <div className="bg-surface rounded-2xl border border-line p-5 shadow-2xs flex flex-col justify-between overflow-hidden">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <h2 className="text-sm font-bold text-ink">Penjualan 30 Hari</h2>
-                        <p className="text-xs text-ink-soft">Per hari, harga titip konsinyasi</p>
+                        <h2 className="text-title-3 text-ink">Penjualan 30 Hari</h2>
+                        <p className="text-caption text-ink-soft">Per hari, harga titip konsinyasi</p>
                       </div>
                     </div>
                     <SalesChart data={sales30Days} />
@@ -494,21 +502,21 @@ function PenitipMarketplace({
                     <div>
                       <div className="flex items-center justify-between pb-3 border-b border-line">
                         <div className="flex items-center gap-2">
-                          <h2 className="text-sm font-bold text-ink">Kunjungi Hari Ini</h2>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold border border-slate-200">
+                          <h2 className="text-title-3 text-ink">Kunjungi Hari Ini</h2>
+                          <span className="text-caption px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 font-semibold border border-slate-200">
                             {priorityPartners.length}
                           </span>
                         </div>
                         <Link
                           to="/warung"
-                          className="text-xs text-slate-700 font-semibold hover:underline"
+                          className="text-caption text-slate-700 font-semibold hover:underline"
                         >
                           Lihat Semua
                         </Link>
                       </div>
 
                       {priorityPartners.length === 0 ? (
-                        <div className="py-6 text-center text-xs text-ink-soft">
+                        <div className="py-6 text-center text-caption text-ink-soft">
                           Semua warung mitra dalam kondisi aman hari ini.
                         </div>
                       ) : (
@@ -519,14 +527,14 @@ function PenitipMarketplace({
                               className="py-3 first:pt-3 last:pb-1 flex items-center justify-between gap-3"
                             >
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-ink leading-snug truncate">
+                                <p className="text-caption font-bold text-ink leading-snug truncate">
                                   {p.name}{' '}
                                   <span className="font-normal text-ink-soft">
                                     · {p.owner_name || 'Mitra'}
                                   </span>
                                 </p>
                                 <p
-                                  className={`text-[11px] mt-0.5 flex items-center gap-1.5 font-medium ${
+                                  className={`text-caption mt-0.5 flex items-center gap-1.5 font-medium ${
                                     p.receivable > 0 ? 'text-danger' : 'text-slate-600'
                                   }`}
                                 >
@@ -542,7 +550,7 @@ function PenitipMarketplace({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleStartVisit(p.id)}
-                                className="rounded-lg h-7 px-2.5 text-xs font-semibold shrink-0 min-h-[44px]"
+                                className="rounded-lg h-7 px-2.5 text-caption font-semibold shrink-0 min-h-[44px]"
                               >
                                 Mulai
                               </Button>
@@ -555,9 +563,9 @@ function PenitipMarketplace({
 
                   {/* Kartu: Perlu Perhatian */}
                   <div className="bg-surface rounded-2xl border border-line p-5 shadow-2xs flex flex-col">
-                    <h2 className="text-sm font-bold text-ink mb-3">Perlu Perhatian</h2>
+                    <h2 className="text-title-3 text-ink mb-3">Perlu Perhatian</h2>
                     {priorityPartners.filter((p) => p.receivable > 0).length === 0 ? (
-                      <div className="flex-1 flex items-center justify-center text-xs text-ink-soft py-6">
+                      <div className="flex-1 flex items-center justify-center text-caption text-ink-soft py-6">
                         Tidak ada warung yang memiliki tunggakan jatuh tempo.
                       </div>
                     ) : (
@@ -569,8 +577,8 @@ function PenitipMarketplace({
                             <div key={p.id} className="py-2 flex items-start gap-2">
                               <span className="w-1.5 h-1.5 rounded-full bg-danger mt-1.5 shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <p className="text-xs font-bold text-ink truncate">{p.name}</p>
-                                <p className="text-[11px] text-danger font-medium">
+                                <p className="text-caption font-bold text-ink truncate">{p.name}</p>
+                                <p className="text-caption text-danger font-medium">
                                   Nota belum lunas: {rupiah(p.receivable)}
                                 </p>
                               </div>
@@ -606,7 +614,7 @@ export default function HomeRoute() {
   const isPemilikToko = currentAccount?.user?.account_type === 'pemilik_toko'
   const isPenitip = !isPemilikToko && !isAccountLoading
 
-  const userName = currentAccount?.user?.full_name || (isPemilikToko ? 'Pemilik Toko' : 'Bu Rina')
+  const userName = currentAccount?.user?.full_name || (isPemilikToko ? 'Pemilik Toko' : 'Penitip')
   const [todayFormatted] = useState(() => tanggalWIB(new Date()))
 
   const {

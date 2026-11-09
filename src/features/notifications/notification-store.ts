@@ -1,176 +1,125 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useProposals, type Proposal } from '@/features/stores/proposals-api'
+
+export type NotificationRole = 'penitip' | 'pemilik_toko'
 
 export interface AppNotification {
+  /** Unik per proposal + status, sehingga perubahan status memunculkan notifikasi baru. */
   id: string
-  role: 'penitip' | 'pemilik_toko' | 'all'
   title: string
   message: string
-  timeAgo: string
   timestamp: string
   isRead: boolean
-  type: 'offer_incoming' | 'offer_accepted' | 'offer_rejected' | 'request_incoming' | 'info'
-  // ID data terkait (misal offerId atau requestId)
-  dataId?: string
+  type: 'offer_incoming' | 'request_incoming' | 'accepted' | 'rejected'
+  proposalId: string
+  /** true bila notifikasi bisa langsung disetujui/ditolak (proposal masuk yang masih pending). */
+  actionable: boolean
 }
 
-export const NOTIFICATIONS_STORAGE_KEY = 'titipku_app_notifications_v1'
+export const READ_STORAGE_KEY = 'titipku_notifications_read_v2'
+/** Hanya proposal 30 hari terakhir yang dijadikan notifikasi. */
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
-export const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  // Notifikasi untuk Role Penitip
-  {
-    id: 'notif-p-1',
-    role: 'penitip',
-    title: 'Tawaran Masuk dari Toko',
-    message: 'Toko Kelontong Berkah Jaya menawarkan etalase depan kasir untuk produk keripik Anda.',
-    timeAgo: '35 mnt lalu',
-    timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
-    isRead: false,
-    type: 'offer_incoming',
-    dataId: 'offer-001',
-  },
-  {
-    id: 'notif-p-2',
-    role: 'penitip',
-    title: 'Tawaran Masuk dari Warung',
-    message: 'Warung Madura Barokah 24 Jam mengajak kerja sama titip aneka camilan.',
-    timeAgo: '3 jam lalu',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    isRead: false,
-    type: 'offer_incoming',
-    dataId: 'offer-002',
-  },
-  {
-    id: 'notif-p-3',
-    role: 'penitip',
-    title: 'Kemitraan Toko Aktif',
-    message: 'Kafe & Roastery Kopi Pojok kini resmi menjadi toko mitra konsinyasi Anda.',
-    timeAgo: 'Kemarin',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    isRead: true,
-    type: 'info',
-    dataId: 'offer-003',
-  },
+function itemCount(proposal: Proposal): string {
+  return proposal.items.length > 0 ? ` ${proposal.items.length} produk` : ' produknya'
+}
 
-  // Notifikasi untuk Role Pemilik Toko
-  {
-    id: 'notif-t-1',
-    role: 'pemilik_toko',
-    title: 'Permohonan Titip Baru',
-    message: 'Ibu Rina Rahmawati (Keripik Pisang Rina) mengajukan titip 30 bungkus keripik.',
-    timeAgo: '45 mnt lalu',
-    timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    isRead: false,
-    type: 'request_incoming',
-    dataId: 'req-001',
-  },
-  {
-    id: 'notif-t-2',
-    role: 'pemilik_toko',
-    title: 'Permohonan Titip Baru',
-    message: 'Ibu Mimin Sunarti (Kue Basah Bu Mimin) mengajukan titip kue lapis legit & risoles.',
-    timeAgo: '5 jam lalu',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-    isRead: false,
-    type: 'request_incoming',
-    dataId: 'req-002',
-  },
-  {
-    id: 'notif-t-3',
-    role: 'pemilik_toko',
-    title: 'Tawaran Toko Diterima!',
-    message: 'Produsen Sambal Bu Rudy telah menyetujui tawaran kemitraan toko Anda.',
-    timeAgo: '2 hari lalu',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    isRead: true,
-    type: 'offer_accepted',
-  },
-]
+/**
+ * Turunkan notifikasi dari proposal asli:
+ * - proposal masuk yang masih pending (perlu tindakan), dan
+ * - proposal yang kita kirim lalu diterima/ditolak pihak lain.
+ */
+export function buildNotifications(proposals: Proposal[], role: NotificationRole, readIds: Set<string>, now = Date.now()): AppNotification[] {
+  const incomingDirection = role === 'penitip' ? 'store_to_penitip' : 'penitip_to_store'
+  const notifications: AppNotification[] = []
 
-export function loadNotifications(): AppNotification[] {
+  for (const proposal of proposals) {
+    const timestamp = proposal.respondedAt ?? proposal.createdAt
+    if (now - new Date(timestamp).getTime() > MAX_AGE_MS) continue
+    const isIncoming = proposal.direction === incomingDirection
+    const counterpart = role === 'penitip' ? proposal.store.name : proposal.business.name
+    const id = `${proposal.id}:${proposal.status}`
+
+    let entry: Omit<AppNotification, 'id' | 'isRead' | 'timestamp' | 'proposalId'> | null = null
+    if (isIncoming && proposal.status === 'pending') {
+      entry =
+        role === 'penitip'
+          ? { type: 'offer_incoming', title: 'Tawaran masuk dari toko', message: `${counterpart} menawarkan tempat untuk produkmu.`, actionable: true }
+          : { type: 'request_incoming', title: 'Pengajuan titip baru', message: `${counterpart} ingin menitipkan${itemCount(proposal)} di tokomu.`, actionable: true }
+    } else if (!isIncoming && proposal.status === 'accepted') {
+      entry = { type: 'accepted', title: role === 'penitip' ? 'Pengajuan disetujui' : 'Tawaran diterima', message: `${counterpart} kini menjadi mitramu.`, actionable: false }
+    } else if (!isIncoming && proposal.status === 'rejected') {
+      entry = {
+        type: 'rejected',
+        title: role === 'penitip' ? 'Pengajuan ditolak' : 'Tawaran ditolak',
+        message: `${counterpart} belum bisa bekerja sama saat ini.`,
+        actionable: false,
+      }
+    }
+    if (entry) notifications.push({ ...entry, id, timestamp, proposalId: proposal.id, isRead: readIds.has(id) })
+  }
+
+  return notifications.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+}
+
+export function formatTimeAgo(iso: string, now = Date.now()): string {
+  const minutes = Math.round((now - new Date(iso).getTime()) / 60000)
+  if (minutes < 1) return 'Baru saja'
+  if (minutes < 60) return `${minutes} mnt lalu`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours} jam lalu`
+  const days = Math.round(hours / 24)
+  return days === 1 ? 'Kemarin' : `${days} hari lalu`
+}
+
+function loadReadIds(): Set<string> {
   try {
-    const raw = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY)
-    if (!raw) {
-      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(INITIAL_NOTIFICATIONS))
-      return INITIAL_NOTIFICATIONS
-    }
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed
-    }
-    return INITIAL_NOTIFICATIONS
+    const raw = localStorage.getItem(READ_STORAGE_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [])
   } catch {
-    return INITIAL_NOTIFICATIONS
+    return new Set()
   }
 }
 
-export function useNotifications(userRole: 'penitip' | 'pemilik_toko' = 'penitip') {
-  const [allNotifications, setAllNotifications] = useState<AppNotification[]>(loadNotifications)
+function saveReadIds(ids: Set<string>) {
+  try {
+    // Simpan secukupnya agar tidak tumbuh tanpa batas.
+    localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...ids].slice(-300)))
+  } catch {
+    // Penyimpanan tidak tersedia (mode privat): status baca hanya berlaku di sesi ini.
+  }
+}
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setAllNotifications(loadNotifications())
-    }
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [])
+/** Notifikasi untuk akun yang login, diturunkan dari /v1/proposals. */
+export function useNotifications(role: NotificationRole) {
+  const proposalsQuery = useProposals()
+  const [readIds, setReadIds] = useState<Set<string>>(loadReadIds)
 
-  const persist = useCallback((updater: (prev: AppNotification[]) => AppNotification[]) => {
-    setAllNotifications((prev) => {
-      const next = updater(prev)
-      try {
-        localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(next))
-      } catch (err) {
-        console.error('Failed to save notifications:', err)
-      }
+  const notifications = useMemo(
+    () => buildNotifications(proposalsQuery.data ?? [], role, readIds),
+    [proposalsQuery.data, role, readIds]
+  )
+
+  const markRead = useCallback((ids: string[]) => {
+    setReadIds((prev) => {
+      const next = new Set(prev)
+      ids.forEach((id) => next.add(id))
+      saveReadIds(next)
       return next
     })
   }, [])
 
-  // Filter notifikasi sesuai role pengguna yang login
-  const notifications = allNotifications.filter(
-    (item) => item.role === userRole || item.role === 'all'
-  )
-
-  const unreadCount = notifications.filter((item) => !item.isRead).length
-  const hasUnread = unreadCount > 0
-
-  const markAsRead = useCallback(
-    (notificationId: string) => {
-      persist((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-      )
-    },
-    [persist]
-  )
-
-  const markAllAsRead = useCallback(() => {
-    persist((prev) =>
-      prev.map((n) =>
-        n.role === userRole || n.role === 'all' ? { ...n, isRead: true } : n
-      )
-    )
-  }, [persist, userRole])
-
-  const addNotification = useCallback(
-    (newNotif: Omit<AppNotification, 'id' | 'timestamp' | 'isRead'>) => {
-      const notif: AppNotification = {
-        ...newNotif,
-        id: `notif-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        isRead: false,
-      }
-      persist((prev) => [notif, ...prev])
-      return notif
-    },
-    [persist]
-  )
-
+  const unreadCount = notifications.filter((n) => !n.isRead).length
   return {
     notifications,
     unreadCount,
-    hasUnread,
-    markAsRead,
-    markAllAsRead,
-    addNotification,
+    hasUnread: unreadCount > 0,
+    isLoading: proposalsQuery.isLoading,
+    isError: proposalsQuery.isError,
+    error: proposalsQuery.error,
+    refetch: proposalsQuery.refetch,
+    markAsRead: (id: string) => markRead([id]),
+    markAllAsRead: () => markRead(notifications.map((n) => n.id)),
   }
 }

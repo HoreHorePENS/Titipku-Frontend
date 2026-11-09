@@ -56,15 +56,15 @@ export function VisitSummaryStep({
     <div className="flex flex-col gap-5 max-w-2xl mx-auto font-sans pb-10">
       {/* 1. Header Ringkasan Tagihan */}
       <div className="bg-surface rounded-2xl border border-line p-5 shadow-2xs">
-        <h2 className="text-base font-bold text-ink mb-1">Ringkasan Tagihan</h2>
+        <h2 className="text-title-3 text-ink mb-1">Ringkasan Tagihan</h2>
         <p className="text-caption text-ink-soft">
           Warung: <strong className="text-ink">{partner.name}</strong> ({partner.ownerName || 'Mitra'})
         </p>
 
-        <div className="mt-4 pt-4 border-t border-line flex flex-col gap-2.5 text-sm">
+        <div className="mt-4 pt-4 border-t border-line flex flex-col gap-2.5 text-body">
           <div className="flex items-center justify-between text-ink">
             <span>Barang terjual hari ini ({totals.totalSold} bks)</span>
-            <span className="font-extrabold tabular-nums">{rupiah(totals.todayTotal)}</span>
+            <span className="font-bold tabular-nums">{rupiah(totals.todayTotal)}</span>
           </div>
 
           {totals.oldDebt > 0 && (
@@ -74,9 +74,9 @@ export function VisitSummaryStep({
             </div>
           )}
 
-          <div className="pt-2 border-t border-line/60 flex items-center justify-between font-extrabold text-base text-ink">
+          <div className="pt-2 border-t border-line/60 flex items-center justify-between font-bold text-title-3 text-ink">
             <span>Total Kewajiban</span>
-            <span className="text-lg tabular-nums text-primary">{rupiah(totals.grandTotal)}</span>
+            <span className="text-title-2 tabular-nums text-primary">{rupiah(totals.grandTotal)}</span>
           </div>
         </div>
       </div>
@@ -85,8 +85,8 @@ export function VisitSummaryStep({
       {totals.todayTotal > 0 ? (
         <div className="bg-surface rounded-2xl border border-line p-5 shadow-2xs flex flex-col gap-4">
           <div>
-            <h3 className="text-sm font-bold text-ink">Pilihan Pembayaran Hari Ini</h3>
-            <p className="text-xs text-ink-soft mt-0.5">
+            <h3 className="text-title-3 text-ink">Pilihan Pembayaran Hari Ini</h3>
+            <p className="text-caption text-ink-soft mt-0.5">
               Pilih jumlah uang yang diserahkan oleh warung mitra
             </p>
           </div>
@@ -102,8 +102,8 @@ export function VisitSummaryStep({
                   : 'border-line bg-surface hover:border-line-strong'
               }`}
             >
-              <span className="text-xs font-bold text-ink">Lunas</span>
-              <span className="text-sm font-extrabold text-primary tabular-nums">
+              <span className="text-caption font-bold text-ink">Lunas</span>
+              <span className="text-body font-bold text-primary tabular-nums">
                 {rupiah(totals.todayTotal)}
               </span>
             </button>
@@ -118,8 +118,8 @@ export function VisitSummaryStep({
                   : 'border-line bg-surface hover:border-line-strong'
               }`}
             >
-              <span className="text-xs font-bold text-ink">Sebagian</span>
-              <span className="text-xs font-medium text-ink-soft">Cicil / DP</span>
+              <span className="text-caption font-bold text-ink">Sebagian</span>
+              <span className="text-caption font-medium text-ink-soft">Cicil / DP</span>
             </button>
 
             {/* Opsi Belum Bayar */}
@@ -132,8 +132,8 @@ export function VisitSummaryStep({
                   : 'border-line bg-surface hover:border-line-strong'
               }`}
             >
-              <span className="text-xs font-bold text-ink">Belum Bayar</span>
-              <span className="text-xs text-danger font-semibold">Rp0</span>
+              <span className="text-caption font-bold text-ink">Belum Bayar</span>
+              <span className="text-caption text-danger font-semibold">Rp0</span>
             </button>
           </div>
 
@@ -147,7 +147,7 @@ export function VisitSummaryStep({
                 max={totals.todayTotal}
               />
 
-              <div className="text-xs flex items-center justify-between text-ink-soft">
+              <div className="text-caption flex items-center justify-between text-ink-soft">
                 <span>Sisa piutang baru:</span>
                 <span className="font-bold text-danger tabular-nums">{rupiah(remainingBill)}</span>
               </div>
@@ -157,7 +157,7 @@ export function VisitSummaryStep({
           {/* Pilihan Metode Bayar (Muncul jika ada uang diserahkan) */}
           {paymentChoice !== 'belum_bayar' && (
             <div className="pt-2">
-              <label className="text-xs font-bold text-ink block mb-2">Metode Pembayaran</label>
+              <label className="text-caption font-bold text-ink block mb-2">Metode Pembayaran</label>
               <div className="flex gap-2">
                 {[
                   { id: 'cash', label: '💵 Tunai' },
@@ -168,7 +168,7 @@ export function VisitSummaryStep({
                     key={m.id}
                     type="button"
                     onClick={() => setPaymentMethod(m.id as PaymentMethod)}
-                    className={`flex-1 py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
+                    className={`flex-1 py-2 px-3 rounded-lg border text-caption font-bold transition-all ${
                       paymentMethod === m.id
                         ? 'border-primary bg-primary text-white shadow-xs'
                         : 'border-line bg-surface text-ink hover:border-line-strong'
@@ -182,7 +182,7 @@ export function VisitSummaryStep({
           )}
         </div>
       ) : (
-        <div className="p-4 rounded-xl bg-accent/10 border border-accent/30 text-accent text-xs font-semibold">
+        <div className="p-4 rounded-xl bg-accent/10 border border-accent/30 text-accent text-caption font-semibold">
           Kunjungan ini tidak memiliki penjualan (titip stok awal). Bagian pembayaran dinonaktifkan secara otomatis.
         </div>
       )}
@@ -195,7 +195,7 @@ export function VisitSummaryStep({
           onChange={(e) => onReceivedByChange(e.target.value)}
           placeholder="Nama penerima barang..."
           hint="Terisi otomatis dari data kontak warung, ubah bila diterima orang lain"
-          className="text-sm font-semibold"
+          className="text-body font-semibold"
         />
       </div>
 
@@ -207,7 +207,7 @@ export function VisitSummaryStep({
           size="lg"
           onClick={onBack}
           disabled={isSubmitting}
-          className="flex-1 rounded-xl h-12 text-sm font-bold"
+          className="flex-1 rounded-xl h-12 text-body font-bold"
         >
           ← Ubah Stok
         </Button>
@@ -218,7 +218,7 @@ export function VisitSummaryStep({
           size="lg"
           onClick={handleConfirm}
           disabled={isSubmitting || !receivedBy.trim()}
-          className="flex-1 rounded-xl h-12 text-sm font-bold shadow-xs flex items-center justify-center gap-2"
+          className="flex-1 rounded-xl h-12 text-body font-bold shadow-xs flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <span>Menyimpan Kunjungan…</span>

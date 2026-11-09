@@ -30,7 +30,7 @@ const toneValueClasses: Record<StatCardTone, string> = {
 
 /**
  * Kartu metrik/statistik angka terstandarisasi untuk seluruh halaman Titipku.
- * Memastikan satu ukuran font angka (`text-2xl md:text-3xl`), radius `rounded-2xl`,
+ * Memastikan satu ukuran font angka (`text-title-1 md:text-display`), radius `rounded-2xl`,
  * dan padding konsisten `p-4 md:p-5`.
  */
 export function StatCard({
@@ -67,7 +67,7 @@ export function StatCard({
       } ${className}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs font-bold text-ink-soft uppercase tracking-wider block">
+        <span className="text-caption font-bold text-ink-soft uppercase tracking-wider block">
           {label}
         </span>
         {icon && <div className="text-ink-soft shrink-0">{icon}</div>}
@@ -75,19 +75,19 @@ export function StatCard({
 
       <div className="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
         <div
-          className={`text-2xl md:text-3xl font-black tabular-nums tracking-tight ${toneValueClasses[tone]}`}
+          className={`text-title-1 md:text-display font-bold tabular-nums tracking-tight ${toneValueClasses[tone]}`}
         >
           {value}
         </div>
         {subValue && (
-          <span className="text-xs md:text-sm font-semibold text-ink-soft">
+          <span className="text-caption md:text-body font-semibold text-ink-soft">
             {subValue}
           </span>
         )}
       </div>
 
       {hint && (
-        <div className="mt-2 text-xs text-ink-soft leading-normal">
+        <div className="mt-2 text-caption text-ink-soft leading-normal">
           {hint}
         </div>
       )}

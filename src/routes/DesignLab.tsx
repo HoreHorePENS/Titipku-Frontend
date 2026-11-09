@@ -247,10 +247,10 @@ export default function DesignLab() {
                 style={{ backgroundColor: `var(${token})` }}
               />
               <div>
-                <p className="text-[11px] font-mono font-semibold text-ink truncate">
+                <p className="text-caption font-mono font-semibold text-ink truncate">
                   {token.replace('--color-', '')}
                 </p>
-                <p className="text-[10px] font-mono text-ink-soft uppercase">{val || '-'}</p>
+                <p className="text-caption font-mono text-ink-soft uppercase">{val || '-'}</p>
               </div>
             </div>
           ))}
@@ -264,46 +264,46 @@ export default function DesignLab() {
       render: () => (
         <div className="flex flex-col gap-5 bg-surface border border-line rounded-2xl p-4">
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-display (clamp 30px-40px / 800)</span>
-            <h1 className="text-display text-ink">Uang tidak lagi nyangkut</h1>
+            <span className="text-caption font-mono text-ink-soft block">text-display (clamp 30px-40px / 800)</span>
+            <h1 className="text-title-1 text-ink">Uang tidak lagi nyangkut</h1>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-title-1 (clamp 22px-28px / 800)</span>
-            <h2 className="text-title-1 text-ink">Dashboard Pemilik Warung</h2>
+            <span className="text-caption font-mono text-ink-soft block">text-title-1 (clamp 22px-28px / 800)</span>
+            <h2 className="text-title-2 text-ink">Dashboard Pemilik Warung</h2>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-title-2 (20px / 800)</span>
-            <h3 className="text-title-2 text-ink">Prioritas Kunjungan Hari Ini</h3>
+            <span className="text-caption font-mono text-ink-soft block">text-title-2 (20px / 800)</span>
+            <h3 className="text-title-3 text-ink">Prioritas Kunjungan Hari Ini</h3>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-title-3 (16px / 700)</span>
+            <span className="text-caption font-mono text-ink-soft block">text-title-3 (16px / 700)</span>
             <h4 className="text-title-3 text-ink">Warung Bu Sri - Rungkut Madya</h4>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-body (15px / 400)</span>
+            <span className="text-caption font-mono text-ink-soft block">text-body (15px / 400)</span>
             <p className="text-body text-ink">
               Hitung sisa di rak warung dengan teliti sebelum menambahkan stok baru hari ini.
             </p>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-caption (13px / 500)</span>
+            <span className="text-caption font-mono text-ink-soft block">text-caption (13px / 500)</span>
             <p className="text-caption text-ink-soft">
               Rungkut Madya · 2,1 km · Terakhir dikunjungi 21 Okt
             </p>
           </div>
 
           <div>
-            <span className="text-[11px] font-mono text-ink-soft block">text-amount (34px / 800 / tabular)</span>
+            <span className="text-caption font-mono text-ink-soft block">text-amount (34px / 800 / tabular)</span>
             <p className="text-amount text-primary tabular-nums">Rp1.240.000</p>
           </div>
 
           <div className="pt-3 border-t border-line">
-            <span className="text-[11px] font-mono text-ink-soft block mb-1">
+            <span className="text-caption font-mono text-ink-soft block mb-1">
               Uji Pemotongan Teks Panjang (line-clamp-2)
             </span>
             <div className="p-3 bg-surface-raised rounded-xl border border-line max-w-[280px]">
@@ -323,7 +323,7 @@ export default function DesignLab() {
       render: () => (
         <div className="flex flex-col gap-6">
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">Varian Tombol (Ukuran Sedang / md - 48px)</h4>
+            <h4 className="text-label text-ink-soft">Varian Tombol (Ukuran Sedang / md - 48px)</h4>
             <div className="flex flex-wrap gap-2.5">
               <Button variant="primary">Mulai Kunjungan</Button>
               <Button variant="secondary">Sekunder</Button>
@@ -335,7 +335,7 @@ export default function DesignLab() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">State: Default, Loading, Disabled</h4>
+            <h4 className="text-label text-ink-soft">State: Default, Loading, Disabled</h4>
             <div className="flex flex-wrap gap-2.5">
               <Button variant="primary">Default</Button>
               <Button variant="primary" loading>Menyimpan…</Button>
@@ -344,7 +344,7 @@ export default function DesignLab() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">Ukuran: Besar (52px), Sedang (48px), Kecil (40px)</h4>
+            <h4 className="text-label text-ink-soft">Ukuran: Besar (52px), Sedang (48px), Kecil (40px)</h4>
             <div className="flex items-center flex-wrap gap-2.5">
               <Button size="lg" variant="primary">Besar (52px)</Button>
               <Button size="md" variant="primary">Sedang (48px)</Button>
@@ -353,22 +353,22 @@ export default function DesignLab() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">Icon-Only (Aria-Label Wajib)</h4>
+            <h4 className="text-label text-ink-soft">Icon-Only (Aria-Label Wajib)</h4>
             <div className="flex items-center gap-2.5">
               <Button iconOnly size="lg" aria-label="Tambah Produk">
-                <span className="text-xl leading-none">+</span>
+                <span className="text-title-1 leading-none">+</span>
               </Button>
               <Button iconOnly size="md" variant="secondary" aria-label="Navigasi">
-                <span className="text-lg leading-none">→</span>
+                <span className="text-title-2 leading-none">→</span>
               </Button>
               <Button iconOnly size="sm" variant="outline" aria-label="Pengaturan">
-                <span className="text-sm leading-none">⚙</span>
+                <span className="text-body leading-none">⚙</span>
               </Button>
             </div>
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">Full Width & Tombol Aksi Berdampingan</h4>
+            <h4 className="text-label text-ink-soft">Full Width & Tombol Aksi Berdampingan</h4>
             <Button fullWidth size="lg" variant="primary">
               + Catat Kunjungan Baru
             </Button>
@@ -387,7 +387,7 @@ export default function DesignLab() {
       render: () => (
         <div className="flex flex-col gap-6">
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-4">
-            <h4 className="text-caption font-semibold text-ink-soft">Matriks State Komponen Input</h4>
+            <h4 className="text-label text-ink-soft">Matriks State Komponen Input</h4>
 
             <Input
               label="Nama warung (Default)"
@@ -402,11 +402,11 @@ export default function DesignLab() {
 
             <div className="flex flex-col gap-1.5 w-full">
               <label className="text-caption font-bold text-ink">
-                Harga titip (Fokus Statis) <span className="ml-1 text-ink-soft font-normal text-[11px]">(wajib)</span>
+                Harga titip (Fokus Statis) <span className="ml-1 text-ink-soft font-normal text-caption">(wajib)</span>
               </label>
               <div className="flex items-center h-14 min-h-[56px] px-3.5 rounded-[14px] border border-primary ring-2 ring-focus-ring/25 bg-surface">
                 <span className="pr-2 font-bold text-ink-soft select-none">Rp</span>
-                <span className="text-[16px] text-ink font-medium">3.000</span>
+                <span className="text-title-3 font-medium text-ink">3.000</span>
                 <span className="animate-pulse ml-0.5 text-primary">|</span>
               </div>
               <p className="text-caption text-ink-soft">Tampilan saat kursor aktif di dalam field</p>
@@ -435,7 +435,7 @@ export default function DesignLab() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-4">
-            <h4 className="text-caption font-semibold text-ink-soft">MoneyInput (Pemisah Ribuan & Nilai Integer)</h4>
+            <h4 className="text-label text-ink-soft">MoneyInput (Pemisah Ribuan & Nilai Integer)</h4>
 
             <MoneyInput
               label="Nilai Awal (Rp3.000)"
@@ -460,7 +460,7 @@ export default function DesignLab() {
           </div>
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-4">
-            <h4 className="text-caption font-semibold text-ink-soft">Uji Teks Panjang (Label & Error Overflow)</h4>
+            <h4 className="text-label text-ink-soft">Uji Teks Panjang (Label & Error Overflow)</h4>
 
             <Input
               label="Nama Lengkap Pemilik Warung atau Penanggung Jawab Konsinyasi di Lapangan"
@@ -472,7 +472,7 @@ export default function DesignLab() {
 
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-4">
             <div>
-              <h4 className="text-caption font-semibold text-ink">Perbandingan Kontras Border: Opsi A vs Opsi B</h4>
+              <h4 className="text-label text-ink">Perbandingan Kontras Border: Opsi A vs Opsi B</h4>
               <p className="text-caption text-ink-soft">
                 Pilih dengan melihat langsung kontras visual batas kotak input.
               </p>
@@ -480,10 +480,10 @@ export default function DesignLab() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-3 bg-surface-raised rounded-xl border border-line flex flex-col gap-2">
-                <span className="text-[11px] font-bold text-success uppercase">
+                <span className="text-caption font-bold text-success uppercase">
                   Opsi A (Rekomendasi - Kontras 2,56:1 s.d. 4,76:1)
                 </span>
-                <p className="text-[12px] text-ink-soft">
+                <p className="text-caption text-ink-soft">
                   Memakai border tegas (line-strong). Batas kotak tampak jelas di bawah sinar matahari.
                 </p>
                 <Input
@@ -494,10 +494,10 @@ export default function DesignLab() {
               </div>
 
               <div className="p-3 bg-surface-raised rounded-xl border border-line flex flex-col gap-2">
-                <span className="text-[11px] font-bold text-ink-soft uppercase">
+                <span className="text-caption font-bold text-ink-soft uppercase">
                   Opsi B (Border Tipis + Latar Kontras)
                 </span>
-                <p className="text-[12px] text-ink-soft">
+                <p className="text-caption text-ink-soft">
                   Memakai border slate-200 tipis dengan latar belakang permukaan sedikit berwarna.
                 </p>
                 <Input
@@ -523,7 +523,7 @@ export default function DesignLab() {
           <div className="flex items-center justify-between p-3 bg-surface-raised rounded-xl border border-line">
             <div>
               <p className="text-caption font-semibold text-ink">Simulasi Aksesibilitas: Tes Buta Warna / Hitam-Putih</p>
-              <p className="text-[12px] text-ink-soft">
+              <p className="text-caption text-ink-soft">
                 Periksa apakah status tetap dapat dibedakan hanya lewat teks dan bentuk penanda.
               </p>
             </div>
@@ -538,7 +538,7 @@ export default function DesignLab() {
 
           {/* Kelompok 1: Status Pembayaran */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">1. Status Pembayaran (PaymentBadge)</h4>
+            <h4 className="text-label text-ink-soft">1. Status Pembayaran (PaymentBadge)</h4>
             <div className="flex flex-wrap items-center gap-2.5">
               <PaymentBadge status="lunas" />
               <PaymentBadge status="sebagian" />
@@ -548,7 +548,7 @@ export default function DesignLab() {
 
           {/* Kelompok 2: Skor Kesehatan Warung */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">2. Skor Kesehatan Warung (HealthBadge)</h4>
+            <h4 className="text-label text-ink-soft">2. Skor Kesehatan Warung (HealthBadge)</h4>
             <div className="flex flex-col gap-2.5">
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-caption text-ink-soft w-28">Dengan Rentang:</span>
@@ -567,7 +567,7 @@ export default function DesignLab() {
 
           {/* Kelompok 3: Alasan Prioritas Kunjungan */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">3. Alasan Prioritas Kunjungan (ReasonChip)</h4>
+            <h4 className="text-label text-ink-soft">3. Alasan Prioritas Kunjungan (ReasonChip)</h4>
             <div className="flex flex-wrap items-center gap-2.5">
               <ReasonChip reason="stok_hampir_habis" />
               <ReasonChip reason="hampir_kedaluwarsa" />
@@ -577,25 +577,25 @@ export default function DesignLab() {
 
           {/* Matriks Tone x Marker x Size */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
-            <h4 className="text-caption font-semibold text-ink-soft">Matriks Tone & Penanda Bentuk (Ukuran sm & md)</h4>
+            <h4 className="text-label text-ink-soft">Matriks Tone & Penanda Bentuk (Ukuran sm & md)</h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-mono text-ink-soft">Success (Circle)</span>
+                <span className="text-caption font-mono text-ink-soft">Success (Circle)</span>
                 <Badge tone="success" size="sm">Ukuran SM</Badge>
                 <Badge tone="success" size="md">Ukuran MD</Badge>
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-mono text-ink-soft">Warning (Square)</span>
+                <span className="text-caption font-mono text-ink-soft">Warning (Square)</span>
                 <Badge tone="warning" size="sm">Ukuran SM</Badge>
                 <Badge tone="warning" size="md">Ukuran MD</Badge>
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-mono text-ink-soft">Danger (Triangle)</span>
+                <span className="text-caption font-mono text-ink-soft">Danger (Triangle)</span>
                 <Badge tone="danger" size="sm">Ukuran SM</Badge>
                 <Badge tone="danger" size="md">Ukuran MD</Badge>
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-[11px] font-mono text-ink-soft">Neutral (Ring)</span>
+                <span className="text-caption font-mono text-ink-soft">Neutral (Ring)</span>
                 <Badge tone="neutral" size="sm">Ukuran SM</Badge>
                 <Badge tone="neutral" size="md">Ukuran MD</Badge>
               </div>
@@ -604,20 +604,20 @@ export default function DesignLab() {
 
           {/* Uji Teks Sangat Panjang (Truncation dengan title) */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-2">
-            <h4 className="text-caption font-semibold text-ink-soft">Uji Teks Panjang (Maksimal Lebar & Elipsis)</h4>
+            <h4 className="text-label text-ink-soft">Uji Teks Panjang (Maksimal Lebar & Elipsis)</h4>
             <div className="max-w-[240px]">
               <Badge tone="warning">
                 Piutang Jatuh Tempo Melebihi Batas 30 Hari Kerja Warung Mitra
               </Badge>
             </div>
-            <p className="text-[11px] text-ink-soft">
+            <p className="text-caption text-ink-soft">
               Teks otomatis terpotong elipsis dan menyimpan atribut title untuk hover/long-press.
             </p>
           </div>
 
           {/* Baris Contoh Kartu Warung pada Lebar 360px */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-2">
-            <h4 className="text-caption font-semibold text-ink-soft">Uji Integrasi Kartu Warung (Simulasi 360px)</h4>
+            <h4 className="text-label text-ink-soft">Uji Integrasi Kartu Warung (Simulasi 360px)</h4>
             <div className="p-3.5 bg-surface-raised rounded-xl border border-line flex items-center justify-between gap-2 max-w-[360px]">
               <div className="min-w-0">
                 <h5 className="text-title-3 text-ink truncate">Warung Bu Sri Rungkut Madya</h5>
@@ -668,7 +668,7 @@ export default function DesignLab() {
           {/* Area Uji Interaktif & Tekan Lama (Long-Press) */}
           <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col gap-3">
             <div>
-              <h4 className="text-caption font-semibold text-ink">Uji Interaktif: Tekan Lama untuk ±5</h4>
+              <h4 className="text-label text-ink">Uji Interaktif: Tekan Lama untuk ±5</h4>
               <p className="text-caption text-ink-soft">
                 Coba tahan tombol minus atau plus selama lebih dari 400ms untuk melihat lompatan angka bertahap per 5 unit.
               </p>
@@ -676,7 +676,7 @@ export default function DesignLab() {
 
             <div className="p-4 bg-surface-raised rounded-xl border border-line flex items-center justify-between gap-4 max-w-[360px]">
               <div>
-                <span className="text-[16px] font-bold text-ink block">Kuantitas Titipan</span>
+                <span className="text-title-3 text-ink block">Kuantitas Titipan</span>
                 <span className="text-caption text-ink-soft">Lompatan: ±1 (klik) / ±5 (tahan)</span>
               </div>
               <Stepper
@@ -727,7 +727,7 @@ export default function DesignLab() {
             {/* Toolbar Pengendali Aksesibilitas Khusus Seksi State */}
             <div className="bg-surface border border-line rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
               <div>
-                <h4 className="text-caption font-bold text-ink">Simulasi Lingkungan Lapangan</h4>
+                <h4 className="text-label text-ink">Simulasi Lingkungan Lapangan</h4>
                 <p className="text-caption text-ink-soft">
                   Uji keterbacaan di bawah terik matahari (hitam-putih) dan preferensi reduced motion.
                 </p>
@@ -753,7 +753,7 @@ export default function DesignLab() {
             {/* BAGIAN A: EMPAT KEADAAN BERDAMPINGAN SESUAI DESAIN ASLI */}
             <div>
               <div className="mb-3">
-                <h3 className="text-title-2 text-ink font-bold">1. Tampilan Asli Desain (Empat Keadaan)</h3>
+                <h3 className="text-title-3 text-ink">1. Tampilan Asli Desain (Empat Keadaan)</h3>
                 <p className="text-caption text-ink-soft">
                   Komposisi empat layar data penting yang dipakai ulang di mobile dan desktop.
                 </p>
@@ -763,13 +763,13 @@ export default function DesignLab() {
                 {/* 1. Loading Skeleton */}
                 <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col shadow-xs">
                   <div className="flex items-center gap-2 mb-3 pb-2 border-b border-line">
-                    <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-[11px] font-bold flex items-center justify-center text-ink">
+                    <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-caption font-bold flex items-center justify-center text-ink">
                       1
                     </span>
                     <span className="text-caption font-bold text-ink">Loading · skeleton</span>
                   </div>
                   <CatalogSkeleton />
-                  <p className="text-[11px] text-ink-soft mt-3 pt-2 border-t border-line italic">
+                  <p className="text-caption text-ink-soft mt-3 pt-2 border-t border-line italic">
                     Bentuk skeleton meniru tata letak asli agar tidak ada lompatan saat data masuk.
                   </p>
                 </div>
@@ -778,7 +778,7 @@ export default function DesignLab() {
                 <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-line">
-                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-[11px] font-bold flex items-center justify-center text-ink">
+                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-caption font-bold flex items-center justify-center text-ink">
                         2
                       </span>
                       <span className="text-caption font-bold text-ink">Kosong · empty state</span>
@@ -805,7 +805,7 @@ export default function DesignLab() {
                       }}
                     />
                   </div>
-                  <p className="text-[11px] text-ink-soft mt-3 pt-2 border-t border-line italic">
+                  <p className="text-caption text-ink-soft mt-3 pt-2 border-t border-line italic">
                     Selalu ada satu aksi utama yang menjelaskan langkah berikutnya.
                   </p>
                 </div>
@@ -814,7 +814,7 @@ export default function DesignLab() {
                 <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-line">
-                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-[11px] font-bold flex items-center justify-center text-ink">
+                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-caption font-bold flex items-center justify-center text-ink">
                         3
                       </span>
                       <span className="text-caption font-bold text-ink">Error · gagal memuat</span>
@@ -850,7 +850,7 @@ export default function DesignLab() {
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-ink-soft mt-3 pt-2 border-t border-line italic">
+                  <p className="text-caption text-ink-soft mt-3 pt-2 border-t border-line italic">
                     Error menjelaskan penyebab + jalan keluar, ditempatkan dekat sumber masalah.
                   </p>
                 </div>
@@ -859,7 +859,7 @@ export default function DesignLab() {
                 <div className="bg-surface border border-line rounded-2xl p-4 flex flex-col justify-between shadow-xs">
                   <div>
                     <div className="flex items-center gap-2 mb-3 pb-2 border-b border-line">
-                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-[11px] font-bold flex items-center justify-center text-ink">
+                      <span className="w-5 h-5 rounded-full bg-surface-raised border border-line text-caption font-bold flex items-center justify-center text-ink">
                         4
                       </span>
                       <span className="text-caption font-bold text-ink">Sukses · toast</span>
@@ -940,7 +940,7 @@ export default function DesignLab() {
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-ink-soft mt-3 pt-2 border-t border-line italic">
+                  <p className="text-caption text-ink-soft mt-3 pt-2 border-t border-line italic">
                     Toast muncul 4 detik di atas bottom nav; aksi berisiko selalu bisa diurungkan.
                   </p>
                 </div>
@@ -951,7 +951,7 @@ export default function DesignLab() {
             <div className="bg-surface border border-line rounded-2xl p-5 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-line">
                 <div>
-                  <h3 className="text-title-2 text-ink font-bold">2. Simulasi Layar Data (QueryState)</h3>
+                  <h3 className="text-title-3 text-ink">2. Simulasi Layar Data (QueryState)</h3>
                   <p className="text-caption text-ink-soft">
                     Beralih keadaan secara langsung tanpa jaringan untuk menguji integrasi TanStack Query.
                   </p>
@@ -1044,7 +1044,7 @@ export default function DesignLab() {
                     <div className="flex flex-col gap-4">
                       {/* Judul Asli */}
                       <div className="flex flex-col">
-                        <h4 className="text-title-1 font-bold text-ink">Katalog & Mitra</h4>
+                        <h4 className="text-title-3 text-ink">Katalog & Mitra</h4>
                         <p className="text-caption text-ink-soft">Daftar warung dan stok aktif konsinyasi</p>
                       </div>
 
@@ -1073,7 +1073,7 @@ export default function DesignLab() {
                               {outlet.name.slice(0, 2).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h5 className="text-title-3 font-bold text-ink truncate">{outlet.name}</h5>
+                              <h5 className="text-title-3 text-ink truncate">{outlet.name}</h5>
                               <p className="text-caption text-ink-soft">{outlet.items} jenis produk dititipkan</p>
                             </div>
                           </div>
@@ -1100,7 +1100,7 @@ export default function DesignLab() {
             {/* BAGIAN C: PENGUJIAN TOAST DI BINGKAI PONSEL DENGAN BOTTOM NAV */}
             <div className="bg-surface border border-line rounded-2xl p-5 shadow-xs">
               <div className="mb-4 pb-3 border-b border-line">
-                <h3 className="text-title-2 text-ink font-bold">3. Sistem Toast & Simulasi Bottom Nav</h3>
+                <h3 className="text-title-3 text-ink">3. Sistem Toast & Simulasi Bottom Nav</h3>
                 <p className="text-caption text-ink-soft">
                   Toast muncul di atas bottom navigation (--bottom-offset), menghormati jeda timer saat di-hover/difokus, dan mengantre jika lebih dari 3.
                 </p>
@@ -1209,7 +1209,7 @@ export default function DesignLab() {
             {/* BAGIAN D: UKURAN PAGE VS INLINE UNTUK EMPTY & ERROR */}
             <div className="bg-surface border border-line rounded-2xl p-5 shadow-xs">
               <div className="mb-4 pb-3 border-b border-line">
-                <h3 className="text-title-2 text-ink font-bold">4. Perbandingan Ukuran: Page vs Inline</h3>
+                <h3 className="text-title-3 text-ink">4. Perbandingan Ukuran: Page vs Inline</h3>
                 <p className="text-caption text-ink-soft">
                   Komponen dapat mengisi layar penuh (page) atau berada di dalam kartu ringkas (inline).
                 </p>
@@ -1267,14 +1267,14 @@ export default function DesignLab() {
                     style={{ width: `${s.px}px`, height: `${s.px}px` }}
                     className="bg-primary/40 rounded-xs border border-primary"
                   />
-                  <span className="text-[12px] font-mono font-bold text-ink">{s.px}</span>
+                  <span className="text-caption font-mono font-bold text-ink">{s.px}</span>
                 </div>
               ))}
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-line text-caption">
               {spacingSteps.map((s) => (
-                <div key={s.px} className="p-2 bg-surface-raised rounded-lg font-mono text-[11px] text-ink">
+                <div key={s.px} className="p-2 bg-surface-raised rounded-lg font-mono text-caption text-ink">
                   <strong>{s.px}px</strong>: {s.token}
                 </div>
               ))}
@@ -1343,7 +1343,7 @@ export default function DesignLab() {
                       </td>
                       <td className="p-3">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                          className={`inline-flex px-2 py-0.5 rounded-md text-caption font-bold ${
                             passes
                               ? 'bg-success-soft text-on-success'
                               : 'bg-danger-soft text-on-danger'
@@ -1401,7 +1401,7 @@ export default function DesignLab() {
       <header className="sticky top-0 z-50 bg-surface/90 backdrop-blur-md border-b border-line px-4 py-3">
         <div className="max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-title-3 text-ink flex items-center gap-2">
+            <h1 className="text-title-1 text-ink flex items-center gap-2">
               🧪 Design Lab <span className="text-caption font-normal text-ink-soft">(DEV Mode)</span>
             </h1>
           </div>
@@ -1409,7 +1409,7 @@ export default function DesignLab() {
           {/* Toolbar Controls */}
           <div className="flex items-center gap-2">
             {/* Pilihan Lebar Bingkai */}
-            <div className="inline-flex rounded-lg border border-line p-0.5 bg-surface-raised text-[12px]">
+            <div className="inline-flex rounded-lg border border-line p-0.5 bg-surface-raised text-caption">
               {(['360', '480', 'full'] as const).map((w) => (
                 <button
                   key={w}
@@ -1426,7 +1426,7 @@ export default function DesignLab() {
             </div>
 
             {/* Pilihan Tema */}
-            <div className="inline-flex rounded-lg border border-line p-0.5 bg-surface-raised text-[12px]">
+            <div className="inline-flex rounded-lg border border-line p-0.5 bg-surface-raised text-caption">
               {(['light', 'dark', 'system'] as const).map((t) => (
                 <button
                   key={t}

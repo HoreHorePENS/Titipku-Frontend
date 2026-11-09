@@ -36,7 +36,7 @@ export function StatusBadge({ status, tone, className = '', ...props }: StatusBa
 
   return (
     <span
-      className={`status-badge inline-flex items-center justify-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wider uppercase select-none ${toneClass} ${className}`}
+      className={`status-badge inline-flex items-center justify-center px-2 py-0.5 rounded text-caption font-bold tracking-wider uppercase select-none ${toneClass} ${className}`}
       {...props}
     >
       {status}

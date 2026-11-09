@@ -43,22 +43,5 @@ export interface StoreInput {
   whatsapp: string
   latitude: number
   longitude: number
-  photo_url?: string
   is_active?: boolean
-}
-
-export interface ConsignProductItem {
-  productId: string
-  qty: number
-  consignPrice: number
-}
-
-export interface ConsignToStoreInput {
-  storeId: string
-  storeName: string
-  ownerName: string
-  whatsapp: string
-  address: string
-  items?: ConsignProductItem[]
-  note?: string
 }

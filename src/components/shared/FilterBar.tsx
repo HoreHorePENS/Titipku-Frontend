@@ -61,7 +61,7 @@ export function FilterBar<T extends string = string>({
                 value={searchValue || ''}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder}
-                className="w-full h-11 pl-9 pr-9 rounded-xl bg-surface border border-line text-sm font-medium text-ink placeholder:text-ink-soft/70 focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 shadow-2xs transition-all"
+                className="w-full h-11 pl-9 pr-9 rounded-xl bg-surface border border-line text-body font-medium text-ink placeholder:text-ink-soft/70 focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 shadow-2xs transition-all"
               />
 
               {searchValue && (
@@ -99,7 +99,7 @@ export function FilterBar<T extends string = string>({
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => onTabChange(tab.value)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer whitespace-nowrap min-h-[40px] shrink-0 ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-caption sm:text-body font-bold transition-all cursor-pointer whitespace-nowrap min-h-[40px] shrink-0 ${
                   isSelected
                     ? 'bg-primary text-on-primary shadow-xs'
                     : 'bg-surface text-ink-soft border border-line hover:border-line-strong hover:text-ink hover:bg-surface-raised'
@@ -108,7 +108,7 @@ export function FilterBar<T extends string = string>({
                 <span>{tab.label}</span>
                 {typeof tab.count === 'number' && (
                   <span
-                    className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold tabular-nums ${
+                    className={`text-caption px-1.5 py-0.5 rounded-full font-bold tabular-nums ${
                       isSelected ? 'bg-white/20 text-white' : 'bg-page text-ink-soft'
                     }`}
                   >

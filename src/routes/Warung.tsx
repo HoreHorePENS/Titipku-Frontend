@@ -118,7 +118,7 @@ export default function WarungRoute() {
               variant="outline"
               size="md"
               onClick={() => navigate('/peta')}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
@@ -131,9 +131,9 @@ export default function WarungRoute() {
               variant="primary"
               size="md"
               onClick={handleOpenCreate}
-              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl"
+              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl"
             >
-              <span className="text-sm leading-none font-bold">+</span>
+              <span className="text-body leading-none font-bold">+</span>
               <span>Tambah Toko Mitra</span>
             </Button>
           </div>
@@ -183,7 +183,7 @@ export default function WarungRoute() {
           {/* Daftar Toko Mitra Sederhana Full-Width (Hanya Nama, Lokasi, Status Ketersediaan + Tombol Detail) */}
           <div className="flex flex-col gap-2.5 w-full">
             {filteredPartners.length === 0 ? (
-              <div className="p-8 text-center text-xs text-ink-soft bg-surface rounded-2xl border border-line">
+              <div className="p-8 text-center text-caption text-ink-soft bg-surface rounded-2xl border border-line">
                 Tidak ada toko mitra yang cocok dengan filter atau kata kunci.
               </div>
             ) : (
@@ -195,20 +195,20 @@ export default function WarungRoute() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-ink text-sm sm:text-base truncate">
+                      <h3 className="text-title-3 text-ink truncate">
                         {partner.name}
                       </h3>
                       {partner.isActive !== false ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <span className="text-caption font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
                           Tersedia
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="text-caption font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                           Tidak Tersedia
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-ink-soft mt-1">
+                    <div className="flex items-center gap-1.5 text-caption text-ink-soft mt-1">
                       <svg className="w-3.5 h-3.5 shrink-0 text-ink-soft" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                         <circle cx="12" cy="10" r="3"></circle>
@@ -224,7 +224,7 @@ export default function WarungRoute() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenDetail(partner)}
-                      className="text-xs font-semibold rounded-xl min-h-[40px] px-3.5 border-line hover:border-ink hover:text-ink cursor-pointer"
+                      className="text-caption font-semibold rounded-xl min-h-[40px] px-3.5 border-line hover:border-ink hover:text-ink cursor-pointer"
                     >
                       Lihat Detail
                     </Button>

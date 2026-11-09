@@ -174,12 +174,12 @@ export function PaymentRecordModal({
       <form id="payment-record-form" onSubmit={handleSubmit(onValidSubmit)} className="flex flex-col gap-4">
         {/* 1. Pilih Warung */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-ink">Pilih Warung Mitra</label>
+          <label className="text-caption font-bold text-ink">Pilih Warung Mitra</label>
           <select
             {...register('partnerId', {
               onChange: () => setValue('amount', 0, { shouldValidate: true }),
             })}
-            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink focus:outline-hidden focus:border-primary shadow-2xs"
+            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-caption font-semibold text-ink focus:outline-hidden focus:border-primary shadow-2xs"
           >
             {partners.map((p) => (
               <option key={p.id} value={p.id}>
@@ -188,7 +188,7 @@ export function PaymentRecordModal({
             ))}
           </select>
           {errors.partnerId?.message && (
-            <p className="text-xs text-danger font-semibold mt-0.5">{errors.partnerId.message}</p>
+            <p className="text-caption text-danger font-semibold mt-0.5">{errors.partnerId.message}</p>
           )}
         </div>
 
@@ -202,17 +202,17 @@ export function PaymentRecordModal({
           />
 
           {errors.amount?.message && (
-            <p className="text-xs text-danger font-semibold mt-0.5">{errors.amount.message}</p>
+            <p className="text-caption text-danger font-semibold mt-0.5">{errors.amount.message}</p>
           )}
 
           {/* Tombol Cepat Lunas */}
           {totalDebt > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-soft">Pilihan cepat:</span>
+              <span className="text-caption text-ink-soft">Pilihan cepat:</span>
               <button
                 type="button"
                 onClick={() => setValue('amount', totalDebt, { shouldValidate: true })}
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-primary-soft text-primary hover:bg-primary-soft/80"
+                className="px-2.5 py-1 rounded-lg text-caption font-bold bg-primary-soft text-primary hover:bg-primary-soft/80"
               >
                 Bayar Lunas ({rupiah(totalDebt)})
               </button>
@@ -221,7 +221,7 @@ export function PaymentRecordModal({
                 <button
                   type="button"
                   onClick={() => setValue('amount', Math.round(totalDebt / 2), { shouldValidate: true })}
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-raised border border-line text-ink-soft hover:text-ink"
+                  className="px-2.5 py-1 rounded-lg text-caption font-semibold bg-surface-raised border border-line text-ink-soft hover:text-ink"
                 >
                   50% ({rupiah(Math.round(totalDebt / 2))})
                 </button>
@@ -232,7 +232,7 @@ export function PaymentRecordModal({
 
         {/* 3. Metode Pembayaran */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-ink">Metode Pembayaran</label>
+          <label className="text-caption font-bold text-ink">Metode Pembayaran</label>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: 'cash', label: '💵 Tunai' },
@@ -243,7 +243,7 @@ export function PaymentRecordModal({
                 key={m.id}
                 type="button"
                 onClick={() => setValue('method', m.id as PaymentMethod, { shouldValidate: true })}
-                className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
+                className={`py-2 px-3 rounded-xl border text-caption font-bold transition-all ${
                   method === m.id
                     ? 'border-primary bg-primary text-white shadow-xs'
                     : 'border-line bg-surface text-ink hover:border-line-strong'
@@ -257,31 +257,31 @@ export function PaymentRecordModal({
 
         {/* 4. Tanggal Pembayaran */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-ink">Tanggal Pembayaran</label>
+          <label className="text-caption font-bold text-ink">Tanggal Pembayaran</label>
           <input
             type="date"
             {...register('paidAtDate')}
-            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-semibold text-ink focus:outline-hidden focus:border-primary shadow-2xs"
+            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-caption font-semibold text-ink focus:outline-hidden focus:border-primary shadow-2xs"
           />
           {errors.paidAtDate?.message && (
-            <p className="text-xs text-danger font-semibold mt-0.5">{errors.paidAtDate.message}</p>
+            <p className="text-caption text-danger font-semibold mt-0.5">{errors.paidAtDate.message}</p>
           )}
         </div>
 
         {/* 5. Catatan Opsional */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-ink">Catatan (opsional)</label>
+          <label className="text-caption font-bold text-ink">Catatan (opsional)</label>
           <input
             type="text"
             {...register('note')}
             placeholder="mis. dititipkan lewat anaknya"
-            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-xs font-medium text-ink placeholder:text-ink-soft/70 focus:outline-hidden focus:border-primary shadow-2xs"
+            className="w-full h-11 px-3 rounded-xl bg-surface border border-line text-caption font-medium text-ink placeholder:text-ink-soft/70 focus:outline-hidden focus:border-primary shadow-2xs"
           />
         </div>
 
         {/* 6. Kotak Pratinjau Alokasi FIFO Real-time */}
-        <div className="p-3.5 rounded-xl bg-primary-soft/50 border border-primary/30 flex flex-col gap-1 text-xs animate-fadeIn">
-          <span className="text-[11px] font-bold text-primary uppercase tracking-wider block">
+        <div className="p-3.5 rounded-xl bg-primary-soft/50 border border-primary/30 flex flex-col gap-1 text-caption animate-fadeIn">
+          <span className="text-caption font-bold text-primary uppercase tracking-wider block">
             PRATINJAU ALOKASI (FIFO)
           </span>
           <p className="font-semibold text-ink leading-relaxed">

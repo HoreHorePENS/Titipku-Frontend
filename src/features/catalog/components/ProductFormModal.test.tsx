@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { ReactElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ProductFormModal } from './ProductFormModal'
 import { ProductCard } from './ProductCard'
 import { toastStore } from '@/components/ui/toast-store'
 import type { Product } from '../types'
+
+// Form produk memakai TanStack Query untuk unggah foto.
+const render = (ui: ReactElement) =>
+  renderToStaticMarkup(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>)
 
 describe('ProductFormModal & ProductCard Component Tests', () => {
   beforeEach(() => {
@@ -16,7 +22,7 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
   })
 
   it('merender modal form produk dengan input nama, harga titip, dan masa simpan', () => {
-    const html = renderToStaticMarkup(
+    const html = render(
       <ProductFormModal
         isOpen={true}
         onClose={vi.fn()}
@@ -29,6 +35,8 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
     expect(html).toContain('Harga Titip / Modal Konsinyasi (Rp)')
     expect(html).toContain('Masa Simpan (Hari)')
     expect(html).toContain('Status Produk Aktif')
+    expect(html).toContain('Foto produk')
+    expect(html).toContain('Ambil dari kamera')
   })
 
   it('merender mode edit saat initialData disediakan', () => {
@@ -41,7 +49,7 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
       isActive: true,
     }
 
-    const html = renderToStaticMarkup(
+    const html = render(
       <ProductFormModal
         isOpen={true}
         onClose={vi.fn()}
@@ -65,7 +73,7 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
       isActive: true,
     }
 
-    const html = renderToStaticMarkup(
+    const html = render(
       <ProductCard
         product={mockProduct}
         onEdit={vi.fn()}

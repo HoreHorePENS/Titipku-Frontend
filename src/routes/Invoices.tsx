@@ -123,18 +123,18 @@ export default function InvoicesRoute() {
               variant="outline"
               size="md"
               onClick={() => setIsCreateInvoiceModalOpen(true)}
-              className="min-h-[44px] px-3.5 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[44px] px-3.5 text-caption font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="text-sm font-bold">+</span>
+              <span className="text-body font-bold">+</span>
               <span>Tambah Tagihan Belum Lunas</span>
             </Button>
             <Button
               variant="primary"
               size="md"
               onClick={() => handleOpenPayment()}
-              className="min-h-[44px] px-4 text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[44px] px-4 text-caption font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <span className="text-sm font-bold">+</span>
+              <span className="text-body font-bold">+</span>
               <span>Catat Pembayaran</span>
             </Button>
           </div>
@@ -163,11 +163,11 @@ export default function InvoicesRoute() {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-danger animate-pulse shrink-0" />
-              <span className="text-xs font-bold text-danger uppercase tracking-wider">
+              <span className="text-caption font-bold text-danger uppercase tracking-wider">
                 Perhatian: {metrics.overduePartners.length} Warung Menunggak &gt; 14 Hari
               </span>
             </div>
-            <p className="text-xs text-ink-soft">
+            <p className="text-caption text-ink-soft">
               Segera prioritaskan kunjungan penagihan saat pengantaran barang berikutnya.
             </p>
           </div>
@@ -180,7 +180,7 @@ export default function InvoicesRoute() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleSelectOverduePartner(op.partnerId)}
-                className="text-xs font-bold border-danger/40 text-danger hover:bg-danger-soft min-h-[40px] cursor-pointer"
+                className="text-caption font-bold border-danger/40 text-danger hover:bg-danger-soft min-h-[40px] cursor-pointer"
               >
                 Tagih {op.partnerName} ({rupiah(op.amount)}) →
               </Button>
@@ -204,7 +204,7 @@ export default function InvoicesRoute() {
         ]}
         extraActions={
           selectedPartnerIdFilter ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-raised border border-line text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-raised border border-line text-caption">
               <span className="text-ink-soft">Filter mitra:</span>
               <strong className="text-ink">
                 {partners.find((p) => p.id === selectedPartnerIdFilter)?.name || selectedPartnerIdFilter}
@@ -224,19 +224,19 @@ export default function InvoicesRoute() {
 
       {/* 5. Konten Utama (Tabel di Desktop, Kartu di Mobile) */}
       {isInvoicesLoading ? (
-        <div className="py-16 text-center text-xs text-ink-soft bg-surface rounded-2xl border border-line animate-pulse">
+        <div className="py-16 text-center text-caption text-ink-soft bg-surface rounded-2xl border border-line animate-pulse">
           Memuat daftar tagihan…
         </div>
       ) : isInvoicesError ? (
         <div className="p-8 text-center bg-danger-soft/40 rounded-2xl border border-danger/30 flex flex-col items-center gap-3">
-          <p className="text-xs font-bold text-danger">Gagal memuat data tagihan dari server.</p>
-          <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs font-bold">
+          <p className="text-caption font-bold text-danger">Gagal memuat data tagihan dari server.</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="text-caption font-bold">
             Coba Lagi
           </Button>
         </div>
       ) : filteredInvoices.length === 0 ? (
-        <div className="py-16 text-center bg-surface rounded-2xl border border-line flex flex-col items-center justify-center p-6 text-xs text-ink-soft">
-          <p className="font-bold text-ink text-sm">Tidak ada tagihan yang cocok</p>
+        <div className="py-16 text-center bg-surface rounded-2xl border border-line flex flex-col items-center justify-center p-6 text-caption text-ink-soft">
+          <p className="font-bold text-ink text-body">Tidak ada tagihan yang cocok</p>
           <p className="mt-1">Coba sesuaikan kata kunci pencarian atau filter status nota Anda.</p>
           {(search || statusFilter !== 'all' || selectedPartnerIdFilter) && (
             <Button
@@ -247,7 +247,7 @@ export default function InvoicesRoute() {
                 setStatusFilter('all')
                 setSelectedPartnerIdFilter('')
               }}
-              className="mt-4 text-xs font-bold"
+              className="mt-4 text-caption font-bold"
             >
               Reset Semua Filter
             </Button>

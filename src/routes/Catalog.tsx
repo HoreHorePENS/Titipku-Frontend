@@ -65,15 +65,14 @@ export default function CatalogRoute() {
   }
 
   // Handler Submit Create / Update
-  const handleSubmitForm = async (data: ProductFormInput) => {
+  const handleSubmitForm = async (data: ProductFormInput): Promise<Product> => {
     if (editingProduct) {
-      await updateProductMutation.mutateAsync({
+      return updateProductMutation.mutateAsync({
         id: editingProduct.id,
         data,
       })
-    } else {
-      await createProductMutation.mutateAsync(data)
     }
+    return createProductMutation.mutateAsync(data)
   }
 
   // Handler Toggle Status Aktif / Nonaktif
@@ -116,7 +115,7 @@ export default function CatalogRoute() {
             onClick={handleOpenCreate}
             className="min-h-[48px] px-5 font-bold shadow-xs flex items-center justify-center gap-2"
           >
-            <span className="text-lg leading-none">+</span>
+            <span className="text-title-2 leading-none">+</span>
             <span>Tambah Produk</span>
           </Button>
         }

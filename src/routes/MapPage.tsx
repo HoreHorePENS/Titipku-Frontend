@@ -86,13 +86,13 @@ export default function MapPage() {
         {/* Header Bersih & Minimalis */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold mb-1 border border-slate-200">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-caption font-semibold mb-1 border border-slate-200">
               <span>Peta Titip Jual</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-title-1 text-slate-900">
               Peta Toko Mitra
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <p className="text-caption sm:text-body text-slate-500 mt-0.5">
               Temukan toko fisik yang siap menerima barang titipan konsinyasi produk UMKM Anda.
             </p>
           </div>
@@ -102,7 +102,7 @@ export default function MapPage() {
             <button
               type="button"
               onClick={() => setViewMode('map')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 text-caption font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'map'
                   ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                   : 'text-slate-500 hover:text-slate-900'
@@ -118,7 +118,7 @@ export default function MapPage() {
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 text-caption font-semibold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                   : 'text-slate-500 hover:text-slate-900'
@@ -155,7 +155,7 @@ export default function MapPage() {
                   key={cat.key}
                   type="button"
                   onClick={() => setSelectedCategory(cat.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer border ${
+                  className={`px-3 py-1.5 rounded-lg text-caption font-semibold shrink-0 transition-all cursor-pointer border ${
                     isSelected
                       ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
                       : 'bg-white text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300'
@@ -175,8 +175,8 @@ export default function MapPage() {
           </div>
         ) : isError ? (
           <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 flex flex-col items-center gap-3">
-            <h3 className="text-sm font-semibold text-slate-900">Gagal Memuat Data Toko</h3>
-            <p className="text-xs text-slate-500 max-w-sm">
+            <h3 className="text-title-3 text-slate-900">Gagal Memuat Data Toko</h3>
+            <p className="text-caption text-slate-500 max-w-sm">
               Terjadi kendala saat mengambil data toko di peta. Silakan coba kembali.
             </p>
             <Button size="sm" variant="outline" onClick={() => refetch()}>
@@ -197,8 +197,8 @@ export default function MapPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredStores.length === 0 ? (
               <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-slate-200 flex flex-col items-center gap-2">
-                <h3 className="text-sm font-semibold text-slate-900">Tidak Ada Toko yang Cocok</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="text-title-3 text-slate-900">Tidak Ada Toko yang Cocok</h3>
+                <p className="text-caption text-slate-500">
                   Coba sesuaikan kata kunci pencarian atau ubah filter kategori toko.
                 </p>
               </div>
@@ -213,28 +213,28 @@ export default function MapPage() {
                   >
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                        <span className="text-caption font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
                           {meta.label}
                         </span>
 
                         {store.hasConsigned ? (
-                          <span className="text-[10px] font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
+                          <span className="text-caption font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
                             Mitra Aktif
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-500 font-medium">
+                          <span className="text-caption text-slate-500 font-medium">
                             Bisa Dititipi
                           </span>
                         )}
                       </div>
 
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900">{store.name}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{store.address}</p>
+                        <h3 className="text-title-3 text-slate-900">{store.name}</h3>
+                        <p className="text-caption text-slate-500 mt-0.5 line-clamp-2">{store.address}</p>
                       </div>
 
                       {store.description && (
-                        <p className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                        <p className="text-caption text-slate-600 line-clamp-2 bg-slate-50 p-2 rounded-lg border border-slate-100">
                           "{store.description}"
                         </p>
                       )}
@@ -247,7 +247,7 @@ export default function MapPage() {
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
+                        className="px-3 py-1.5 text-caption font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-all border border-slate-200"
                       >
                         WhatsApp
                       </a>
@@ -255,7 +255,7 @@ export default function MapPage() {
                       <Button
                         size="sm"
                         variant="primary"
-                        className="flex-1 text-xs font-semibold rounded-lg"
+                        className="flex-1 text-caption font-semibold rounded-lg"
                         onClick={() => handleOpenConsign(store)}
                       >
                         {store.hasConsigned ? 'Tambah Barang' : 'Titip Barang'}

@@ -52,7 +52,7 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
             variant="outline"
             size="md"
             onClick={onClose}
-            className="rounded-xl px-4 min-h-[44px] text-xs font-bold"
+            className="rounded-xl px-4 min-h-[44px] text-caption font-bold"
           >
             Tutup
           </Button>
@@ -63,7 +63,7 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
               variant="secondary"
               size="md"
               onClick={handleOpenWhatsApp}
-              className="rounded-xl px-3.5 min-h-[44px] text-xs font-bold flex items-center gap-1.5"
+              className="rounded-xl px-3.5 min-h-[44px] text-caption font-bold flex items-center gap-1.5"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -76,7 +76,7 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
               variant="primary"
               size="md"
               onClick={handlePrintNota}
-              className="rounded-xl px-4 min-h-[44px] text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="rounded-xl px-4 min-h-[44px] text-caption font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 9V2h12v7" />
@@ -89,31 +89,31 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
         </div>
       }
     >
-      <div className="grid grid-cols-2 gap-3 text-xs p-3 rounded-xl bg-surface-raised border border-line">
+      <div className="grid grid-cols-2 gap-3 text-caption p-3 rounded-xl bg-surface-raised border border-line">
         <div>
           <span className="text-ink-soft block">Diterima oleh:</span>
-          <strong className="text-ink text-sm">{visit.receivedBy || '-'}</strong>
+          <strong className="text-ink text-body">{visit.receivedBy || '-'}</strong>
         </div>
         <div>
           <span className="text-ink-soft block">Mitra / Pemilik:</span>
-          <strong className="text-ink text-sm">{visit.partnerOwnerName || visit.partnerName}</strong>
+          <strong className="text-ink text-body">{visit.partnerOwnerName || visit.partnerName}</strong>
         </div>
       </div>
 
       <div>
-        <h3 className="text-xs font-bold text-ink-soft uppercase tracking-wider mb-2">
+        <h3 className="text-label text-ink-soft uppercase tracking-wider mb-2">
           Rincian Barang Titipan
         </h3>
 
         {visit.items.length === 0 ? (
-          <p className="text-xs text-ink-soft py-3 text-center italic">
+          <p className="text-caption text-ink-soft py-3 text-center italic">
             Tidak ada rincian pergerakan barang pada kunjungan ini.
           </p>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-line">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full text-left text-caption border-collapse">
               <thead>
-                <tr className="border-b border-line bg-surface-raised/60 text-[11px] font-bold text-ink-soft">
+                <tr className="border-b border-line bg-surface-raised/60 text-caption font-bold text-ink-soft">
                   <th className="py-2.5 px-3">PRODUK</th>
                   <th className="py-2.5 px-2 text-right">SISA</th>
                   <th className="py-2.5 px-2 text-right">RETUR</th>
@@ -142,10 +142,10 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
       </div>
 
       {/* Ringkasan Pembayaran */}
-      <div className="p-4 rounded-xl bg-surface-raised/50 border border-line flex flex-col gap-2 text-xs">
-        <div className="flex justify-between items-center text-sm">
+      <div className="p-4 rounded-xl bg-surface-raised/50 border border-line flex flex-col gap-2 text-caption">
+        <div className="flex justify-between items-center text-body">
           <span className="font-bold text-ink">Total Tagihan:</span>
-          <span className="font-extrabold text-primary tabular-nums">
+          <span className="font-bold text-primary tabular-nums">
             <Money amount={visit.total} />
           </span>
         </div>

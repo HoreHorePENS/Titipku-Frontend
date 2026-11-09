@@ -1,14 +1,35 @@
 import { Modal } from '@/components/shared/Modal'
 import { Button } from '@/components/ui/Button'
+import { toast } from '@/components/ui/toast-store'
+import { describeApiError } from '@/lib/api-errors'
 import { rupiah } from '@/lib/format'
 import type { PenitipBusiness } from '../penitip-businesses'
+import { WhatsAppIcon } from './whatsapp'
+import { whatsappLink } from '../whatsapp-link'
 
 interface PenitipDetailModalProps {
   business: PenitipBusiness | null
   isOpen: boolean
   onClose: () => void
   onOffer: (business: PenitipBusiness) => void
-  onCancelOffer?: (businessId: string) => void
+  onCancelOffer: (business: PenitipBusiness) => Promise<unknown>
+  isCancelling?: boolean
+  /** Buka daftar pengajuan masuk (bila penitip sudah mengajukan ke toko ini). */
+  onOpenRequests?: () => void
+}
+
+function ProductThumb({ url, name }: { url: string | null; name: string }) {
+  return (
+    <div className="w-12 h-12 rounded-lg overflow-hidden border border-line bg-slate-50 shrink-0 flex items-center justify-center text-slate-400">
+      {url ? (
+        <img src={url} alt={name} loading="lazy" className="w-full h-full object-cover" />
+      ) : (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+          <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      )}
+    </div>
+  )
 }
 
 export function PenitipDetailModal({
@@ -17,152 +38,105 @@ export function PenitipDetailModal({
   onClose,
   onOffer,
   onCancelOffer,
+  isCancelling = false,
+  onOpenRequests,
 }: PenitipDetailModalProps) {
   if (!business) return null
 
-  const handleWhatsApp = () => {
-    const url = `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(
-      `Halo ${business.businessName} (${business.ownerName}), saya pemilik toko ingin berdiskusi mengenai titip-jual produk Anda di warung kami.`
-    )}`
-    window.open(url, '_blank', 'noopener,noreferrer')
+  const handleCancel = async () => {
+    try {
+      await onCancelOffer(business)
+      toast.show({ title: 'Tawaran dibatalkan', description: `Tawaran ke ${business.businessName} sudah dibatalkan.`, type: 'info' })
+      onClose()
+    } catch (err) {
+      toast.show({ title: 'Tawaran belum bisa dibatalkan', description: describeApiError(err).message, type: 'error' })
+    }
   }
 
+  const canOffer = business.offerStatus === 'none' || business.offerStatus === 'rejected'
+
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Profil Produsen Penitip UMKM"
-      className="max-w-xl"
-    >
-      <div className="flex flex-col gap-4 font-sans text-slate-900">
-        {/* Header Bisnis */}
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0">
-            {business.businessName.slice(0, 2).toUpperCase()}
+    <Modal isOpen={isOpen} onClose={onClose} title={business.businessName} description={`Pemilik: ${business.ownerName}`} maxWidth="xl">
+      <div className="flex flex-col gap-4 text-ink">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-3 rounded-xl border border-line">
+            <dt className="text-caption text-ink-soft">Alamat</dt>
+            <dd className="text-body text-ink mt-0.5">{business.address || 'Belum diisi penitip'}</dd>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200">
-                {business.category.toUpperCase()}
-              </span>
-              {business.offerStatus === 'pending' && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
-                  Tawaran Terkirim
-                </span>
-              )}
-              {business.offerStatus === 'accepted' && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white border border-slate-800">
-                  Sudah Bermitra
-                </span>
-              )}
-            </div>
-            <h3 className="text-base font-bold text-slate-900 mt-1">{business.businessName}</h3>
-            <p className="text-xs text-slate-500">
-              {business.ownerName} · {business.city}
-            </p>
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">{business.description}</p>
+          <div className="p-3 rounded-xl border border-line">
+            <dt className="text-caption text-ink-soft">WhatsApp</dt>
+            <dd className="text-body text-ink mt-0.5 font-mono">{business.whatsapp || 'Belum diisi penitip'}</dd>
           </div>
-        </div>
+        </dl>
 
-        {/* Informasi Kontak & Lokasi */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 bg-white rounded-xl border border-slate-200">
-            <span className="text-slate-500 block font-medium">Alamat Produksi:</span>
-            <span className="font-semibold text-slate-900 mt-0.5 block">{business.address}</span>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200">
-            <span className="text-slate-500 block font-medium">Nomor WhatsApp:</span>
-            <span className="font-semibold text-slate-900 mt-0.5 block">{business.whatsapp}</span>
-          </div>
-        </div>
-
-        {/* Daftar Produk yang Ditawarkan untuk Titip Jual */}
-        <div>
-          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2">
-            Katalog Produk Siap Titip ({business.topProducts.length} Produk)
-          </h4>
-          <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
+        <section>
+          <h3 className="text-title-3 text-ink mb-2">Produk siap titip ({business.productCount})</h3>
+          <ul className="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
             {business.topProducts.map((product) => (
-              <div
-                key={product.id}
-                className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-3 shadow-2xs"
-              >
+              <li key={product.id} className="p-2.5 rounded-xl border border-line flex items-center gap-3">
+                <ProductThumb url={product.photoUrl} name={product.name} />
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] font-semibold text-slate-500 uppercase">
-                    {product.category}
-                  </span>
-                  <p className="text-xs font-bold text-slate-900 truncate mt-0.5">{product.name}</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Daya tahan: {product.shelfLife}</p>
+                  <p className="text-body font-semibold text-ink truncate">{product.name}</p>
+                  <p className="text-caption text-ink-soft">Tahan {product.shelfLifeDays} hari</p>
                 </div>
-
                 <div className="text-right shrink-0">
-                  <div className="text-xs font-bold text-slate-900">
-                    {rupiah(product.consignPrice)}
-                    <span className="text-[10px] font-normal text-slate-500">
-                      {' '}
-                      / {product.unit}
-                    </span>
-                  </div>
+                  <p className="text-body font-mono font-semibold text-ink">{rupiah(product.consignPrice)}</p>
+                  <p className="text-caption text-ink-soft">Jual {rupiah(product.suggestedRetailPrice)}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+          {business.productCount > business.topProducts.length && (
+            <p className="text-caption text-ink-soft mt-1.5">
+              +{business.productCount - business.topProducts.length} produk lainnya
+            </p>
+          )}
+        </section>
 
-        {/* Status Tawaran Aktif */}
         {business.offerStatus === 'pending' && business.offerMessage && (
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-            <span className="font-semibold text-slate-700 block">Pesan Tawaran Terkirim:</span>
-            <p className="text-slate-600 mt-0.5 italic">"{business.offerMessage}"</p>
+          <div className="p-3 rounded-xl border border-line bg-slate-50">
+            <p className="text-label text-ink">Pesan tawaranmu</p>
+            <p className="text-body text-ink-soft mt-0.5">{business.offerMessage}</p>
           </div>
         )}
+        {business.offerStatus === 'incoming' && (
+          <p className="p-3 rounded-xl border border-line bg-slate-50 text-body text-ink">
+            Penitip ini sudah mengajukan titip-jual ke tokomu. Setujui atau tolak di daftar pengajuan masuk.
+          </p>
+        )}
 
-        {/* Tombol Aksi */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={handleWhatsApp}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors min-h-[44px] flex items-center gap-1.5 shrink-0"
-          >
-            <span>Hubungi WA</span>
-          </button>
-
-          {business.offerStatus === 'none' && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-line">
+          {business.whatsapp && (
+            <a
+              href={whatsappLink(business.whatsapp, `Halo ${business.ownerName} (${business.businessName}), saya pemilik toko di Titipku. Saya ingin berdiskusi tentang titip-jual produk Anda.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 rounded-xl border border-line text-button text-ink hover:bg-slate-50 min-h-[44px]"
+            >
+              <WhatsAppIcon />
+              Hubungi lewat WhatsApp
+            </a>
+          )}
+          {canOffer && (
             <Button
-              type="button"
               variant="primary"
-              className="flex-1 rounded-xl font-semibold min-h-[44px]"
+              className="flex-1 rounded-xl min-h-[44px]"
               onClick={() => {
                 onClose()
                 onOffer(business)
               }}
             >
-              Tawari Pebisnis Ini
+              {business.offerStatus === 'rejected' ? 'Tawari lagi' : 'Tawari penitip ini'}
             </Button>
           )}
-
-          {business.offerStatus === 'pending' && onCancelOffer && (
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 rounded-xl font-semibold min-h-[44px]"
-              onClick={() => {
-                onCancelOffer(business.id)
-                onClose()
-              }}
-            >
-              Batalkan Tawaran
+          {business.offerStatus === 'pending' && (
+            <Button variant="outline" className="flex-1 rounded-xl min-h-[44px]" loading={isCancelling} onClick={handleCancel}>
+              Batalkan tawaran
             </Button>
           )}
-
-          {business.offerStatus === 'accepted' && (
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 rounded-xl font-semibold min-h-[44px]"
-              disabled
-            >
-              Sudah Menjadi Mitra
+          {business.offerStatus === 'incoming' && onOpenRequests && (
+            <Button variant="primary" className="flex-1 rounded-xl min-h-[44px]" onClick={onOpenRequests}>
+              Buka pengajuan masuk
             </Button>
           )}
         </div>

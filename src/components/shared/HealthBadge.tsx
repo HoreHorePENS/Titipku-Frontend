@@ -62,7 +62,7 @@ export function HealthBadge({
       {shapeIcon}
       <span>{config.label}</span>
       {showRange && (
-        <span className="opacity-75 font-normal text-[10px]">({config.range})</span>
+        <span className="opacity-75 font-normal text-caption">({config.range})</span>
       )}
     </Badge>
   )

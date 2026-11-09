@@ -5,6 +5,7 @@ import { MapIcon, LogoutIcon } from './nav-icons'
 import { NotificationPopover } from '@/components/shared/NotificationPopover'
 import { ProfileDetailModal } from '@/components/shared/ProfileDetailModal'
 import { useCurrentAccount, logoutUser } from '@/features/auth'
+import { useProposals } from '@/features/stores/proposals-api'
 import { toast } from '@/components/ui/toast-store'
 
 export function AppLayout() {
@@ -17,6 +18,12 @@ export function AppLayout() {
   const isPemilikToko = user?.account_type === 'pemilik_toko'
 
   const navItems = isPemilikToko ? PEMILIK_TOKO_NAV_ITEMS : NAV_ITEMS
+
+  // Penanda menu dari data asli: tawaran (penitip) / pengajuan (toko) yang menunggu jawaban.
+  const { data: proposals } = useProposals(Boolean(currentAccount))
+  const incomingDirection = isPemilikToko ? 'penitip_to_store' : 'store_to_penitip'
+  const pendingIncoming = (proposals ?? []).filter((p) => p.direction === incomingDirection && p.status === 'pending').length
+  const showBadge = (item: NavItemConfig) => item.badge === 'pendingIncoming' && pendingIncoming > 0
 
   // Custom profile state synced with localStorage
   const [customProfile, setCustomProfile] = useState<{
@@ -47,9 +54,9 @@ export function AppLayout() {
 
   const entityTitle = isPemilikToko
     ? currentAccount?.store?.name || 'Toko Saya'
-    : customProfile?.businessName || currentAccount?.business?.name || 'Keripik Pisang Rina'
+    : customProfile?.businessName || currentAccount?.business?.name || 'Usaha saya'
 
-  const ownerName = customProfile?.fullName || user?.full_name || 'Bu Rina'
+  const ownerName = customProfile?.fullName || user?.full_name || ''
   const profilePhoto = customProfile?.photoUrl
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -77,18 +84,18 @@ export function AppLayout() {
           -------------------------------------------------------------------- */}
       <header className="md:hidden sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-line px-4 py-2.5 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-sm shadow-2xs">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-body shadow-2xs">
             T
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-900 leading-tight">Titipku</span>
-              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-caption font-bold text-slate-900 leading-tight">Titipku</span>
+              <span className="text-caption font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
                 {isPemilikToko ? 'Toko' : 'Penitip'}
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 leading-tight truncate max-w-[170px]">
-              {entityTitle} · {ownerName}
+            <span className="text-caption text-slate-500 leading-tight truncate max-w-[170px]">
+              {entityTitle}{ownerName ? ' · ' + ownerName : ''}
             </span>
           </div>
         </div>
@@ -104,7 +111,7 @@ export function AppLayout() {
             className="flex items-center justify-center w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-all cursor-pointer min-h-[44px]"
             title="Profil Akun"
           >
-            <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs overflow-hidden">
+            <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center text-caption font-bold shadow-2xs overflow-hidden">
               {profilePhoto ? (
                 <img src={profilePhoto} alt={ownerName} className="w-full h-full object-cover" />
               ) : (
@@ -125,14 +132,14 @@ export function AppLayout() {
         <div>
           {/* Brand & Profil Monokrom */}
           <div className="flex flex-col items-center mb-6 px-2 text-center">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-base shadow-2xs">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-title-3 shadow-2xs">
               T
             </div>
-            <span className="text-xs font-bold text-slate-900 mt-2">Titipku</span>
-            <span className="text-[10px] text-slate-500 max-w-[76px] truncate font-medium">
+            <span className="text-caption font-bold text-slate-900 mt-2">Titipku</span>
+            <span className="text-caption text-slate-500 max-w-[76px] truncate font-medium">
               {entityTitle}
             </span>
-            <span className="text-[10px] text-slate-400 max-w-[76px] truncate">
+            <span className="text-caption text-slate-400 max-w-[76px] truncate">
               {ownerName}
             </span>
           </div>
@@ -158,14 +165,14 @@ export function AppLayout() {
                 >
                   <div className="relative">
                     <item.icon className="w-5 h-5 stroke-[2]" />
-                    {item.hasBadge && (
+                    {showBadge(item) && (
                       <span
                         className="absolute -top-1 -right-1 w-2 h-2 bg-slate-900 rounded-full ring-2 ring-white"
-                        aria-label="Ada notifikasi"
+                        aria-label={pendingIncoming + ' menunggu jawaban'}
                       />
                     )}
                   </div>
-                  <span className="text-[10px] mt-1 tracking-tight leading-none font-medium text-center">
+                  <span className="text-caption mt-1 tracking-tight leading-none font-medium text-center">
                     {item.label}
                   </span>
                 </NavLink>
@@ -184,7 +191,7 @@ export function AppLayout() {
                 title="Peta Toko Mitra"
               >
                 <MapIcon className="w-5 h-5 stroke-[2]" />
-                <span className="text-[10px] mt-1 tracking-tight leading-none font-medium text-center">
+                <span className="text-caption mt-1 tracking-tight leading-none font-medium text-center">
                   Peta Toko
                 </span>
               </NavLink>
@@ -201,7 +208,7 @@ export function AppLayout() {
             title="Keluar dari Akun"
           >
             <LogoutIcon className="w-4 h-4 stroke-[2]" />
-            <span className="text-[10px] mt-1 font-medium">Keluar</span>
+            <span className="text-caption mt-1 font-medium">Keluar</span>
           </button>
         </div>
       </aside>
@@ -217,7 +224,7 @@ export function AppLayout() {
         {/* Header Desktop dengan Fitur Notifikasi di Pojok Kanan Atas */}
         {!isVisitNew && (
           <header className="hidden md:flex items-center justify-between px-6 lg:px-8 py-3 bg-surface/90 backdrop-blur-md border-b border-line sticky top-0 z-20">
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <div className="flex items-center gap-2 text-caption text-slate-500 font-medium">
               <span className="font-bold text-slate-900">{entityTitle}</span>
               <span>·</span>
               <span>{isPemilikToko ? 'Pemilik Toko Mitra' : 'Produsen Penitip'}</span>
@@ -234,7 +241,7 @@ export function AppLayout() {
                 className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer min-h-[44px]"
                 title="Lihat Profil Akun"
               >
-                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs overflow-hidden">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-caption font-bold shadow-2xs overflow-hidden">
                   {profilePhoto ? (
                     <img src={profilePhoto} alt={ownerName} className="w-full h-full object-cover" />
                   ) : (
@@ -242,8 +249,8 @@ export function AppLayout() {
                   )}
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="text-xs font-semibold text-slate-900 leading-tight">{ownerName}</span>
-                  <span className="text-[10px] text-slate-400 leading-none">{isPemilikToko ? 'Pemilik Toko' : 'Penitip'}</span>
+                  <span className="text-caption font-semibold text-slate-900 leading-tight">{ownerName}</span>
+                  <span className="text-caption text-slate-400 leading-none">{isPemilikToko ? 'Pemilik Toko' : 'Penitip'}</span>
                 </div>
               </button>
             </div>
@@ -283,16 +290,16 @@ export function AppLayout() {
                       isActive ? 'stroke-[2.2] scale-105' : 'stroke-[1.8]'
                     }`}
                   />
-                  {item.hasBadge && (
+                  {showBadge(item) && (
                     <span
                       className="absolute -top-0.5 -right-1 w-2 h-2 bg-slate-900 rounded-full ring-2 ring-white"
-                      aria-label="Ada notifikasi"
+                      aria-label={pendingIncoming + ' menunggu jawaban'}
                     />
                   )}
                 </div>
 
                 <span
-                  className={`text-[10px] mt-1 leading-none tracking-tight ${
+                  className={`text-caption mt-1 leading-none tracking-tight ${
                     isActive ? 'font-bold' : 'font-medium'
                   }`}
                 >
@@ -323,8 +330,8 @@ export function AppLayout() {
                 <LogoutIcon className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Konfirmasi Keluar</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h3 className="text-title-3 text-slate-900">Konfirmasi Keluar</h3>
+                <p className="text-caption text-slate-500 mt-0.5">
                   Apakah Anda yakin ingin keluar dari akun Titipku?
                 </p>
               </div>
@@ -334,14 +341,14 @@ export function AppLayout() {
               <button
                 type="button"
                 onClick={() => setShowLogoutConfirm(false)}
-                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-caption font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-caption font-semibold transition-all shadow-xs cursor-pointer"
               >
                 Ya, Keluar
               </button>

@@ -1,5 +1,16 @@
 // Fetch wrapper terstandarisasi sesuai kontrak backend Titipku
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+/**
+ * Ubah path foto dari backend ("/uploads/<acak>.webp") menjadi URL lengkap.
+ * URL absolut (data lama) dikembalikan apa adanya; nilai kosong -> null.
+ */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('/uploads/')) return `${BASE_URL}${path}`
+  if (/^https?:\/\//i.test(path)) return path
+  return null
+}
 
 // In-memory token cache (memenuhi aturan AGENTS.md: dilarang menyimpan token di localStorage)
 let memoryToken: string | null = null
@@ -113,8 +124,11 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
     token = await ensureDevToken()
   }
 
+  // FormData (unggah file) wajib tanpa Content-Type manual agar browser
+  // menambahkan boundary multipart sendiri.
+  const isFormData = typeof FormData !== 'undefined' && options?.body instanceof FormData
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options?.headers as Record<string, string>),
   }
 

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
-import { generateUUID } from '@/lib/uuid'
-import type { Store, StoreFilter, StoreInput, ConsignToStoreInput } from './types'
+import { apiClient, resolveMediaUrl } from '@/lib/api-client'
+import type { Store, StoreFilter, StoreInput } from './types'
 
 interface RawStoreResponse {
   id: string
@@ -29,7 +28,7 @@ function mapStore(raw: RawStoreResponse): Store {
     whatsapp: raw.whatsapp,
     latitude: raw.latitude,
     longitude: raw.longitude,
-    photoUrl: raw.photo_url,
+    photoUrl: resolveMediaUrl(raw.photo_url),
     isActive: raw.is_active,
     hasConsigned: raw.has_consigned,
     createdAt: raw.created_at,
@@ -135,56 +134,27 @@ export function useSetMyStoreActive() {
   })
 }
 
-/**
- * Hook untuk penitip menitipkan barang ke toko:
- * 1. Hubungkan toko sebagai mitra partner (POST /v1/partners dengan store_id)
- * 2. Jika ada barang titipan awal yang dipilih, langsung rekam kunjungan titipan pertama (POST /v1/visits)
- */
-export function useConsignToStore() {
+/** Unggah (file terkompresi) atau hapus (null) foto toko milik sendiri. */
+export function useSetMyStorePhoto() {
   const queryClient = useQueryClient()
-
   return useMutation({
-    mutationFn: async (input: ConsignToStoreInput) => {
-      // 1. Tambahkan toko sebagai partner mitra konsinyasi
-      const partnerRes = await apiClient<{ data: { id: string; name: string } }>('/v1/partners', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: input.storeName,
-          owner_name: input.ownerName || input.storeName,
-          whatsapp: input.whatsapp,
-          address: input.address,
-          store_id: input.storeId,
-          is_active: true,
-        }),
-      })
-
-      const partnerId = partnerRes.data.id
-
-      // 2. Jika ada barang titipan awal, submit initial visit drop
-      if (input.items && input.items.length > 0) {
-        await apiClient('/v1/visits', {
-          method: 'POST',
-          body: JSON.stringify({
-            client_request_id: generateUUID(),
-            partner_id: partnerId,
-            items: input.items.map((item) => ({
-              product_id: item.productId,
-              remaining: 0,
-              returned: 0,
-              new_drop: item.qty,
-            })),
-          }),
-        })
+    mutationFn: async (file: Blob | null) => {
+      if (!file) {
+        const res = await apiClient<{ data: RawStoreResponse }>('/v1/stores/mine/photo', { method: 'DELETE' })
+        return mapStore(res.data)
       }
-
-      return { partnerId, storeId: input.storeId }
+      const form = new FormData()
+      form.append('file', file, 'foto-toko.webp')
+      const res = await apiClient<{ data: RawStoreResponse }>('/v1/stores/mine/photo', {
+        method: 'PUT',
+        body: form,
+      })
+      return mapStore(res.data)
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['store', 'mine'] })
       queryClient.invalidateQueries({ queryKey: ['stores'] })
-      queryClient.invalidateQueries({ queryKey: ['partners'] })
-      queryClient.invalidateQueries({ queryKey: ['visits'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-      queryClient.invalidateQueries({ queryKey: ['partner-options'] })
+      queryClient.invalidateQueries({ queryKey: ['proposals'] })
     },
   })
 }

@@ -174,8 +174,8 @@ export function PartnerFormModal({
 
         <div className="flex items-center justify-between p-3.5 bg-surface-raised rounded-xl border border-line mt-1">
           <div>
-            <p className="text-xs font-bold text-ink">Status Warung Aktif</p>
-            <p className="text-[11px] text-ink-soft">
+            <p className="text-caption font-bold text-ink">Status Warung Aktif</p>
+            <p className="text-caption text-ink-soft">
               Warung aktif dapat dipilih saat mencatat kunjungan baru
             </p>
           </div>

@@ -123,7 +123,7 @@ export function Stepper({
         onPointerUp={() => handlePointerUpOrLeave(-step)}
         onPointerLeave={() => stopHold()}
         onContextMenu={(e) => e.preventDefault()}
-        className={`w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center font-bold text-xl transition-all duration-100 ${
+        className={`w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center font-bold text-title-1 transition-all duration-100 ${
           isMinReached
             ? 'bg-surface/50 text-ink-disabled border border-line/50 cursor-not-allowed opacity-30'
             : 'bg-surface text-ink border border-line hover:bg-surface-raised active:scale-95 shadow-2xs'
@@ -158,7 +158,7 @@ export function Stepper({
         onPointerUp={() => handlePointerUpOrLeave(step)}
         onPointerLeave={() => stopHold()}
         onContextMenu={(e) => e.preventDefault()}
-        className={`w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center font-bold text-xl transition-all duration-100 ${
+        className={`w-12 h-12 min-w-[48px] min-h-[48px] rounded-xl flex items-center justify-center font-bold text-title-1 transition-all duration-100 ${
           isMaxReached
             ? 'bg-primary/50 text-on-primary/50 cursor-not-allowed opacity-30'
             : 'bg-primary text-on-primary hover:bg-primary-hover active:scale-95 shadow-2xs'

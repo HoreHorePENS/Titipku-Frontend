@@ -103,7 +103,7 @@ export function CreateManualInvoiceModal({
       description="Catat tagihan konsinyasi atau piutang warung yang belum dibayarkan."
       className="max-w-md"
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-xs font-sans text-slate-900">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-caption font-sans text-slate-900">
         {/* Pilih Warung Mitra */}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="inv-partner" className="font-semibold text-slate-700">
@@ -114,7 +114,7 @@ export function CreateManualInvoiceModal({
             required
             value={partnerId}
             onChange={(e) => handlePartnerChange(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-caption text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
           >
             {partners.length === 0 ? (
               <option value="">Belum ada toko mitra</option>
@@ -140,7 +140,7 @@ export function CreateManualInvoiceModal({
               required
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-caption font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
 
@@ -154,7 +154,7 @@ export function CreateManualInvoiceModal({
               required
               value={invoiceDate}
               onChange={(e) => setInvoiceDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-caption text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
           </div>
         </div>
@@ -173,10 +173,10 @@ export function CreateManualInvoiceModal({
             placeholder="0"
             value={amount || ''}
             onChange={(e) => setAmount(Number(e.target.value) || 0)}
-            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 tabular-nums"
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-body font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 tabular-nums"
           />
           {amount > 0 && (
-            <span className="text-xs font-semibold text-slate-600">
+            <span className="text-caption font-semibold text-slate-600">
               Terbaca: <strong className="text-slate-900">{rupiah(amount)}</strong> (Status: Belum Lunas)
             </span>
           )}
@@ -193,7 +193,7 @@ export function CreateManualInvoiceModal({
             value={receivedBy}
             onChange={(e) => setReceivedBy(e.target.value)}
             placeholder="Nama penanggung jawab warung"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-caption text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
           />
         </div>
 
@@ -208,7 +208,7 @@ export function CreateManualInvoiceModal({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="cth. Keripik Pisang 20 bks & Keripik Tempe 15 bks"
-            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+            className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-caption text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
           />
         </div>
 
@@ -219,7 +219,7 @@ export function CreateManualInvoiceModal({
             variant="outline"
             size="md"
             onClick={onClose}
-            className="flex-1 text-xs font-semibold rounded-xl min-h-[44px]"
+            className="flex-1 text-caption font-semibold rounded-xl min-h-[44px]"
           >
             Batal
           </Button>
@@ -228,7 +228,7 @@ export function CreateManualInvoiceModal({
             variant="primary"
             size="md"
             disabled={isSubmitting || amount <= 0}
-            className="flex-1 text-xs font-semibold rounded-xl min-h-[44px]"
+            className="flex-1 text-caption font-semibold rounded-xl min-h-[44px]"
           >
             {isSubmitting ? 'Menyimpan…' : 'Simpan Tagihan'}
           </Button>

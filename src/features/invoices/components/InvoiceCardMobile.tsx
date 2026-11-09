@@ -30,8 +30,8 @@ export function InvoiceCardMobile({
       {/* Baris Atas: Nama Warung & Status Badge */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-ink leading-snug">{invoice.partnerName}</h3>
-          <p className="text-xs text-ink-soft mt-0.5">
+          <h3 className="text-title-3 text-ink">{invoice.partnerName}</h3>
+          <p className="text-caption text-ink-soft mt-0.5">
             {invoice.visitNumber} · {dateFormatted}
           </p>
         </div>
@@ -39,7 +39,7 @@ export function InvoiceCardMobile({
         <div className="flex flex-col items-end gap-1">
           <StatusBadge status={statusLabel} />
           {isOverdue && (
-            <span className="text-[10px] font-bold text-danger bg-danger-soft px-1.5 py-0.5 rounded">
+            <span className="text-caption font-bold text-danger bg-danger-soft px-1.5 py-0.5 rounded">
               {invoice.daysOverdue} hari belum bayar
             </span>
           )}
@@ -49,13 +49,13 @@ export function InvoiceCardMobile({
       {/* Baris Tengah: Sisa Tagihan & Total */}
       <div className="flex items-end justify-between pt-1 border-t border-line/60">
         <div>
-          <span className="text-xs text-ink-soft block font-medium">Sisa tagihan:</span>
-          <span className="text-base font-extrabold text-ink tabular-nums">
+          <span className="text-caption text-ink-soft block font-medium">Sisa tagihan:</span>
+          <span className="text-title-3 font-bold text-ink tabular-nums">
             {rupiah(invoice.remaining)}
           </span>
         </div>
 
-        <div className="text-right text-xs text-ink-soft">
+        <div className="text-right text-caption text-ink-soft">
           <span>Total: {rupiah(invoice.total)}</span>
           {invoice.paid > 0 && (
             <span className="block text-success font-semibold">
@@ -72,7 +72,7 @@ export function InvoiceCardMobile({
             variant="primary"
             size="sm"
             onClick={() => onPay(invoice)}
-            className="flex-1 rounded-xl h-9 text-xs font-bold shadow-2xs"
+            className="flex-1 rounded-xl h-9 text-caption font-bold shadow-2xs"
           >
             Catat bayar
           </Button>
@@ -82,7 +82,7 @@ export function InvoiceCardMobile({
           variant="secondary"
           size="sm"
           onClick={() => onResendWA(invoice)}
-          className="flex-1 rounded-xl h-9 text-xs font-bold flex items-center justify-center gap-1"
+          className="flex-1 rounded-xl h-9 text-caption font-bold flex items-center justify-center gap-1"
         >
           <span>Kirim via WA</span>
           <span>↗</span>

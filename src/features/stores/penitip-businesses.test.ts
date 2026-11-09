@@ -1,68 +1,60 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  loadBusinesses,
-  PENITIP_STORAGE_KEY,
-  INITIAL_PENITIP_BUSINESSES,
-  PENITIP_CATEGORIES,
-} from './penitip-businesses'
+import { describe, it, expect } from 'vitest'
+import { mapProducer } from './penitip-businesses'
+import type { RawProducer, RawProposal } from './proposals-api'
 
-describe('Penitip Businesses Storage & Domain', () => {
-  let mockStorage: Record<string, string> = {}
+function proposal(overrides: Partial<RawProposal> = {}): RawProposal {
+  return {
+    id: 'prop-1',
+    direction: 'store_to_penitip',
+    status: 'pending',
+    message: 'Rak depan kasir',
+    shelf_location: null,
+    estimated_capacity: null,
+    created_at: '2026-11-09T10:00:00Z',
+    responded_at: null,
+    store: { id: 's1', name: 'Warung Siti', category: 'warung', address: 'Jl. Menur', whatsapp: '6281', photo_url: null, owner_name: 'Siti', latitude: 0, longitude: 0 },
+    business: { id: 'b1', name: 'Keripik Rina', owner_name: 'Rina', whatsapp: null, address: null },
+    items: [],
+    ...overrides,
+  }
+}
 
-  beforeEach(() => {
-    mockStorage = {}
-    vi.stubGlobal('localStorage', {
-      getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, val: string) => {
-        mockStorage[key] = val
-      },
-      removeItem: (key: string) => {
-        delete mockStorage[key]
-      },
-      clear: () => {
-        mockStorage = {}
-      },
-    })
+function producer(overrides: Partial<RawProducer> = {}): RawProducer {
+  return {
+    id: 'b1',
+    name: 'Keripik Rina',
+    owner_name: 'ibu rina',
+    whatsapp: '6282192929292',
+    address: null,
+    product_count: 3,
+    products: [
+      { id: 'p1', name: 'Keripik A', photo_path: null, consign_price: 12000, retail_price: 15000, shelf_life_days: 90, is_active: true },
+      { id: 'p2', name: 'Keripik B', photo_path: '/uploads/0123456789abcdef0123456789abcdef.webp', consign_price: 10000, retail_price: 13000, shelf_life_days: 60, is_active: true },
+    ],
+    is_partner: false,
+    latest_proposal: null,
+    ...overrides,
+  }
+}
+
+describe('mapProducer (data asli dari /v1/producers)', () => {
+  it('tanpa proposal -> belum ditawari, foto sampul dari produk pertama yang berfoto', () => {
+    const business = mapProducer(producer())
+    expect(business.offerStatus).toBe('none')
+    expect(business.productCount).toBe(3)
+    expect(business.photoUrl).toMatch(/\/uploads\/0123456789abcdef0123456789abcdef\.webp$/)
+    expect(business.topProducts[0]).toMatchObject({ name: 'Keripik A', consignPrice: 12000, suggestedRetailPrice: 15000 })
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
+  it('status hubungan mengikuti proposal terakhir', () => {
+    expect(mapProducer(producer({ latest_proposal: proposal() })).offerStatus).toBe('pending')
+    expect(mapProducer(producer({ latest_proposal: proposal({ direction: 'penitip_to_store' }) })).offerStatus).toBe('incoming')
+    expect(mapProducer(producer({ latest_proposal: proposal({ status: 'rejected' }) })).offerStatus).toBe('rejected')
+    expect(mapProducer(producer({ latest_proposal: proposal({ status: 'cancelled' }) })).offerStatus).toBe('none')
+    expect(mapProducer(producer({ is_partner: true, latest_proposal: proposal({ status: 'accepted' }) })).offerStatus).toBe('accepted')
   })
 
-  it('menginisialisasi data awal jika storage kosong', () => {
-    const list = loadBusinesses()
-    expect(list.length).toBe(INITIAL_PENITIP_BUSINESSES.length)
-    expect(mockStorage[PENITIP_STORAGE_KEY]).toBeDefined()
-    expect(list[0].businessName).toBe('Keripik Pisang & Aneka Snack Bu Rina')
-  })
-
-  it('memuat data yang ada di storage jika valid', () => {
-    const custom = [
-      {
-        ...INITIAL_PENITIP_BUSINESSES[0],
-        id: 'custom-1',
-        businessName: 'Snack Bu Siti Test',
-        offerStatus: 'pending' as const,
-      },
-    ]
-    mockStorage[PENITIP_STORAGE_KEY] = JSON.stringify(custom)
-
-    const list = loadBusinesses()
-    expect(list.length).toBe(1)
-    expect(list[0].id).toBe('custom-1')
-    expect(list[0].businessName).toBe('Snack Bu Siti Test')
-    expect(list[0].offerStatus).toBe('pending')
-  })
-
-  it('menangani JSON rusak dengan fallback ke INITIAL_PENITIP_BUSINESSES', () => {
-    mockStorage[PENITIP_STORAGE_KEY] = 'INVALID_JSON_@@@'
-    const list = loadBusinesses()
-    expect(list.length).toBe(INITIAL_PENITIP_BUSINESSES.length)
-  })
-
-  it('memiliki kategori lengkap dengan label bahasa Indonesia', () => {
-    expect(PENITIP_CATEGORIES.length).toBeGreaterThanOrEqual(5)
-    expect(PENITIP_CATEGORIES.some((c) => c.key === 'snack')).toBe(true)
-    expect(PENITIP_CATEGORIES.some((c) => c.key === 'kue')).toBe(true)
+  it('menyimpan id proposal untuk pembatalan', () => {
+    expect(mapProducer(producer({ latest_proposal: proposal({ id: 'xyz' }) })).offerId).toBe('xyz')
   })
 })

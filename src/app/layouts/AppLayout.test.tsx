@@ -1,8 +1,21 @@
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppLayout } from './AppLayout'
 import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS } from './nav-items'
+
+function renderLayout() {
+  // Lonceng notifikasi memakai TanStack Query (data proposal asli).
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, enabled: false } } })
+  return renderToStaticMarkup(
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={['/']}>
+        <AppLayout />
+      </MemoryRouter>
+    </QueryClientProvider>
+  )
+}
 
 describe('AppLayout Shell & Navigation', () => {
   it('harus memuat tepat 5 item navigasi resmi', () => {
@@ -26,17 +39,15 @@ describe('AppLayout Shell & Navigation', () => {
   })
 
   it('merender navigasi desktop (aside) dan navigasi mobile (nav bottom)', () => {
-    const html = renderToStaticMarkup(
-      <MemoryRouter initialEntries={['/']}>
-        <AppLayout />
-      </MemoryRouter>
-    )
+    const html = renderLayout()
 
     // Memeriksa keberadaan sidebar desktop
     expect(html).toContain('aria-label="Navigasi Utama Desktop"')
     expect(html).toContain('Titipku')
-    expect(html).toContain('Bu Rina')
-    expect(html).toContain('Keripik Pisang Rina')
+    // Tanpa data akun, tidak ada nama contoh (mis. 'Bu Rina') yang tampil.
+    expect(html).not.toContain('Bu Rina')
+    expect(html).not.toContain('Keripik Pisang Rina')
+    expect(html).toContain('Usaha saya')
 
     // Memeriksa keberadaan bottom navigation mobile
     expect(html).toContain('aria-label="Navigasi Bawah Mobile"')
@@ -48,11 +59,7 @@ describe('AppLayout Shell & Navigation', () => {
   })
 
   it('memiliki style --bottom-offset 76px untuk penempatan toast di atas bottom nav', () => {
-    const html = renderToStaticMarkup(
-      <MemoryRouter initialEntries={['/']}>
-        <AppLayout />
-      </MemoryRouter>
-    )
+    const html = renderLayout()
 
     expect(html).toContain('--bottom-offset:76px')
   })

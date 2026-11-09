@@ -1,6 +1,7 @@
 export * from './types'
 export * from './constants'
 export * from './api'
+export * from './proposals-api'
 export * from './consignment-requests'
 export * from './components/StoreMap'
 export * from './components/ConsignModal'

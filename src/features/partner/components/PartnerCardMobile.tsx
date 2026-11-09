@@ -52,10 +52,10 @@ export function PartnerCardMobile({
       {/* Baris Atas: Nama Warung & Status Badge Kesehatan */}
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-base font-extrabold text-ink leading-snug">{partner.name}</h3>
-          <p className="text-xs text-ink-soft mt-0.5">
+          <h3 className="text-title-3 text-ink">{partner.name}</h3>
+          <p className="text-caption text-ink-soft mt-0.5">
             {partner.address ? partner.address.split(',')[0] : 'Mitra'} ·{' '}
-            <span className="text-[11px]">terakhir {lastVisitDate}</span>
+            <span className="text-caption">terakhir {lastVisitDate}</span>
           </p>
         </div>
 
@@ -63,18 +63,18 @@ export function PartnerCardMobile({
       </div>
 
       {/* Baris Bawah: Pemilik & Saldo Utang */}
-      <div className="flex items-center justify-between pt-1 border-t border-line/60 text-xs">
+      <div className="flex items-center justify-between pt-1 border-t border-line/60 text-caption">
         <span className="text-ink-soft font-medium">
           {partner.ownerName ? `Pemilik: ${partner.ownerName}` : 'Mitra aktif'}
         </span>
 
         <div className="text-right">
           {partner.receivable > 0 ? (
-            <span className="text-sm font-extrabold text-danger tabular-nums">
+            <span className="text-body font-bold text-danger tabular-nums">
               {rupiah(partner.receivable)}
             </span>
           ) : (
-            <span className="text-xs font-bold text-success">Lunas (Rp0)</span>
+            <span className="text-caption font-bold text-success">Lunas (Rp0)</span>
           )}
         </div>
       </div>
