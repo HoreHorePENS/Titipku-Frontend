@@ -72,5 +72,55 @@ describe('Auth Schemas', () => {
       })
       expect(res.success).toBe(false)
     })
+
+    it('memvalidasi pendaftaran pemilik toko dengan format lengkap', () => {
+      const res = registerSchema.safeParse({
+        accountType: 'pemilik_toko',
+        storeName: 'Warung Barokah Bu Siti',
+        storeCategory: 'warung',
+        storeAddress: 'Jl. Menur No. 12 Surabaya',
+        storeLat: -7.2575,
+        storeLng: 112.7521,
+        ownerName: 'Bu Siti',
+        email: 'siti@warung.id',
+        whatsapp: '081234567890',
+        password: 'password123',
+        confirmPassword: 'password123',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('memvalidasi pendaftaran pemilik toko jika lat/lng tidak diisi', () => {
+      const res = registerSchema.safeParse({
+        accountType: 'pemilik_toko',
+        storeName: 'Warung Barokah Bu Siti',
+        storeAddress: 'Jl. Menur No. 12 Surabaya',
+        ownerName: 'Bu Siti',
+        email: 'siti@warung.id',
+        whatsapp: '081234567890',
+        password: 'password123',
+        confirmPassword: 'password123',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('menolak pendaftaran pemilik toko tanpa nama toko atau alamat toko', () => {
+      const res = registerSchema.safeParse({
+        accountType: 'pemilik_toko',
+        storeName: '',
+        storeAddress: '',
+        ownerName: 'Bu Siti',
+        email: 'siti@warung.id',
+        whatsapp: '081234567890',
+        password: 'password123',
+        confirmPassword: 'password123',
+      })
+      expect(res.success).toBe(false)
+      if (!res.success) {
+        const paths = res.error.issues.map((i) => i.path[0])
+        expect(paths).toContain('storeName')
+        expect(paths).toContain('storeAddress')
+      }
+    })
   })
 })

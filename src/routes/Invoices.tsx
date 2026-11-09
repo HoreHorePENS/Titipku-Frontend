@@ -10,6 +10,7 @@ import {
 import { InvoiceCardMobile } from '@/features/invoices/components/InvoiceCardMobile'
 import { InvoiceTableDesktop } from '@/features/invoices/components/InvoiceTableDesktop'
 import { PaymentRecordModal } from '@/features/invoices/components/PaymentRecordModal'
+import { CreateManualInvoiceModal } from '@/features/invoices/components/CreateManualInvoiceModal'
 import { useInvoices, useCreatePayment } from '@/features/invoices/api'
 import { usePartners } from '@/features/partner/api'
 import { calculateInvoicesMetrics, filterInvoices } from '@/features/invoices/calc'
@@ -21,11 +22,12 @@ export default function InvoicesRoute() {
   const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all')
   const [selectedPartnerIdFilter, setSelectedPartnerIdFilter] = useState<string>('')
 
-  // State Modal Bayar
+  // State Modal Bayar & Modal Tambah Tagihan Belum Lunas
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false)
   const [modalPartnerId, setModalPartnerId] = useState<string>('')
 
-  // Query Backend
+  // Query Backend & Local
   const { data: invoices = [], isLoading: isInvoicesLoading, isError: isInvoicesError, refetch } = useInvoices()
   const { data: partners = [] } = usePartners()
   const createPaymentMutation = useCreatePayment()
@@ -114,17 +116,28 @@ export default function InvoicesRoute() {
       {/* 1. Header Halaman Terstandarisasi */}
       <PageHeader
         title="Tagihan & Piutang"
-        description="Pantau nota konsinyasi, alokasi FIFO pelunasan otomatis, dan piutang warung mitra."
+        description="Pantau nota konsinyasi, pelunasan pembayaran, dan piutang toko mitra secara transparan."
         actions={
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => handleOpenPayment()}
-            className="min-h-[48px] px-5 font-bold shadow-xs flex items-center gap-2"
-          >
-            <span className="text-lg leading-none">+</span>
-            <span>Catat Pembayaran</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setIsCreateInvoiceModalOpen(true)}
+              className="min-h-[44px] px-3.5 text-xs font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="text-sm font-bold">+</span>
+              <span>Tambah Tagihan Belum Lunas</span>
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => handleOpenPayment()}
+              className="min-h-[44px] px-4 text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="text-sm font-bold">+</span>
+              <span>Catat Pembayaran</span>
+            </Button>
+          </div>
         }
       />
 
@@ -167,7 +180,7 @@ export default function InvoicesRoute() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleSelectOverduePartner(op.partnerId)}
-                className="text-xs font-bold border-danger/40 text-danger hover:bg-danger-soft min-h-[40px]"
+                className="text-xs font-bold border-danger/40 text-danger hover:bg-danger-soft min-h-[40px] cursor-pointer"
               >
                 Tagih {op.partnerName} ({rupiah(op.amount)}) →
               </Button>
@@ -266,6 +279,14 @@ export default function InvoicesRoute() {
           </div>
         </>
       )}
+
+      {/* Modal Tambah Tagihan Belum Lunas */}
+      <CreateManualInvoiceModal
+        isOpen={isCreateInvoiceModalOpen}
+        onClose={() => setIsCreateInvoiceModalOpen(false)}
+        partners={partners}
+        onSuccess={() => refetch()}
+      />
 
       {/* Modal Catat Pembayaran */}
       <PaymentRecordModal

@@ -1,0 +1,454 @@
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { PageContainer } from '@/components/shared'
+import { Input } from '@/components/ui/Input'
+import { Button } from '@/components/ui/Button'
+import { toast } from '@/components/ui/toast-store'
+import { useCurrentAccount } from '@/features/auth'
+import { CreateStoreInvoiceModal } from '@/features/invoices'
+import {
+  ConsignmentRequestCard,
+  ConsignmentRequestDetailModal,
+  useConsignmentRequests,
+  type ConsignmentRequest,
+} from '@/features/stores'
+
+type StatusFilter = 'all' | 'pending' | 'accepted' | 'rejected'
+
+export default function PenitipRoute() {
+  const navigate = useNavigate()
+  const { data: currentAccount } = useCurrentAccount()
+  const isPemilikToko = currentAccount?.user?.account_type === 'pemilik_toko'
+
+  // Hook Permintaan Titipan & User Role Penitip
+  const { requests, pendingCount, acceptedCount, rejectedCount, updateRequestStatus } =
+    useConsignmentRequests()
+
+  const [selectedRequest, setSelectedRequest] = useState<ConsignmentRequest | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false)
+  const [invoicePenitipTarget, setInvoicePenitipTarget] = useState<ConsignmentRequest | null>(null)
+
+  // Quick Approve dari Baris Kartu
+  const handleQuickApprove = (request: ConsignmentRequest) => {
+    updateRequestStatus(request.id, 'accepted')
+    toast.show({
+      title: 'Penitip Berhasil Disetujui',
+      description: `Permohonan penitipan dari ${request.producerBusinessName} (${request.producerOwnerName}) telah disetujui.`,
+      type: 'success',
+    })
+  }
+
+  // Quick Reject dari Baris Kartu
+  const handleQuickReject = (request: ConsignmentRequest) => {
+    updateRequestStatus(request.id, 'rejected')
+    toast.show({
+      title: 'Permohonan Ditolak',
+      description: `Permohonan penitipan dari ${request.producerBusinessName} telah ditolak.`,
+      type: 'info',
+    })
+  }
+
+  // Klik Bar untuk Membuka Detail Lengkap
+  const handleOpenDetail = (request: ConsignmentRequest) => {
+    setSelectedRequest(request)
+    setIsDetailModalOpen(true)
+  }
+
+  // Filter & Pencarian Data
+  const filteredRequests = useMemo(() => {
+    return requests.filter((item) => {
+      // 1. Filter Status
+      if (statusFilter !== 'all' && item.status !== statusFilter) {
+        return false
+      }
+
+      // 2. Filter Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim()
+        const matchBusiness = item.producerBusinessName.toLowerCase().includes(q)
+        const matchOwner = item.producerOwnerName.toLowerCase().includes(q)
+        const matchCity = item.producerCity.toLowerCase().includes(q)
+        const matchProducts = item.items.some((prod) =>
+          prod.productName.toLowerCase().includes(q)
+        )
+        return matchBusiness || matchOwner || matchCity || matchProducts
+      }
+
+      return true
+    })
+  }, [requests, statusFilter, searchQuery])
+
+  // Pemisahan Mitra Aktif (Disetujui) dan History Pelanggan/Pengajuan
+  const activeRequests = useMemo(() => {
+    return filteredRequests.filter((r) => r.status === 'accepted')
+  }, [filteredRequests])
+
+  const historyRequests = useMemo(() => {
+    return filteredRequests.filter((r) => r.status !== 'accepted')
+  }, [filteredRequests])
+
+  // Guard: Jika bukan pemilik toko, alihkan ke halaman warung konsinyasi
+  if (currentAccount && !isPemilikToko) {
+    navigate('/warung', { replace: true })
+    return null
+  }
+
+  return (
+    <PageContainer maxWidth="full" className="px-4 md:px-8">
+      <div className="flex flex-col gap-6 py-4 w-full font-sans">
+        {/* Header Halaman */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold mb-1 border border-slate-200 self-start">
+              <svg
+                className="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span>Manajemen Kemitraan Toko</span>
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Daftar User Role Penitip
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500">
+              Daftar produsen UMKM (role penitip) yang mengajukan titip-jual ke warung Anda.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => {
+                setInvoicePenitipTarget(null)
+                setIsCreateInvoiceOpen(true)
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold rounded-xl min-h-[44px]"
+            >
+              <span className="font-bold">+</span>
+              <span>Buat Nota Penjualan</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Ringkasan Statistik Penitip (4 Kolom Ringkas) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col">
+            <span className="text-xs text-slate-500 font-medium">Total Penitip</span>
+            <span className="text-xl font-bold text-slate-900 mt-1">{requests.length}</span>
+            <span className="text-[10px] text-slate-400 mt-0.5">Produsen terdaftar</span>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col">
+            <span className="text-xs text-amber-900 font-semibold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Menunggu Approval
+            </span>
+            <span className="text-xl font-bold text-slate-900 mt-1">{pendingCount}</span>
+            <span className="text-[10px] text-slate-400 mt-0.5">Perlu konfirmasi toko</span>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col">
+            <span className="text-xs text-emerald-900 font-semibold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+              Disetujui / Aktif
+            </span>
+            <span className="text-xl font-bold text-slate-900 mt-1">{acceptedCount}</span>
+            <span className="text-[10px] text-slate-400 mt-0.5">Siap drop barang</span>
+          </div>
+
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex flex-col">
+            <span className="text-xs text-slate-500 font-medium">Ditolak</span>
+            <span className="text-xl font-bold text-slate-700 mt-1">{rejectedCount}</span>
+            <span className="text-[10px] text-slate-400 mt-0.5">Tidak diterima</span>
+          </div>
+        </div>
+
+        {/* Search Bar & Filter Tab Switcher */}
+        <div className="flex flex-col gap-3">
+          {/* Input Pencarian */}
+          <div className="relative">
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nama usaha penitip, nama pemilik, produk, atau kota..."
+              className="pl-10 text-xs sm:text-sm rounded-xl min-h-[44px]"
+            />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </div>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 px-1 py-0.5"
+              >
+                Hapus
+              </button>
+            )}
+          </div>
+
+          {/* Filter Pills / Tabs */}
+          <div
+            className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs"
+            role="tablist"
+            aria-label="Filter Status Penitip"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === 'all'}
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer shrink-0 min-h-[40px] flex items-center gap-1.5 ${
+                statusFilter === 'all'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>Semua</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  statusFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {requests.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === 'pending'}
+              onClick={() => setStatusFilter('pending')}
+              className={`px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer shrink-0 min-h-[40px] flex items-center gap-1.5 ${
+                statusFilter === 'pending'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>Menunggu Approval</span>
+              {pendingCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-amber-500 text-slate-900">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === 'accepted'}
+              onClick={() => setStatusFilter('accepted')}
+              className={`px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer shrink-0 min-h-[40px] flex items-center gap-1.5 ${
+                statusFilter === 'accepted'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>Disetujui / Aktif</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  statusFilter === 'accepted'
+                    ? 'bg-slate-700 text-white'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {acceptedCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === 'rejected'}
+              onClick={() => setStatusFilter('rejected')}
+              className={`px-3 py-2 rounded-xl font-semibold transition-all cursor-pointer shrink-0 min-h-[40px] flex items-center gap-1.5 ${
+                statusFilter === 'rejected'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <span>Ditolak</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  statusFilter === 'rejected'
+                    ? 'bg-slate-700 text-white'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
+              >
+                {rejectedCount}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Daftar Baris Kartu User Penitip */}
+        <div className="flex flex-col gap-3">
+          {filteredRequests.length === 0 ? (
+            <div className="py-12 bg-white rounded-2xl border border-slate-200 text-center flex flex-col items-center justify-center gap-3 p-6">
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center">
+                <svg
+                  className="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">
+                  Tidak Ada Data User Penitip yang Cocok
+                </p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                  {searchQuery
+                    ? `Tidak ditemukan hasil dengan kata kunci "${searchQuery}". Coba kata kunci lain.`
+                    : 'Belum ada data permohonan penitip untuk filter ini.'}
+                </p>
+              </div>
+            </div>
+          ) : statusFilter === 'all' ? (
+            /* Tampilan Terstruktur: Mitra Aktif di Atas, History di Bawah */
+            <div className="flex flex-col gap-8">
+              {/* Bagian Atas: Mitra Penitip Aktif */}
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                      Mitra Penitip Aktif ({activeRequests.length})
+                    </h2>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">Siap drop barang &amp; hitung nota</span>
+                </div>
+
+                {activeRequests.length === 0 ? (
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
+                    Belum ada mitra penitip yang disetujui / aktif.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {activeRequests.map((request) => (
+                      <ConsignmentRequestCard
+                        key={request.id}
+                        request={request}
+                        onClick={handleOpenDetail}
+                        onApprove={handleQuickApprove}
+                        onReject={handleQuickReject}
+                        onCalculate={(req) => {
+                          setInvoicePenitipTarget(req)
+                          setIsCreateInvoiceOpen(true)
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Bagian Bawah: History Pelanggan & Pengajuan Penitip */}
+              <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                    <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                      History Pelanggan &amp; Pengajuan Penitip ({historyRequests.length})
+                    </h2>
+                  </div>
+                  <span className="text-xs text-slate-500 font-medium">Menunggu persetujuan atau riwayat ditolak</span>
+                </div>
+
+                {historyRequests.length === 0 ? (
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-xs text-slate-500">
+                    Tidak ada riwayat pelanggan atau permohonan tertunda.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {historyRequests.map((request) => (
+                      <ConsignmentRequestCard
+                        key={request.id}
+                        request={request}
+                        onClick={handleOpenDetail}
+                        onApprove={handleQuickApprove}
+                        onReject={handleQuickReject}
+                        onCalculate={(req) => {
+                          setInvoicePenitipTarget(req)
+                          setIsCreateInvoiceOpen(true)
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {filteredRequests.map((request) => (
+                <ConsignmentRequestCard
+                  key={request.id}
+                  request={request}
+                  onClick={handleOpenDetail}
+                  onApprove={handleQuickApprove}
+                  onReject={handleQuickReject}
+                  onCalculate={(req) => {
+                    setInvoicePenitipTarget(req)
+                    setIsCreateInvoiceOpen(true)
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Pop-up Rincian Lengkap User Penitip */}
+        <ConsignmentRequestDetailModal
+          request={selectedRequest}
+          isOpen={isDetailModalOpen}
+          onClose={() => setIsDetailModalOpen(false)}
+          onUpdateStatus={updateRequestStatus}
+          onCreateInvoice={(req) => {
+            setInvoicePenitipTarget(req)
+            setIsCreateInvoiceOpen(true)
+          }}
+        />
+
+        {/* Modal Buat Nota Penjualan Digital */}
+        <CreateStoreInvoiceModal
+          isOpen={isCreateInvoiceOpen}
+          onClose={() => {
+            setIsCreateInvoiceOpen(false)
+            setInvoicePenitipTarget(null)
+          }}
+          initialPenitip={invoicePenitipTarget}
+          storeName="Toko Mitra Titipku"
+        />
+      </div>
+    </PageContainer>
+  )
+}

@@ -6,10 +6,8 @@ import { Input } from '@/components/ui/Input'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/toast-store'
-import { rupiah } from '@/lib/format'
 import { ApiError } from '@/lib/api-client'
 import { productFormSchema, type ProductFormData } from '../schema'
-import { calculateProductMargin } from '../calc'
 import type { Product, ProductFormInput } from '../types'
 
 export interface ProductFormModalProps {
@@ -61,10 +59,7 @@ export function ProductFormModal({
   }, [isOpen, initialData, reset])
 
   const consignPrice = watch('consignPrice') || 0
-  const retailPrice = watch('retailPrice') || 0
   const isActive = watch('isActive')
-
-  const { marginRp, marginPct } = calculateProductMargin(consignPrice, retailPrice)
 
   if (!isOpen) return null
 
@@ -73,7 +68,7 @@ export function ProductFormModal({
       await onSubmit({
         name: data.name.trim(),
         consign_price: data.consignPrice,
-        retail_price: data.retailPrice,
+        retail_price: data.retailPrice || data.consignPrice,
         shelf_life_days: data.shelfLifeDays,
         is_active: data.isActive,
       })
@@ -89,7 +84,6 @@ export function ProductFormModal({
           for (const [key, msg] of Object.entries(err.fields)) {
             if (key === 'name') setError('name', { message: msg })
             if (key === 'consign_price') setError('consignPrice', { message: msg })
-            if (key === 'retail_price') setError('retailPrice', { message: msg })
             if (key === 'shelf_life_days') setError('shelfLifeDays', { message: msg })
           }
         }
@@ -154,55 +148,23 @@ export function ProductFormModal({
           {...register('name')}
         />
 
-        {/* 2. Grid Dua Kolom: Harga Titip & Harga Eceran */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <div className="flex flex-col gap-1">
-            <MoneyInput
-              label="Harga Titip (Rp)"
-              required
-              placeholder="10.000"
-              value={consignPrice}
-              onChange={(val) => setValue('consignPrice', val || 0, { shouldValidate: true })}
-            />
-            <span className="text-[11px] text-ink-soft">Uang yang kamu terima per bungkus laku.</span>
-            {errors.consignPrice?.message && (
-              <p className="text-xs text-danger font-semibold mt-0.5">
-                {errors.consignPrice.message}
-              </p>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <MoneyInput
-              label="Harga Eceran (Rp)"
-              required
-              placeholder="12.000"
-              value={retailPrice}
-              onChange={(val) => setValue('retailPrice', val || 0, { shouldValidate: true })}
-            />
-            <span className="text-[11px] text-ink-soft">Harga jual warung ke konsumen.</span>
-            {errors.retailPrice?.message && (
-              <p className="text-xs text-danger font-semibold mt-0.5">
-                {errors.retailPrice.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Preview Margin Warung */}
-        <div className="bg-primary-soft/40 border border-primary/20 rounded-xl p-3 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold text-primary">Margin Warung Mitra:</span>
-            <span className="text-[11px] text-ink-soft">
-              Warung untung dari selisih harga eceran dan titip.
-            </span>
-          </div>
-          <div className="text-right">
-            <span className="text-sm font-bold text-primary tabular-nums">
-              {rupiah(marginRp)}
-            </span>
-            <span className="text-xs text-primary/80 font-medium ml-1">({marginPct}%)</span>
-          </div>
+        {/* 2. Harga Titip (Modal yang Diterima Penitip) */}
+        <div className="flex flex-col gap-1">
+          <MoneyInput
+            label="Harga Titip / Modal Konsinyasi (Rp)"
+            required
+            placeholder="10.000"
+            value={consignPrice}
+            onChange={(val) => setValue('consignPrice', val || 0, { shouldValidate: true })}
+          />
+          <span className="text-[11px] text-ink-soft">
+            Uang yang Anda terima dari warung untuk setiap bungkus yang laku terjual.
+          </span>
+          {errors.consignPrice?.message && (
+            <p className="text-xs text-danger font-semibold mt-0.5">
+              {errors.consignPrice.message}
+            </p>
+          )}
         </div>
 
         {/* 3. Masa Simpan (Shelf Life) */}
@@ -227,7 +189,7 @@ export function ProductFormModal({
           <div className="flex flex-col">
             <span className="text-sm font-bold text-ink">Status Produk Aktif</span>
             <span className="text-xs text-ink-soft">
-              Produk aktif dapat dipilih saat mencatat kunjungan & titip baru.
+              Produk aktif dapat dipilih saat menitipkan barang ke warung mitra.
             </span>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">

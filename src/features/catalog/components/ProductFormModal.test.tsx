@@ -15,7 +15,7 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
     toastStore.dismissAll()
   })
 
-  it('merender modal form produk dengan input nama, harga titip, harga eceran, dan masa simpan', () => {
+  it('merender modal form produk dengan input nama, harga titip, dan masa simpan', () => {
     const html = renderToStaticMarkup(
       <ProductFormModal
         isOpen={true}
@@ -26,8 +26,7 @@ describe('ProductFormModal & ProductCard Component Tests', () => {
 
     expect(html).toContain('Tambah Produk Baru')
     expect(html).toContain('Nama Produk')
-    expect(html).toContain('Harga Titip (Rp)')
-    expect(html).toContain('Harga Eceran (Rp)')
+    expect(html).toContain('Harga Titip / Modal Konsinyasi (Rp)')
     expect(html).toContain('Masa Simpan (Hari)')
     expect(html).toContain('Status Produk Aktif')
   })
