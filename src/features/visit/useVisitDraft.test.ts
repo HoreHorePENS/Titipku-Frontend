@@ -5,6 +5,8 @@ import {
   clearDraftFromStorage,
   DRAFT_STORAGE_KEY,
 } from './useVisitDraft'
+import { setAuthToken } from '@/lib/api-client'
+import { fakeAccountToken } from '@/lib/test-account-token'
 
 describe('Persistent useVisitDraft (Offline-First Storage)', () => {
   // Mock localStorage
@@ -12,6 +14,7 @@ describe('Persistent useVisitDraft (Offline-First Storage)', () => {
 
   beforeEach(() => {
     mockStorage = {}
+    setAuthToken(fakeAccountToken('user-a'))
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => mockStorage[key] ?? null,
       setItem: (key: string, val: string) => {
@@ -28,6 +31,7 @@ describe('Persistent useVisitDraft (Offline-First Storage)', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    setAuthToken(null)
   })
 
   it('berhasil menyimpan dan memulihkan draf kunjungan dengan skema ber-versi v1', () => {

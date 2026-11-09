@@ -6,6 +6,7 @@ import { NotificationPopover } from '@/components/shared/NotificationPopover'
 import { ProfileDetailModal } from '@/components/shared/ProfileDetailModal'
 import { useCurrentAccount, logoutUser } from '@/features/auth'
 import { useProposals } from '@/features/stores/proposals-api'
+import { ACCOUNT_STORAGE_KEYS, readAccountItem } from '@/lib/account-storage'
 import { toast } from '@/components/ui/toast-store'
 
 export function AppLayout() {
@@ -25,14 +26,14 @@ export function AppLayout() {
   const pendingIncoming = (proposals ?? []).filter((p) => p.direction === incomingDirection && p.status === 'pending').length
   const showBadge = (item: NavItemConfig) => item.badge === 'pendingIncoming' && pendingIncoming > 0
 
-  // Custom profile state synced with localStorage
+  // Profil kustom disimpan per akun (lib/account-storage.ts)
   const [customProfile, setCustomProfile] = useState<{
     fullName?: string
     businessName?: string
     photoUrl?: string
   } | null>(() => {
     try {
-      const raw = localStorage.getItem('titipku_custom_profile')
+      const raw = readAccountItem(ACCOUNT_STORAGE_KEYS.customProfile)
       return raw ? JSON.parse(raw) : null
     } catch {
       return null
@@ -52,7 +53,7 @@ export function AppLayout() {
   useEffect(() => {
     const handleProfileUpdate = () => {
       try {
-        const raw = localStorage.getItem('titipku_custom_profile')
+        const raw = readAccountItem(ACCOUNT_STORAGE_KEYS.customProfile)
         if (raw) setCustomProfile(JSON.parse(raw))
       } catch {
         // ignore

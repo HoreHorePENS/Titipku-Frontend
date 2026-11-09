@@ -1,0 +1,5 @@
+/** Token berbentuk JWT (tanpa tanda tangan valid) dengan klaim `sub`, khusus untuk test. */
+export function fakeAccountToken(userId: string): string {
+  const encode = (value: object) => btoa(JSON.stringify(value)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
+  return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: userId })}.signature`
+}

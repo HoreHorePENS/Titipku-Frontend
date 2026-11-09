@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react'
 import type { VisitItemInput } from './types'
+import { ACCOUNT_STORAGE_KEYS, readAccountItem, removeAccountItem, writeAccountItem } from '@/lib/account-storage'
 
-export const DRAFT_STORAGE_KEY = 'titipku_visit_draft_v1'
+// Draf disimpan per akun (lib/account-storage.ts) agar tidak terbawa ke akun lain.
+export const DRAFT_STORAGE_KEY = ACCOUNT_STORAGE_KEYS.visitDraft
 
 export interface PersistedVisitDraft {
   version: 1
@@ -33,8 +35,7 @@ export function saveDraftToStorage(data: Omit<PersistedVisitDraft, 'version' | '
       version: 1,
       updatedAt: new Date().toISOString(),
     }
-    storage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload))
-    return true
+    return writeAccountItem(DRAFT_STORAGE_KEY, JSON.stringify(payload))
   } catch (error) {
     // Penanganan storage kuota penuh atau private browsing mode
     console.warn('Gagal menyimpan draf kunjungan ke localStorage:', error)
@@ -47,7 +48,7 @@ export function loadDraftFromStorage(): PersistedVisitDraft | null {
   if (!storage) return null
 
   try {
-    const raw = storage.getItem(DRAFT_STORAGE_KEY)
+    const raw = readAccountItem(DRAFT_STORAGE_KEY)
     if (!raw) return null
 
     const parsed = JSON.parse(raw) as PersistedVisitDraft
@@ -56,13 +57,13 @@ export function loadDraftFromStorage(): PersistedVisitDraft | null {
       return parsed
     }
     // Jika format lama atau rusak, bersihkan
-    storage.removeItem(DRAFT_STORAGE_KEY)
+    removeAccountItem(DRAFT_STORAGE_KEY)
     return null
   } catch (error) {
     // JSON korup atau storage tidak bisa diakses
     console.warn('Gagal membaca draf kunjungan dari localStorage:', error)
     try {
-      storage.removeItem(DRAFT_STORAGE_KEY)
+      removeAccountItem(DRAFT_STORAGE_KEY)
     } catch {
       // Abaikan jika storage disabled
     }
@@ -75,7 +76,7 @@ export function clearDraftFromStorage(): void {
   if (!storage) return
 
   try {
-    storage.removeItem(DRAFT_STORAGE_KEY)
+    removeAccountItem(DRAFT_STORAGE_KEY)
   } catch {
     // Abaikan jika storage error
   }

@@ -1,6 +1,8 @@
 import type { VisitRecord, VisitItem, PaymentStatus } from '@/features/visit/types'
+import { ACCOUNT_STORAGE_KEYS, readAccountItem, writeAccountItem } from '@/lib/account-storage'
 
-const STORAGE_KEY = 'titipku_digital_invoices'
+// Nota buatan toko disimpan per akun (lihat lib/account-storage.ts).
+const STORAGE_KEY = ACCOUNT_STORAGE_KEYS.digitalInvoices
 
 export interface CreateStoreInvoiceItemInput {
   productId: string
@@ -24,7 +26,7 @@ export interface CreateStoreInvoiceInput {
 
 export function getStoreDigitalInvoices(): VisitRecord[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = readAccountItem(STORAGE_KEY)
     if (!raw) return []
     return JSON.parse(raw) as VisitRecord[]
   } catch {
@@ -36,7 +38,7 @@ export function saveStoreDigitalInvoice(invoice: VisitRecord): void {
   try {
     const current = getStoreDigitalInvoices()
     const updated = [invoice, ...current]
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    writeAccountItem(STORAGE_KEY, JSON.stringify(updated))
   } catch (err) {
     console.error('Failed to save digital invoice to storage', err)
   }

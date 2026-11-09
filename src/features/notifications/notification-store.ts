@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useProposals, type Proposal } from '@/features/stores/proposals-api'
+import { ACCOUNT_STORAGE_KEYS, readAccountItem, writeAccountItem } from '@/lib/account-storage'
 
 export type NotificationRole = 'penitip' | 'pemilik_toko'
 
@@ -16,7 +17,7 @@ export interface AppNotification {
   actionable: boolean
 }
 
-export const READ_STORAGE_KEY = 'titipku_notifications_read_v2'
+export const READ_STORAGE_KEY = ACCOUNT_STORAGE_KEYS.notificationsRead
 /** Hanya proposal 30 hari terakhir yang dijadikan notifikasi. */
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -74,7 +75,7 @@ export function formatTimeAgo(iso: string, now = Date.now()): string {
 
 function loadReadIds(): Set<string> {
   try {
-    const raw = localStorage.getItem(READ_STORAGE_KEY)
+    const raw = readAccountItem(READ_STORAGE_KEY)
     const parsed: unknown = raw ? JSON.parse(raw) : []
     return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [])
   } catch {
@@ -85,7 +86,7 @@ function loadReadIds(): Set<string> {
 function saveReadIds(ids: Set<string>) {
   try {
     // Simpan secukupnya agar tidak tumbuh tanpa batas.
-    localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...ids].slice(-300)))
+    writeAccountItem(READ_STORAGE_KEY, JSON.stringify([...ids].slice(-300)))
   } catch {
     // Penyimpanan tidak tersedia (mode privat): status baca hanya berlaku di sesi ini.
   }

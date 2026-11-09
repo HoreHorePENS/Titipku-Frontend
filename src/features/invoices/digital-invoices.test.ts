@@ -3,12 +3,15 @@ import {
   getStoreDigitalInvoices,
   createStoreDigitalInvoice,
 } from './digital-invoices'
+import { setAuthToken } from '@/lib/api-client'
+import { fakeAccountToken } from '@/lib/test-account-token'
 
 describe('digital-invoices', () => {
   let store: Record<string, string> = {}
 
   beforeEach(() => {
     store = {}
+    setAuthToken(fakeAccountToken('user-a'))
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => store[key] || null,
       setItem: (key: string, value: string) => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { ACCOUNT_STORAGE_KEYS, readAccountItem, writeAccountItem } from '@/lib/account-storage'
 import { Modal } from '@/components/shared/Modal'
 import { Button } from '@/components/ui/Button'
 import { useNavigate } from 'react-router-dom'
@@ -49,7 +50,7 @@ export function ProfileDetailModal({
 
     let saved: SavedCustomProfile = {}
     try {
-      const raw = localStorage.getItem('titipku_custom_profile')
+      const raw = readAccountItem(ACCOUNT_STORAGE_KEYS.customProfile)
       if (raw) saved = JSON.parse(raw)
     } catch {
       // ignore
@@ -102,7 +103,7 @@ export function ProfileDetailModal({
       photoUrl,
     }
 
-    localStorage.setItem('titipku_custom_profile', JSON.stringify(payload))
+    writeAccountItem(ACCOUNT_STORAGE_KEYS.customProfile, JSON.stringify(payload))
     window.dispatchEvent(new CustomEvent('titipku_profile_updated'))
 
     setSaveSuccess(true)
