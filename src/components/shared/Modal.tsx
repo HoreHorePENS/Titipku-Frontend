@@ -73,14 +73,14 @@ export function Modal({
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-ink/50 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-[60] flex items-center justify-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4 bg-ink/50 backdrop-blur-xs animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
         ref={dialogRef}
-        className={`bg-surface border border-line rounded-2xl w-full ${maxWidthClasses[maxWidth]} shadow-xl overflow-hidden flex flex-col max-h-[90vh] font-sans animate-in zoom-in-95 duration-150 ${className}`}
+        className={`bg-surface border border-line rounded-2xl w-full ${maxWidthClasses[maxWidth]} shadow-xl overflow-hidden flex flex-col max-h-[calc(100dvh-1.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:max-h-[90vh] font-sans animate-in zoom-in-95 duration-150 ${className}`}
       >
         {/* Header Modal Terstandarisasi */}
         <div className="flex items-start justify-between p-4 sm:p-5 border-b border-line bg-page/50 shrink-0">
@@ -115,7 +115,7 @@ export function Modal({
 
         {/* Footer Aksi Opsional */}
         {footer && (
-          <div className="p-4 sm:p-5 border-t border-line bg-page/50 flex items-center justify-end gap-3 shrink-0">
+          <div className="px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-5 border-t border-line bg-page/50 flex flex-wrap items-center justify-end gap-3 shrink-0">
             {footer}
           </div>
         )}

@@ -23,7 +23,7 @@ describe('AppLayout Shell & Navigation', () => {
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
       'Beranda',
       'Bukti Nota',
-      'Toko Mitra Saya',
+      'Toko Mitra',
       'Tagihan',
       'Produk',
     ])

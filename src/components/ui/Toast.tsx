@@ -212,7 +212,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
       {/* Wadah Toast: di atas bottom nav lewat var(--bottom-offset, 16px), max-w-[480px] */}
       <aside
         aria-label="Notifikasi sistem"
-        className="fixed left-0 right-0 z-50 pointer-events-none flex flex-col items-center px-4"
+        className="fixed left-0 right-0 z-[70] pointer-events-none flex flex-col items-center px-4"
         style={{
           bottom: 'calc(var(--bottom-offset, 16px) + env(safe-area-inset-bottom, 0px))',
         }}

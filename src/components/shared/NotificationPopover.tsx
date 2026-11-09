@@ -73,7 +73,11 @@ export function NotificationPopover({ userRole }: NotificationPopoverProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl border border-line shadow-xl z-50 overflow-hidden" role="dialog" aria-label="Notifikasi">
+        <div
+          className="fixed inset-x-3 top-[4.5rem] max-h-[calc(100dvh-6rem)] sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-2 sm:w-96 sm:max-h-none bg-white rounded-2xl border border-line shadow-xl z-[60] overflow-hidden flex flex-col"
+          role="dialog"
+          aria-label="Notifikasi"
+        >
           <div className="px-4 py-3 bg-slate-50 border-b border-line flex items-center justify-between">
             <h2 className="text-title-3 text-ink">
               Notifikasi{unreadCount > 0 && <span className="text-caption text-ink-soft font-medium"> · {unreadCount} baru</span>}
@@ -85,7 +89,7 @@ export function NotificationPopover({ userRole }: NotificationPopoverProps) {
             )}
           </div>
 
-          <ul className="max-h-96 overflow-y-auto divide-y divide-line">
+          <ul className="min-h-0 flex-1 sm:max-h-96 overflow-y-auto divide-y divide-line">
             {isError ? (
               <li className="py-8 px-4 text-center text-body text-ink-soft">Notifikasi belum bisa dimuat. Coba lagi sebentar lagi.</li>
             ) : notifications.length === 0 ? (

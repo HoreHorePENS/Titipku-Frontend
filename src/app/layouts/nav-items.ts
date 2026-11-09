@@ -13,7 +13,7 @@ export interface NavItemConfig {
 export const NAV_ITEMS: NavItemConfig[] = [
   { to: '/', label: 'Beranda', icon: HomeIcon, badge: 'pendingIncoming' },
   { to: '/kunjungan', label: 'Bukti Nota', icon: VisitIcon },
-  { to: '/warung', label: 'Toko Mitra Saya', icon: StoreIcon },
+  { to: '/warung', label: 'Toko Mitra', icon: StoreIcon },
   { to: '/tagihan', label: 'Tagihan', icon: InvoiceIcon },
   { to: '/produk', label: 'Produk', icon: ProductIcon },
 ]

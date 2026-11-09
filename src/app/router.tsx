@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from '@/app/layouts/AppLayout'
 import PublicLayout from '@/app/layouts/PublicLayout'
 import ProtectedRoute from '@/app/ProtectedRoute'
+import { RequireRole } from '@/app/RequireRole'
 import Home from '@/routes/Home'
 import Visit from '@/routes/Visit'
 import Landing from '@/routes/Landing'
@@ -48,16 +49,16 @@ const router = createBrowserRouter([
       { path: '/home', element: <Home /> },
       { path: '/peta', element: <MapPage /> },
       { path: '/map', element: <MapPage /> },
-      { path: '/toko-saya', element: <MyStore /> },
-      { path: '/penitip', element: <Penitip /> },
-      { path: '/kunjungan', element: <Visit /> },
-      { path: '/kunjungan/baru', element: <VisitNew /> },
-      { path: '/visit/new', element: <VisitNew /> },
-      { path: '/warung', element: <Warung /> },
-      { path: '/tagihan', element: <Invoices /> },
-      { path: '/invoices', element: <Invoices /> },
-      { path: '/produk', element: <Catalog /> },
-      { path: '/catalog', element: <Catalog /> },
+      { path: '/toko-saya', element: <RequireRole role="pemilik_toko"><MyStore /></RequireRole> },
+      { path: '/penitip', element: <RequireRole role="pemilik_toko"><Penitip /></RequireRole> },
+      { path: '/kunjungan', element: <RequireRole role="penitip"><Visit /></RequireRole> },
+      { path: '/kunjungan/baru', element: <RequireRole role="penitip"><VisitNew /></RequireRole> },
+      { path: '/visit/new', element: <RequireRole role="penitip"><VisitNew /></RequireRole> },
+      { path: '/warung', element: <RequireRole role="penitip"><Warung /></RequireRole> },
+      { path: '/tagihan', element: <RequireRole role="penitip"><Invoices /></RequireRole> },
+      { path: '/invoices', element: <RequireRole role="penitip"><Invoices /></RequireRole> },
+      { path: '/produk', element: <RequireRole role="penitip"><Catalog /></RequireRole> },
+      { path: '/catalog', element: <RequireRole role="penitip"><Catalog /></RequireRole> },
     ],
   },
 

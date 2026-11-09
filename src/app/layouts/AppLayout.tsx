@@ -39,6 +39,16 @@ export function AppLayout() {
     }
   })
 
+  // Token ditolak (kedaluwarsa/dicabut): buang seluruh sesi lalu minta login ulang.
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      logoutUser()
+      navigate('/auth', { replace: true })
+    }
+    window.addEventListener('titipku:unauthorized', handleUnauthorized)
+    return () => window.removeEventListener('titipku:unauthorized', handleUnauthorized)
+  }, [navigate])
+
   useEffect(() => {
     const handleProfileUpdate = () => {
       try {
@@ -265,7 +275,7 @@ export function AppLayout() {
           -------------------------------------------------------------------- */}
       {!isVisitNew && (
         <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-line px-2 py-2 flex items-center justify-around z-50 shadow-lg"
+          className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-line px-1 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-stretch justify-around z-50 shadow-lg"
           aria-label="Navigasi Bawah Mobile"
         >
           {navItems.map((item: NavItemConfig) => {
@@ -278,7 +288,7 @@ export function AppLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`relative flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all min-h-[50px] ${
+                className={`relative flex flex-col items-center justify-start flex-1 min-w-0 py-1.5 px-0.5 rounded-xl transition-all min-h-[50px] ${
                   isActive
                     ? 'text-slate-900 font-bold'
                     : 'text-slate-400 hover:text-slate-700 font-medium'
@@ -299,7 +309,7 @@ export function AppLayout() {
                 </div>
 
                 <span
-                  className={`text-caption mt-1 leading-none tracking-tight ${
+                  className={`block w-full text-center truncate whitespace-nowrap text-caption mt-1 leading-tight ${
                     isActive ? 'font-bold' : 'font-medium'
                   }`}
                 >
@@ -322,7 +332,7 @@ export function AppLayout() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs animate-fadeIn"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs animate-fadeIn"
         >
           <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-5 shadow-lg flex flex-col gap-4 font-sans">
             <div className="flex items-center gap-3">

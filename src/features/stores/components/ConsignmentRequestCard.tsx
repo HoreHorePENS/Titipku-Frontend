@@ -23,8 +23,8 @@ export function ConsignmentRequestCard({ request, onClick, onApprove, onReject, 
         : 'Tanpa rincian produk'
 
   return (
-    <article className="p-4 bg-white rounded-2xl border border-line hover:border-line-strong transition-colors flex flex-col sm:flex-row sm:items-center gap-3">
-      <button type="button" onClick={() => onClick(request)} className="min-w-0 flex-1 text-left cursor-pointer">
+    <article className="p-4 bg-white rounded-2xl border border-line hover:border-line-strong transition-colors flex flex-col gap-3">
+      <button type="button" onClick={() => onClick(request)} className="min-w-0 w-full text-left cursor-pointer">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-title-3 text-ink truncate">{request.producerBusinessName}</h3>
           <span className="text-caption font-semibold px-2 py-0.5 rounded-full border border-line text-ink-soft">
@@ -38,7 +38,8 @@ export function ConsignmentRequestCard({ request, onClick, onApprove, onReject, 
         <p className="text-body text-ink mt-1 truncate">{summary}</p>
       </button>
 
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Tombol selalu di baris bawah agar tidak menimpa nama penitip di layar sempit. */}
+      <div className="flex flex-wrap items-center justify-end gap-2 pt-3 border-t border-line">
         {request.status === 'pending' && onReject && (
           <Button variant="outline" size="sm" className="rounded-xl min-h-[44px]" disabled={busy} onClick={() => onReject(request)}>
             Tolak

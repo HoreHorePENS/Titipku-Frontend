@@ -388,7 +388,7 @@ export function CreateStoreInvoiceModal({
       maxWidth="2xl"
       footer={
         <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-3">
-          <div className="text-caption text-slate-600 flex items-center gap-3">
+          <div className="text-caption text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-1">
             <span>
               Terjual: <strong className="text-slate-900">{totals.totalSold} bks</strong>
             </span>
@@ -399,7 +399,7 @@ export function CreateStoreInvoiceModal({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button variant="outline" size="md" onClick={handleClose} className="rounded-xl min-h-[44px]">
+            <Button variant="outline" size="md" onClick={handleClose} className="rounded-xl min-h-[44px] shrink-0">
               Batal
             </Button>
             <Button
@@ -407,9 +407,11 @@ export function CreateStoreInvoiceModal({
               size="md"
               disabled={totals.hasInvalidItems || totals.totalSold <= 0}
               onClick={() => setStep('payment')}
-              className="rounded-xl min-h-[44px] font-semibold"
+              className="rounded-xl min-h-[44px] font-semibold flex-1 sm:flex-none min-w-0"
             >
-              Lanjut ke Pembayaran ({formatRupiah(totals.todayTotal)}) →
+              <span className="truncate">
+                Lanjut ke pembayaran<span className="hidden sm:inline"> ({formatRupiah(totals.todayTotal)})</span>
+              </span>
             </Button>
           </div>
         </div>
@@ -439,8 +441,8 @@ export function CreateStoreInvoiceModal({
 
         {/* Info Singkat Penitip yang Sedang Dihitung */}
         {activePenitip && (
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-caption">
-            <div className="flex items-center gap-2">
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption">
+            <div className="flex flex-wrap items-center gap-x-2 min-w-0">
               <span className="font-bold text-slate-900">{activePenitip.producerBusinessName}</span>
               <span className="text-slate-400">·</span>
               <span className="text-slate-600">{activePenitip.producerOwnerName}</span>

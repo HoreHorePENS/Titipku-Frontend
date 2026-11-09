@@ -21,13 +21,13 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
 
   return (
     <div
-      className={`bg-surface rounded-2xl border transition-all duration-200 overflow-hidden shadow-2xs ${
+      className={`@container bg-surface rounded-2xl border transition-all duration-200 overflow-hidden shadow-2xs ${
         calc.isValid ? 'border-line hover:border-line-strong' : 'border-danger/80 ring-2 ring-danger/20'
       }`}
     >
       {/* 1. Header Kartu Produk */}
       <div className="p-4 border-b border-line bg-surface flex flex-wrap items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-title-3 text-ink">{item.productName}</h3>
           </div>
@@ -36,7 +36,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center px-3 py-1 rounded-lg bg-surface-raised border border-line text-caption font-bold text-ink tabular-nums">
             Stok kemarin: {item.prevStock} bks
           </span>
@@ -63,20 +63,20 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
       )}
 
       {/* 3. Grid Input (3 Kolom Sejajar di Desktop, Tumpuk Rapi di Mobile) */}
-      <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 divide-y md:divide-y-0 md:divide-x divide-line/60">
+      <div className="p-4 grid grid-cols-1 @3xl:grid-cols-3 gap-4 @3xl:gap-5 divide-y @3xl:divide-y-0 @3xl:divide-x divide-line/60">
         {/* Kolom 1: Sisa di Rak */}
-        <div className="flex flex-col pt-3 first:pt-0 md:pt-0 md:pr-4">
-          <div className="flex items-center justify-between gap-3 md:block md:h-11">
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center justify-between md:justify-start gap-1">
+        <div className="flex flex-col pt-3 first:pt-0 @3xl:pt-0 @3xl:pr-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 @3xl:block @3xl:h-11">
+            <div className="flex flex-col justify-center min-w-0 flex-1">
+              <div className="flex items-center justify-between @3xl:justify-start gap-1">
                 <span className="text-body font-bold text-ink">Sisa di rak</span>
-                <span className="text-caption text-ink-soft hidden md:inline ml-auto">Hasil hitung</span>
+                <span className="text-caption text-ink-soft hidden @3xl:inline ml-auto">Hasil hitung</span>
               </div>
               <p className="text-caption text-ink-soft mt-0.5 truncate">Barang masih ada di rak warung</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
-            <div className="md:hidden shrink-0">
+            <div className="@3xl:hidden shrink-0 ml-auto">
               <Stepper
                 value={item.remaining}
                 onChange={(val) => onChange({ ...item, remaining: val })}
@@ -87,7 +87,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </div>
 
           {/* Stepper di Desktop: Sejajar di bawah header */}
-          <div className="hidden md:flex mt-3 items-center justify-center">
+          <div className="hidden @3xl:flex mt-3 items-center justify-center">
             <Stepper
               value={item.remaining}
               onChange={(val) => onChange({ ...item, remaining: val })}
@@ -97,7 +97,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </div>
 
           {/* Quick preset chips */}
-          <div className="mt-2.5 md:mt-3 flex flex-wrap items-center gap-1.5 md:min-h-[58px] content-start">
+          <div className="mt-2.5 @3xl:mt-3 flex flex-wrap items-center gap-1.5 @3xl:min-h-[58px] content-start">
             <button
               type="button"
               onClick={() => onChange({ ...item, remaining: 0 })}
@@ -126,18 +126,18 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
         </div>
 
         {/* Kolom 2: Retur */}
-        <div className="flex flex-col pt-3 md:pt-0 md:px-4">
-          <div className="flex items-center justify-between gap-3 md:block md:h-11">
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center justify-between md:justify-start gap-1">
+        <div className="flex flex-col pt-3 @3xl:pt-0 @3xl:px-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 @3xl:block @3xl:h-11">
+            <div className="flex flex-col justify-center min-w-0 flex-1">
+              <div className="flex items-center justify-between @3xl:justify-start gap-1">
                 <span className="text-body font-bold text-ink">Retur</span>
-                <span className="text-caption text-ink-soft hidden md:inline ml-auto">Ditarik</span>
+                <span className="text-caption text-ink-soft hidden @3xl:inline ml-auto">Ditarik</span>
               </div>
               <p className="text-caption text-ink-soft mt-0.5 truncate">Barang rusak / mendekati basi</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
-            <div className="md:hidden shrink-0">
+            <div className="@3xl:hidden shrink-0 ml-auto">
               <Stepper
                 value={item.returned}
                 onChange={(val) => onChange({ ...item, returned: val })}
@@ -148,7 +148,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </div>
 
           {/* Stepper di Desktop: Sejajar di bawah header */}
-          <div className="hidden md:flex mt-3 items-center justify-center">
+          <div className="hidden @3xl:flex mt-3 items-center justify-center">
             <Stepper
               value={item.returned}
               onChange={(val) => onChange({ ...item, returned: val })}
@@ -157,7 +157,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
             />
           </div>
 
-          <div className="mt-2.5 md:mt-3 flex flex-wrap items-center gap-1.5 md:min-h-[58px] content-start">
+          <div className="mt-2.5 @3xl:mt-3 flex flex-wrap items-center gap-1.5 @3xl:min-h-[58px] content-start">
             <button
               type="button"
               onClick={() => onChange({ ...item, returned: 0 })}
@@ -173,18 +173,18 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
         </div>
 
         {/* Kolom 3: Titip Baru */}
-        <div className="flex flex-col pt-3 md:pt-0 md:pl-4">
-          <div className="flex items-center justify-between gap-3 md:block md:h-11">
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center justify-between md:justify-start gap-1">
+        <div className="flex flex-col pt-3 @3xl:pt-0 @3xl:pl-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 @3xl:block @3xl:h-11">
+            <div className="flex flex-col justify-center min-w-0 flex-1">
+              <div className="flex items-center justify-between @3xl:justify-start gap-1">
                 <span className="text-body font-bold text-ink">Titip baru</span>
-                <span className="text-caption text-ink-soft hidden md:inline ml-auto">Stok tambahan</span>
+                <span className="text-caption text-ink-soft hidden @3xl:inline ml-auto">Stok tambahan</span>
               </div>
               <p className="text-caption text-ink-soft mt-0.5 truncate">Barang segar ditambahkan hari ini</p>
             </div>
 
             {/* Stepper di Mobile: Berdampingan di kanan */}
-            <div className="md:hidden shrink-0">
+            <div className="@3xl:hidden shrink-0 ml-auto">
               <Stepper
                 value={item.newDrop}
                 onChange={(val) => onChange({ ...item, newDrop: val })}
@@ -194,7 +194,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </div>
 
           {/* Stepper di Desktop: Sejajar di bawah header */}
-          <div className="hidden md:flex mt-3 items-center justify-center">
+          <div className="hidden @3xl:flex mt-3 items-center justify-center">
             <Stepper
               value={item.newDrop}
               onChange={(val) => onChange({ ...item, newDrop: val })}
@@ -203,7 +203,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
           </div>
 
           {/* Chips Saran Titip Baru */}
-          <div className="mt-2.5 md:mt-3 flex flex-wrap items-center gap-1.5 md:min-h-[58px] content-start">
+          <div className="mt-2.5 @3xl:mt-3 flex flex-wrap items-center gap-1.5 @3xl:min-h-[58px] content-start">
             <button
               type="button"
               onClick={() => onChange({ ...item, newDrop: 0 })}
@@ -234,7 +234,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
       </div>
 
       {/* 4. Footer Pratinjau Perhitungan Instan */}
-      <div className="px-4 py-3 bg-surface-raised/40 border-t border-line flex items-center justify-between text-caption">
+      <div className="px-4 py-3 bg-surface-raised/40 border-t border-line flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-caption">
         <div className="flex items-center gap-3 text-ink-soft">
           <span>
             Terjual: <strong className="text-ink tabular-nums">{calc.sold} bks</strong>

@@ -355,14 +355,14 @@ export default function PenitipRoute() {
             <div className="flex flex-col gap-8">
               {/* Bagian Atas: Mitra Penitip Aktif */}
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                    <h2 className="text-title-3 text-slate-900 uppercase tracking-wider">
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0"></span>
+                    <h2 className="text-title-3 text-slate-900">
                       Mitra Penitip Aktif ({activeRequests.length})
                     </h2>
                   </div>
-                  <span className="text-caption text-slate-500 font-medium">Siap drop barang &amp; hitung nota</span>
+                  <span className="text-caption text-slate-500 font-medium pl-[18px] sm:pl-0">Siap drop barang &amp; hitung nota</span>
                 </div>
 
                 {activeRequests.length === 0 ? (
@@ -391,14 +391,14 @@ export default function PenitipRoute() {
 
               {/* Bagian Bawah: History Pelanggan & Pengajuan Penitip */}
               <div className="flex flex-col gap-3 pt-4 border-t border-slate-200">
-                <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                    <h2 className="text-title-3 text-slate-900 uppercase tracking-wider">
+                <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
+                    <h2 className="text-title-3 text-slate-900">
                       History Pelanggan &amp; Pengajuan Penitip ({historyRequests.length})
                     </h2>
                   </div>
-                  <span className="text-caption text-slate-500 font-medium">Menunggu persetujuan atau riwayat ditolak</span>
+                  <span className="text-caption text-slate-500 font-medium pl-[18px] sm:pl-0">Menunggu persetujuan atau riwayat ditolak</span>
                 </div>
 
                 {historyRequests.length === 0 ? (

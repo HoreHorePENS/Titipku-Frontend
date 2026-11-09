@@ -8,7 +8,8 @@ import { PageContainer, PageHeader } from '@/components/shared'
 import { toast } from '@/components/ui/toast-store'
 import { useDashboard, usePartners } from '@/features/dashboard/api'
 import { useVisits } from '@/features/visit/api'
-import { useCurrentAccount } from '@/features/auth'
+import { useAccountRole, useCurrentAccount } from '@/features/auth'
+import { ApiErrorState } from '@/components/shared/ApiErrorState'
 import { CreateStoreInvoiceModal } from '@/features/invoices'
 import {
   useMyStore,
@@ -610,9 +611,9 @@ function PenitipMarketplace({
 // ─── Route Utama ─────────────────────────────────────────────────────────────
 
 export default function HomeRoute() {
-  const { data: currentAccount, isLoading: isAccountLoading } = useCurrentAccount()
-  const isPemilikToko = currentAccount?.user?.account_type === 'pemilik_toko'
-  const isPenitip = !isPemilikToko && !isAccountLoading
+  const { data: currentAccount, refetch: refetchAccount, error: accountError } = useCurrentAccount()
+  // Peran selalu dari akun yang sedang login; query khusus peran baru jalan setelah peran pasti.
+  const { isPemilikToko, isPenitip, role, isError: isAccountError } = useAccountRole()
 
   const userName = currentAccount?.user?.full_name || (isPemilikToko ? 'Pemilik Toko' : 'Penitip')
   const [todayFormatted] = useState(() => tanggalWIB(new Date()))
@@ -628,6 +629,24 @@ export default function HomeRoute() {
   const { data: visits = [], isLoading: isVisitsLoading } = useVisits(undefined, isPenitip)
 
   const isLoading = isDashboardLoading || isPartnersLoading || isVisitsLoading
+
+  if (isAccountError) {
+    return (
+      <PageContainer>
+        <ApiErrorState error={accountError} onRetry={() => refetchAccount()} title="Data akun belum bisa dimuat" size="page" />
+      </PageContainer>
+    )
+  }
+  if (!role) {
+    return (
+      <PageContainer>
+        <div className="flex flex-col gap-4" aria-busy="true" aria-label="Memuat beranda">
+          <Skeleton variant="rect" className="h-10 w-56" />
+          <Skeleton variant="rect" className="h-40 w-full rounded-2xl" />
+        </div>
+      </PageContainer>
+    )
+  }
 
   if (isPemilikToko) {
     return <PemilikTokoDashboard userName={userName} todayFormatted={todayFormatted} />
