@@ -45,7 +45,7 @@ describe('Auth Schemas', () => {
       expect(res.success).toBe(false)
       if (!res.success) {
         const issue = res.error.issues.find((i) => i.path.includes('confirmPassword'))
-        expect(issue?.message).toBe('Konfirmasi kata sandi tidak cocok')
+        expect(issue?.message).toBe('Kata sandi tidak sama.')
       }
     })
 

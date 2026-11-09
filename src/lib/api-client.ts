@@ -80,12 +80,15 @@ export interface ApiErrorDetail {
   code: string
   message: string
   fields?: Record<string, string>
+  fieldCodes?: Record<string, string>
 }
 
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
   readonly fields?: Record<string, string>
+  /** Kode mesin per field dari backend (required, invalid_format, …). Lihat docs/api-errors.md di backend. */
+  readonly fieldCodes?: Record<string, string>
 
   constructor(status: number, errorDetail: ApiErrorDetail) {
     super(errorDetail.message || `API error: ${status}`)
@@ -93,6 +96,7 @@ export class ApiError extends Error {
     this.status = status
     this.code = errorDetail.code || 'UNKNOWN_ERROR'
     this.fields = errorDetail.fields
+    this.fieldCodes = errorDetail.fieldCodes
   }
 }
 
@@ -144,6 +148,10 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
           fields:
             errObj.fields && typeof errObj.fields === 'object'
               ? (errObj.fields as Record<string, string>)
+              : undefined,
+          fieldCodes:
+            errObj.field_codes && typeof errObj.field_codes === 'object'
+              ? (errObj.field_codes as Record<string, string>)
               : undefined,
         }
       }

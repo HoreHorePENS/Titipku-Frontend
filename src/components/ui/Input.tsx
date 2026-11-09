@@ -54,7 +54,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       ? 'bg-slate-100 dark:bg-slate-900 border-line opacity-75 cursor-not-allowed'
       : readOnly
       ? 'bg-slate-50 dark:bg-slate-900/60 border-line cursor-default'
-      : `${baseBorderClasses} ${borderFocusClasses} bg-surface`
+      : // Saat error, jangan pasang border netral: kelas itu menimpa border-danger.
+        `${isError ? '' : baseBorderClasses} ${borderFocusClasses} bg-surface`
 
     const sizeClasses =
       inputSize === 'sm'
@@ -96,7 +97,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             readOnly={readOnly}
             required={required}
             aria-invalid={isError ? 'true' : undefined}
-            aria-describedby={isError ? errorId : hint ? hintId : undefined}
+            aria-describedby={[isError ? errorId : '', hint ? hintId : ''].filter(Boolean).join(' ') || undefined}
             className={`w-full h-full bg-transparent text-ink placeholder:text-ink-soft text-[16px] leading-normal outline-none ${
               readOnly ? 'cursor-default select-all' : ''
             } ${isActuallyDisabled ? 'cursor-not-allowed text-ink-disabled' : ''} ${className}`}
@@ -111,12 +112,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {/* Teks Bawah: Pesan Error atau Hint */}
+        {/* Teks Bawah: Hint selalu tampil (mis. syarat kata sandi), pesan error di bawahnya */}
+        {hint ? (
+          <p id={hintId} className="text-caption text-ink-soft">
+            {hint}
+          </p>
+        ) : null}
+        {/* Live region selalu ada agar pesan baru dibacakan screen reader (polite;
+            ringkasan form memakai role="alert"). */}
+        <div aria-live="polite" className={isError ? undefined : 'sr-only'}>
         {isError ? (
           <div
             id={errorId}
-            role="alert"
-            aria-live="polite"
             className="flex items-center gap-1.5 text-caption text-danger font-medium animate-fadeIn"
           >
             {/* Ikon Alert Inline (tanpa emoji, tanpa dependensi eksternal) */}
@@ -134,11 +141,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </svg>
             <span>{error}</span>
           </div>
-        ) : hint ? (
-          <p id={hintId} className="text-caption text-ink-soft">
-            {hint}
-          </p>
         ) : null}
+        </div>
       </div>
     )
   }

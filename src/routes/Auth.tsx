@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useForm, type SubmitHandler } from 'react-hook-form'
+import { useForm, type FieldErrors, type FieldValues, type Path, type SubmitHandler, type UseFormSetError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
@@ -11,11 +11,18 @@ import {
   isAuthenticated,
   loginSchema,
   registerSchema,
+  toLoginPayload,
+  toRegisterPayload,
+  describeLoginError,
+  describeRegisterError,
+  LOGIN_FIELD_ORDER,
+  REGISTER_FIELD_ORDER,
+  PASSWORD_REQUIREMENTS,
   type LoginFormData,
   type RegisterFormData,
 } from '@/features/auth'
 import { LocationPickerMap } from '@/features/stores'
-import { ApiError } from '@/lib/api-client'
+import type { FriendlyApiError } from '@/lib/api-errors'
 
 const STORE_CATEGORIES = [
   { value: 'warung', label: 'Warung Makan' },
@@ -28,12 +35,66 @@ const STORE_CATEGORIES = [
   { value: 'lainnya', label: 'Lainnya' },
 ]
 
+interface FormAlertState {
+  message: string
+  /** Tampilkan tautan "Masuk" (mis. saat email sudah terdaftar). */
+  offerLogin?: boolean
+}
+
+function invalidSummary(count: number): string {
+  return count === 1
+    ? 'Ada 1 isian yang perlu diperbaiki. Periksa kolom yang ditandai merah.'
+    : `Ada ${count} isian yang perlu diperbaiki. Periksa kolom yang ditandai merah.`
+}
+
+/** Pasang error server ke field form, fokus ke field pertama sesuai urutan form. */
+function applyServerFieldErrors<T extends FieldValues>(
+  friendly: FriendlyApiError<Path<T>>,
+  order: Path<T>[],
+  setError: UseFormSetError<T>
+): number {
+  let focused = false
+  let count = 0
+  for (const field of order) {
+    const message = friendly.fieldErrors[field]
+    if (!message) continue
+    setError(field, { type: 'server', message }, { shouldFocus: !focused })
+    focused = true
+    count += 1
+  }
+  return count
+}
+
+function FormAlert({ alert, children }: { alert: FormAlertState | null; children?: ReactNode }) {
+  if (!alert) return null
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-800"
+    >
+      <svg className="mt-0.5 h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          fillRule="evenodd"
+          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+          clipRule="evenodd"
+        />
+      </svg>
+      <div className="flex flex-col gap-1">
+        <p>{alert.message}</p>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function AuthRoute() {
   const navigate = useNavigate()
   const location = useLocation()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [selectedRole, setSelectedRole] = useState<'penitip' | 'pemilik_toko'>('penitip')
-  const [isLoading, setIsLoading] = useState(false)
+  const [loginAlert, setLoginAlert] = useState<FormAlertState | null>(null)
+  const [registerAlert, setRegisterAlert] = useState<FormAlertState | null>(null)
+  const loginEmailRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -46,20 +107,26 @@ export default function AuthRoute() {
     register: registerLogin,
     handleSubmit: handleSubmitLogin,
     setError: setLoginError,
-    formState: { errors: loginErrors },
+    setValue: setLoginValue,
+    formState: { errors: loginErrors, isSubmitting: isLoginSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
+    // Validasi saat field ditinggalkan, lalu langsung saat diperbaiki.
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
+    shouldFocusError: true,
   })
 
   const {
     register: registerSignUp,
     handleSubmit: handleSubmitSignUp,
     setValue: setSignUpValue,
+    getValues: getSignUpValues,
     watch: watchSignUp,
     setError: setSignUpError,
     clearErrors: clearSignUpErrors,
-    formState: { errors: signUpErrors },
+    formState: { errors: signUpErrors, isSubmitting: isSignUpSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -77,168 +144,81 @@ export default function AuthRoute() {
       password: '',
       confirmPassword: '',
     },
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
+    shouldFocusError: true,
   })
 
   const currentLat = watchSignUp('storeLat')
   const currentLng = watchSignUp('storeLng')
 
+  const { ref: loginEmailFieldRef, ...loginEmailField } = registerLogin('email')
+
   const handleRoleChange = (role: 'penitip' | 'pemilik_toko') => {
     setSelectedRole(role)
-    setSignUpValue('accountType', role, { shouldValidate: true, shouldDirty: true })
+    setSignUpValue('accountType', role, { shouldValidate: false, shouldDirty: true })
     clearSignUpErrors()
+    setRegisterAlert(null)
+  }
+
+  const goToLogin = (email?: string) => {
+    setMode('login')
+    setRegisterAlert(null)
+    setLoginAlert(null)
+    if (email) setLoginValue('email', email)
+    // Fokus ke field email setelah form masuk dirender.
+    setTimeout(() => loginEmailRef.current?.focus(), 0)
+  }
+
+  const redirectAfterAuth = () => {
+    const target = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/'
+    navigate(target, { replace: true })
   }
 
   const onLoginSubmit: SubmitHandler<LoginFormData> = async (data) => {
-    setIsLoading(true)
+    setLoginAlert(null)
     try {
-      await loginUser({
-        email: data.email.trim(),
-        password: data.password,
-      })
+      await loginUser(toLoginPayload(data))
       toast.show({
         title: 'Berhasil Masuk',
         description: 'Selamat datang kembali di Titipku',
         type: 'success',
       })
-      const target = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/'
-      navigate(target, { replace: true })
+      redirectAfterAuth()
     } catch (err: unknown) {
-      let errorMessage = 'Email atau kata sandi tidak valid. Silakan coba kembali.'
-      if (err instanceof ApiError) {
-        if (err.status === 401 || err.code === 'UNAUTHORIZED') {
-          errorMessage = 'Email atau kata sandi salah. Silakan periksa kembali.'
-          setLoginError('password', { message: 'Kata sandi atau email tidak cocok' })
-        } else if (err.message) {
-          errorMessage = err.message
-        }
-      }
-      toast.show({
-        title: 'Gagal Masuk',
-        description: errorMessage,
-        type: 'error',
-      })
-    } finally {
-      setIsLoading(false)
+      const friendly = describeLoginError(err)
+      applyServerFieldErrors(friendly, LOGIN_FIELD_ORDER, setLoginError)
+      setLoginAlert({ message: friendly.message })
+      if (friendly.kind === 'unauthorized') loginEmailRef.current?.focus()
     }
+  }
+
+  const onLoginInvalid = (fieldErrors: FieldErrors<LoginFormData>) => {
+    setLoginAlert({ message: invalidSummary(Object.keys(fieldErrors).length) })
   }
 
   const onRegisterSubmit: SubmitHandler<RegisterFormData> = async (data) => {
-    setIsLoading(true)
+    setRegisterAlert(null)
+    const isPemilik = data.accountType === 'pemilik_toko'
     try {
-      const isPemilik = (data.accountType || selectedRole) === 'pemilik_toko'
+      const payload = toRegisterPayload(data)
+      await registerUser(payload)
 
-      const lat =
-        typeof data.storeLat === 'number' && !isNaN(data.storeLat) ? data.storeLat : -7.2575
-      const lng =
-        typeof data.storeLng === 'number' && !isNaN(data.storeLng) ? data.storeLng : 112.7521
-
-      await registerUser({
-        account_type: isPemilik ? 'pemilik_toko' : 'penitip',
-        business_name: isPemilik ? (data.storeName?.trim() || 'Toko') : data.businessName?.trim(),
-        owner_name: data.ownerName.trim(),
-        email: data.email.trim(),
-        whatsapp: data.whatsapp.trim(),
-        password: data.password,
-        store: isPemilik
-          ? {
-              name: (data.storeName || '').trim(),
-              category: data.storeCategory || 'warung',
-              address: (data.storeAddress || '').trim(),
-              whatsapp: data.whatsapp.trim(),
-              photo_url: data.storePhotoUrl?.trim() || undefined,
-              latitude: lat,
-              longitude: lng,
-            }
-          : undefined,
-      })
-
-      const entityName = isPemilik ? data.storeName?.trim() : data.businessName?.trim()
       toast.show({
         title: 'Pendaftaran Berhasil',
-        description: `Selamat datang, ${data.ownerName.trim()}! Akun ${isPemilik ? 'Toko' : 'Penitip'} "${entityName}" siap digunakan.`,
+        description: `Selamat datang, ${payload.owner_name}! Akun ${isPemilik ? 'Toko' : 'Penitip'} "${payload.business_name}" siap digunakan.`,
         type: 'success',
       })
-      const target = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/'
-      navigate(target, { replace: true })
+      redirectAfterAuth()
     } catch (err: unknown) {
-      let errorMessage = 'Gagal mendaftarkan akun baru. Silakan periksa kembali formulir Anda.'
-      if (err instanceof ApiError) {
-        if (err.fields) {
-          const fieldMap: Record<string, keyof RegisterFormData> = {
-            business_name: 'businessName',
-            owner_name: 'ownerName',
-            email: 'email',
-            whatsapp: 'whatsapp',
-            password: 'password',
-            store_name: 'storeName',
-            store_category: 'storeCategory',
-            store_address: 'storeAddress',
-            store_latitude: 'storeLat',
-            store_longitude: 'storeLng',
-            store_whatsapp: 'whatsapp',
-            store: 'storeName',
-          }
-
-          const fieldErrorMessages: string[] = []
-          for (const [key, msg] of Object.entries(err.fields)) {
-            const formField = fieldMap[key] || (key.startsWith('store.') ? 'storeName' : undefined)
-            if (formField) {
-              setSignUpError(formField, { message: msg })
-            }
-            fieldErrorMessages.push(msg)
-          }
-
-          if (fieldErrorMessages.length > 0) {
-            errorMessage = fieldErrorMessages.join(', ')
-          }
-        }
-        if (err.status === 409 || err.code === 'CONFLICT') {
-          errorMessage = 'Email atau nomor WhatsApp sudah terdaftar di Titipku.'
-          setSignUpError('email', { message: 'Email atau nomor WhatsApp sudah terdaftar' })
-        } else if (err.message && !err.fields) {
-          errorMessage = err.message
-        }
-      } else if (err instanceof Error) {
-        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-          errorMessage = 'Gagal terhubung ke server backend (port 8081). Pastikan server backend sedang aktif.'
-        } else {
-          errorMessage = err.message
-        }
-      }
-      toast.show({
-        title: 'Pendaftaran Gagal',
-        description: errorMessage,
-        type: 'error',
-      })
-    } finally {
-      setIsLoading(false)
+      const friendly = describeRegisterError(err)
+      applyServerFieldErrors(friendly, REGISTER_FIELD_ORDER, setSignUpError)
+      setRegisterAlert({ message: friendly.message, offerLogin: friendly.code === 'EMAIL_TAKEN' })
     }
   }
 
-  const onRegisterInvalid = (fieldErrors: typeof signUpErrors) => {
-    const errorKeys = Object.keys(fieldErrors)
-    if (errorKeys.length > 0) {
-      const firstKey = errorKeys[0] as keyof typeof fieldErrors
-      const firstError = fieldErrors[firstKey]
-      const fieldLabels: Record<string, string> = {
-        storeName: 'Nama Toko',
-        storeAddress: 'Alamat Toko',
-        storeLat: 'Koordinat Latitude',
-        storeLng: 'Koordinat Longitude',
-        businessName: 'Nama Usaha',
-        ownerName: 'Nama Pemilik Akun',
-        whatsapp: 'Nomor WhatsApp',
-        email: 'Email',
-        password: 'Kata Sandi',
-        confirmPassword: 'Ulangi Kata Sandi',
-      }
-      const label = fieldLabels[firstKey] || firstKey
-      toast.show({
-        title: `Kolom ${label} Belum Sesuai`,
-        description: firstError?.message || 'Silakan lengkapi kolom yang bertanda wajib.',
-        type: 'error',
-      })
-    }
+  const onRegisterInvalid = (fieldErrors: FieldErrors<RegisterFormData>) => {
+    setRegisterAlert({ message: invalidSummary(Object.keys(fieldErrors).length) })
   }
 
   return (
@@ -269,7 +249,7 @@ export default function AuthRoute() {
             type="button"
             role="tab"
             aria-selected={mode === 'login'}
-            onClick={() => setMode('login')}
+            onClick={() => goToLogin()}
             className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               mode === 'login'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
@@ -282,7 +262,10 @@ export default function AuthRoute() {
             type="button"
             role="tab"
             aria-selected={mode === 'register'}
-            onClick={() => setMode('register')}
+            onClick={() => {
+              setMode('register')
+              setLoginAlert(null)
+            }}
             className={`py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               mode === 'register'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
@@ -295,22 +278,34 @@ export default function AuthRoute() {
 
         {/* Tampilan Form */}
         {mode === 'login' ? (
-          <form onSubmit={handleSubmitLogin(onLoginSubmit)} className="flex flex-col gap-4">
+          <form
+            noValidate
+            aria-label="Masuk ke akun"
+            onSubmit={handleSubmitLogin(onLoginSubmit, onLoginInvalid)}
+            className="flex flex-col gap-4"
+          >
+            <FormAlert alert={loginAlert} />
+
             <Input
               label="Alamat Email"
               type="email"
+              inputMode="email"
               placeholder="nama@email.com"
               error={loginErrors.email?.message}
               required
               autoComplete="email"
               autoFocus
-              {...registerLogin('email')}
+              {...loginEmailField}
+              ref={(el) => {
+                loginEmailFieldRef(el)
+                loginEmailRef.current = el
+              }}
             />
 
             <Input
               label="Kata Sandi"
               type="password"
-              placeholder="Minimal 8 karakter"
+              placeholder="Kata sandi akun Anda"
               error={loginErrors.password?.message}
               required
               autoComplete="current-password"
@@ -322,28 +317,32 @@ export default function AuthRoute() {
               variant="primary"
               size="lg"
               fullWidth
-              loading={isLoading}
-              disabled={isLoading}
+              loading={isLoginSubmitting}
+              disabled={isLoginSubmitting}
               className="rounded-xl min-h-[44px] text-xs font-semibold shadow-xs mt-1"
             >
-              Masuk ke Titipku
+              {isLoginSubmitting ? 'Memproses…' : 'Masuk ke Titipku'}
             </Button>
           </form>
         ) : (
-          <form onSubmit={handleSubmitSignUp(onRegisterSubmit, onRegisterInvalid)} className="flex flex-col gap-4">
+          <form
+            noValidate
+            aria-label="Daftar akun baru"
+            onSubmit={handleSubmitSignUp(onRegisterSubmit, onRegisterInvalid)}
+            className="flex flex-col gap-4"
+          >
             {/* Input Tersembunyi Sinkronisasi Form State */}
             <input type="hidden" {...registerSignUp('accountType')} value={selectedRole} />
             <input type="hidden" {...registerSignUp('storeLat', { valueAsNumber: true })} />
             <input type="hidden" {...registerSignUp('storeLng', { valueAsNumber: true })} />
 
             {/* Pilihan 2 Role / Persona Minimalis */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-slate-700">
-                Pilih Peran Akun
-              </label>
+            <fieldset className="flex flex-col gap-2">
+              <legend className="text-xs font-semibold text-slate-700 mb-2">Pilih Peran Akun</legend>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
+                  aria-pressed={selectedRole === 'penitip'}
                   onClick={() => handleRoleChange('penitip')}
                   className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                     selectedRole === 'penitip'
@@ -359,6 +358,7 @@ export default function AuthRoute() {
 
                 <button
                   type="button"
+                  aria-pressed={selectedRole === 'pemilik_toko'}
                   onClick={() => handleRoleChange('pemilik_toko')}
                   className={`p-3 rounded-xl border text-left flex flex-col gap-1 transition-all cursor-pointer ${
                     selectedRole === 'pemilik_toko'
@@ -372,7 +372,7 @@ export default function AuthRoute() {
                   </span>
                 </button>
               </div>
-            </div>
+            </fieldset>
 
             {/* Field sesuai Role */}
             {selectedRole === 'penitip' ? (
@@ -381,6 +381,7 @@ export default function AuthRoute() {
                 placeholder="Contoh: Keripik Pisang Rina"
                 error={signUpErrors.businessName?.message}
                 required
+                autoComplete="organization"
                 {...registerSignUp('businessName')}
               />
             ) : (
@@ -397,12 +398,18 @@ export default function AuthRoute() {
                   placeholder="Contoh: Warung Berkah Bu Siti"
                   error={signUpErrors.storeName?.message}
                   required
+                  autoComplete="organization"
                   {...registerSignUp('storeName')}
                 />
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Kategori Toko</label>
+                  <label htmlFor="register-store-category" className="text-xs font-semibold text-slate-700">
+                    Kategori Toko
+                  </label>
                   <select
+                    id="register-store-category"
+                    aria-invalid={signUpErrors.storeCategory ? 'true' : undefined}
+                    aria-describedby={signUpErrors.storeCategory ? 'register-store-category-error' : undefined}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-900 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-slate-900"
                     {...registerSignUp('storeCategory')}
                   >
@@ -412,6 +419,11 @@ export default function AuthRoute() {
                       </option>
                     ))}
                   </select>
+                  {signUpErrors.storeCategory?.message && (
+                    <p id="register-store-category-error" className="text-caption text-danger font-medium">
+                      {signUpErrors.storeCategory.message}
+                    </p>
+                  )}
                 </div>
 
                 <Input
@@ -419,6 +431,7 @@ export default function AuthRoute() {
                   placeholder="Contoh: Jl. Menur No. 12, Surabaya"
                   error={signUpErrors.storeAddress?.message}
                   required
+                  autoComplete="street-address"
                   {...registerSignUp('storeAddress')}
                 />
 
@@ -426,6 +439,7 @@ export default function AuthRoute() {
                   label="URL Foto Profil Toko (Opsional)"
                   placeholder="Contoh: https://images.unsplash.com/... atau link foto toko"
                   error={signUpErrors.storePhotoUrl?.message}
+                  inputMode="url"
                   {...registerSignUp('storePhotoUrl')}
                 />
 
@@ -448,20 +462,26 @@ export default function AuthRoute() {
               placeholder="Contoh: Ibu Rina Rahmawati"
               error={signUpErrors.ownerName?.message}
               required
+              autoComplete="name"
               {...registerSignUp('ownerName')}
             />
 
             <Input
               label="Nomor WhatsApp"
-              placeholder="Contoh: 081234567890"
+              type="tel"
+              inputMode="tel"
+              placeholder="Contoh: 0812 3456 7890"
+              hint="Boleh diawali 08, 628, atau +628."
               error={signUpErrors.whatsapp?.message}
               required
+              autoComplete="tel"
               {...registerSignUp('whatsapp')}
             />
 
             <Input
               label="Alamat Email"
               type="email"
+              inputMode="email"
               placeholder="nama@email.com"
               error={signUpErrors.email?.message}
               required
@@ -472,7 +492,8 @@ export default function AuthRoute() {
             <Input
               label="Kata Sandi"
               type="password"
-              placeholder="Minimal 8 karakter"
+              placeholder="Buat kata sandi"
+              hint={PASSWORD_REQUIREMENTS}
               error={signUpErrors.password?.message}
               required
               autoComplete="new-password"
@@ -489,16 +510,32 @@ export default function AuthRoute() {
               {...registerSignUp('confirmPassword')}
             />
 
+            <FormAlert alert={registerAlert}>
+              {registerAlert?.offerLogin && (
+                <button
+                  type="button"
+                  onClick={() => goToLogin(getSignUpValues('email').trim().toLowerCase())}
+                  className="self-start font-semibold underline underline-offset-2 hover:text-red-900 cursor-pointer"
+                >
+                  Masuk dengan email ini
+                </button>
+              )}
+            </FormAlert>
+
             <Button
               type="submit"
               variant="primary"
               size="lg"
               fullWidth
-              loading={isLoading}
-              disabled={isLoading}
+              loading={isSignUpSubmitting}
+              disabled={isSignUpSubmitting}
               className="rounded-xl min-h-[44px] text-xs font-semibold shadow-xs mt-1"
             >
-              {selectedRole === 'pemilik_toko' ? 'Daftarkan Toko' : 'Daftar Akun Penitip'}
+              {isSignUpSubmitting
+                ? 'Mendaftarkan…'
+                : selectedRole === 'pemilik_toko'
+                  ? 'Daftarkan Toko'
+                  : 'Daftar Akun Penitip'}
             </Button>
           </form>
         )}
