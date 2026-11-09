@@ -14,7 +14,8 @@ export const productFormSchema = z
     retailPrice: z
       .number({ message: 'Harga eceran wajib diisi angka' })
       .int('Harga eceran harus bilangan bulat')
-      .min(0, 'Harga eceran tidak boleh negatif'),
+      .min(0, 'Harga eceran tidak boleh negatif')
+      .optional(),
     shelfLifeDays: z
       .number({ message: 'Masa simpan wajib diisi angka' })
       .int('Masa simpan harus bilangan bulat hari')
@@ -22,7 +23,7 @@ export const productFormSchema = z
       .max(365, 'Masa simpan maksimal 365 hari'),
     isActive: z.boolean(),
   })
-  .refine((data) => data.retailPrice >= data.consignPrice, {
+  .refine((data) => data.retailPrice === undefined || data.retailPrice >= data.consignPrice, {
     message: 'Harga eceran tidak boleh lebih kecil dari harga titip',
     path: ['retailPrice'],
   })

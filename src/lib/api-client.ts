@@ -124,13 +124,6 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
   })
 
   if (!response.ok) {
-    if (response.status === 401) {
-      setAuthToken(null)
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('titipku:unauthorized'))
-      }
-    }
-
     let errorDetail: ApiErrorDetail = {
       code: 'HTTP_ERROR',
       message: `Permintaan gagal (${response.status} ${response.statusText})`,
@@ -156,6 +149,14 @@ export async function apiClient<T>(endpoint: string, options?: RequestInit): Pro
       }
     } catch {
       // Body bukan JSON
+    }
+
+    // Hanya logout jika token memang invalid/expired (bukan karena business scope)
+    if (response.status === 401 && errorDetail.code !== 'BUSINESS_SCOPE_REQUIRED') {
+      setAuthToken(null)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('titipku:unauthorized'))
+      }
     }
 
     throw new ApiError(response.status, errorDetail)

@@ -12,6 +12,9 @@ import Invoices from '@/routes/Invoices'
 import Catalog from '@/routes/Catalog'
 import Warung from '@/routes/Warung'
 import Receipt from '@/routes/Receipt'
+import MapPage from '@/routes/MapPage'
+import MyStore from '@/routes/MyStore'
+import Penitip from '@/routes/Penitip'
 
 // Lazy load DesignLab khusus saat development environment (tree-shaken di build produksi)
 const LazyDesignLab = import.meta.env.DEV
@@ -43,6 +46,10 @@ const router = createBrowserRouter([
     children: [
       { path: '/', element: <Home /> },
       { path: '/home', element: <Home /> },
+      { path: '/peta', element: <MapPage /> },
+      { path: '/map', element: <MapPage /> },
+      { path: '/toko-saya', element: <MyStore /> },
+      { path: '/penitip', element: <Penitip /> },
       { path: '/kunjungan', element: <Visit /> },
       { path: '/kunjungan/baru', element: <VisitNew /> },
       { path: '/visit/new', element: <VisitNew /> },
@@ -55,7 +62,6 @@ const router = createBrowserRouter([
   },
 
   // 2. Rute Publik Tanpa Navigasi Pemilik (PublicLayout)
-  // /i/:token sesuai kontrak tautan WhatsApp dari backend, /n/:token dipertahankan sebagai alias
   {
     element: <PublicLayout><Receipt /></PublicLayout>,
     path: '/i/:token',

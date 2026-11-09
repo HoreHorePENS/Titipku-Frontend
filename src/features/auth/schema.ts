@@ -9,11 +9,14 @@ export type LoginFormData = z.infer<typeof loginSchema>
 
 export const registerSchema = z
   .object({
-    businessName: z
-      .string()
-      .trim()
-      .min(2, 'Nama usaha minimal 2 karakter')
-      .max(120, 'Nama usaha maksimal 120 karakter'),
+    accountType: z.enum(['penitip', 'pemilik_toko']).default('penitip').optional(),
+    businessName: z.string().trim().optional(),
+    storeName: z.string().trim().optional(),
+    storeCategory: z.string().optional(),
+    storeAddress: z.string().trim().optional(),
+    storePhotoUrl: z.string().trim().optional(),
+    storeLat: z.number().optional(),
+    storeLng: z.number().optional(),
     ownerName: z
       .string()
       .trim()
@@ -41,6 +44,48 @@ export const registerSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Konfirmasi kata sandi tidak cocok',
     path: ['confirmPassword'],
+  })
+  .superRefine((data, ctx) => {
+    const isPemilik = data.accountType === 'pemilik_toko'
+
+    if (isPemilik) {
+      if (!data.storeName || data.storeName.trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nama toko minimal 2 karakter',
+          path: ['storeName'],
+        })
+      }
+      if (!data.storeAddress || data.storeAddress.trim().length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Alamat toko wajib diisi minimal 3 karakter',
+          path: ['storeAddress'],
+        })
+      }
+      if (typeof data.storeLat === 'number' && (data.storeLat < -90 || data.storeLat > 90)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Latitude harus berada di antara -90 dan 90',
+          path: ['storeLat'],
+        })
+      }
+      if (typeof data.storeLng === 'number' && (data.storeLng < -180 || data.storeLng > 180)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Longitude harus berada di antara -180 dan 180',
+          path: ['storeLng'],
+        })
+      }
+    } else {
+      if (!data.businessName || data.businessName.trim().length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Nama usaha minimal 2 karakter',
+          path: ['businessName'],
+        })
+      }
+    }
   })
 
 export type RegisterFormData = z.infer<typeof registerSchema>

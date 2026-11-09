@@ -8,11 +8,12 @@ export async function fetchDashboard(date?: string): Promise<DashboardData> {
   return response.data
 }
 
-export function useDashboard(date?: string) {
+export function useDashboard(date?: string, enabled = true) {
   return useQuery({
     queryKey: ['dashboard', date || 'today'],
     queryFn: () => fetchDashboard(date),
     staleTime: 1000 * 60, // 1 menit
+    enabled,
   })
 }
 
@@ -21,10 +22,11 @@ export async function fetchPartners(): Promise<PartnerRecord[]> {
   return response.data || []
 }
 
-export function usePartners() {
+export function usePartners(enabled = true) {
   return useQuery({
     queryKey: ['partners', 'active'],
     queryFn: fetchPartners,
     staleTime: 1000 * 60 * 5, // 5 menit
+    enabled,
   })
 }

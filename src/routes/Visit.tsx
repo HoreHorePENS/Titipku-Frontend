@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { PageContainer, PageHeader, FilterBar } from '@/components/shared'
@@ -19,7 +18,7 @@ export default function VisitRoute() {
   const [search, setSearch] = useState<string>('')
   const [activeModalVisit, setActiveModalVisit] = useState<VisitRecord | null>(null)
 
-  // Query langsung ke backend API core-service (Docker)
+  // Query langsung ke backend API core-service (Docker) & gabungan nota digital dari warung
   const { data: visits = [], isLoading, isError, refetch } = useVisits(selectedPartner)
   const { data: partnerOptions = [{ id: 'all', name: 'Semua warung' }] } = usePartnerOptions()
 
@@ -37,34 +36,19 @@ export default function VisitRoute() {
     return groupVisitsByDate(filteredVisits)
   }, [filteredVisits])
 
-  const handleStartVisit = () => {
-    navigate('/kunjungan/baru')
-  }
-
   return (
     <PageContainer>
       {/* 1. Header Halaman */}
       <PageHeader
-        title="Kunjungan"
-        description={`${filteredVisits.length} riwayat kunjungan tercatat`}
-        actions={
-          <Button
-            variant="primary"
-            size="md"
-            onClick={handleStartVisit}
-            className="flex items-center gap-1.5"
-          >
-            <span className="text-base leading-none font-bold">+</span>
-            <span>Catat Kunjungan</span>
-          </Button>
-        }
+        title="Bukti Nota Digital"
+        description="Daftar bukti nota penjualan konsinyasi resmi yang dihitung dan diterbitkan langsung oleh warung mitra."
       />
 
       {/* 2. Bar Filter */}
       <FilterBar
         searchValue={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Cari no. nota atau warung..."
+        searchPlaceholder="Cari no. nota atau nama warung..."
         extraActions={
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
             {/* Dropdown Warung */}
@@ -101,17 +85,17 @@ export default function VisitRoute() {
         <VisitSkeleton />
       ) : isError ? (
         <ErrorState
-          title="Gagal memuat kunjungan"
-          description="Terjadi kendala saat mengambil data kunjungan dari server."
+          title="Gagal memuat bukti nota"
+          description="Terjadi kendala saat mengambil data nota dari server."
           onRetry={() => refetch()}
         />
       ) : filteredVisits.length === 0 ? (
         <EmptyState
-          title="Tidak ada kunjungan"
-          description="Belum ada riwayat kunjungan yang sesuai dengan filter yang Anda pilih."
+          title="Belum ada bukti nota"
+          description="Belum ada bukti nota penjualan yang diterbitkan oleh warung mitra konsinyasi untuk filter ini."
           action={{
-            label: 'Catat Kunjungan Baru',
-            onClick: handleStartVisit,
+            label: 'Lihat Daftar Warung Mitra',
+            onClick: () => navigate('/warung'),
           }}
         />
       ) : (
@@ -146,7 +130,7 @@ export default function VisitRoute() {
         </>
       )}
 
-      {/* Modal Detail Kunjungan */}
+      {/* Modal Detail Nota */}
       <VisitDetailModal
         visit={activeModalVisit}
         onClose={() => setActiveModalVisit(null)}

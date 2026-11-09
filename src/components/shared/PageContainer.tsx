@@ -6,7 +6,7 @@ export interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement>
   /** Tambahan padding bawah untuk memberi ruang bagi navigation bottom bar di mobile */
   withBottomNavPadding?: boolean
   /** Lebar maksimal kontainer halaman, default: '7xl' */
-  maxWidth?: '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl'
+  maxWidth?: '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl' | 'full'
 }
 
 const maxWidthClasses: Record<NonNullable<PageContainerProps['maxWidth']>, string> = {
@@ -16,6 +16,7 @@ const maxWidthClasses: Record<NonNullable<PageContainerProps['maxWidth']>, strin
   '5xl': 'max-w-5xl',
   '6xl': 'max-w-6xl',
   '7xl': 'max-w-7xl',
+  'full': 'max-w-full',
 }
 
 /**

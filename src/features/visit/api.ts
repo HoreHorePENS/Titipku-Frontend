@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
+import { getStoreDigitalInvoices } from '@/features/invoices/digital-invoices'
 import type {
   VisitRecord,
   VisitItem,
@@ -131,14 +132,14 @@ export function usePartnerOptions() {
 }
 
 // ============================================================================
-// 3. VISITS LIST & DETAIL
+// 3. VISITS LIST & DETAIL (BUKTI NOTA PENJUALAN)
 // ============================================================================
 
 export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
   const query = partnerId && partnerId !== 'all' ? `?partner_id=${encodeURIComponent(partnerId)}` : ''
 
   const [visitsRes, invoicesRes, partnersRes] = await Promise.all([
-    apiClient<{ data: BackendVisit[] }>(`/v1/visits${query}`),
+    apiClient<{ data: BackendVisit[] }>(`/v1/visits${query}`).catch(() => ({ data: [] })),
     apiClient<{ data: BackendInvoice[] }>('/v1/invoices').catch(() => ({ data: [] })),
     apiClient<{ data: BackendPartner[] }>('/v1/partners').catch(() => ({ data: [] })),
   ])
@@ -159,7 +160,7 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
     invoiceMap.set(inv.visit_id, inv)
   })
 
-  return basicVisits.map((v) => {
+  const backendRecords: VisitRecord[] = basicVisits.map((v) => {
     const invoice = invoiceMap.get(v.id)
     const status: PaymentStatus = invoice ? invoice.status : v.total === 0 ? 'paid' : 'unpaid'
     const paid = invoice ? invoice.paid : 0
@@ -198,17 +199,35 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
       items,
     }
   })
+
+  // Gabungkan dengan bukti nota digital yang diterbitkan langsung oleh Pemilik Warung dari aplikasi
+  const storeDigitalInvoices = getStoreDigitalInvoices().filter((inv) => {
+    if (partnerId && partnerId !== 'all') {
+      return inv.partnerId === partnerId
+    }
+    return true
+  })
+
+  const combined = [...storeDigitalInvoices, ...backendRecords]
+  return combined.sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
 }
 
-export function useVisits(partnerId?: string) {
+export function useVisits(partnerId?: string, enabled = true) {
   return useQuery({
     queryKey: ['visits', partnerId || 'all'],
     queryFn: () => fetchVisits(partnerId),
     staleTime: 1000 * 60 * 2, // 2 menit
+    enabled,
   })
 }
 
 export async function fetchVisitDetail(visitId: string): Promise<VisitRecord> {
+  // Cek terlebih dahulu di bukti nota digital lokal dari warung
+  if (visitId.startsWith('store-inv-')) {
+    const local = getStoreDigitalInvoices().find((x) => x.id === visitId)
+    if (local) return local
+  }
+
   const [res, invoicesRes, partnersRes] = await Promise.all([
     apiClient<{ data: BackendVisit }>(`/v1/visits/${visitId}`),
     apiClient<{ data: BackendInvoice[] }>('/v1/invoices').catch(() => ({ data: [] })),

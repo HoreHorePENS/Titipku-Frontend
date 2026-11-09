@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Modal } from '@/components/shared/Modal'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Money } from '@/components/shared/Money'
@@ -21,8 +20,6 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
   const statusLabel =
     visit.status === 'paid' ? 'LUNAS' : visit.status === 'partial' ? 'SEBAGIAN' : 'BELUM LUNAS'
 
-  const notaLink = visit.publicToken ? `/n/${visit.publicToken}` : `/kunjungan`
-
   const handleOpenWhatsApp = () => {
     if (visit.whatsappUrl) {
       window.open(visit.whatsappUrl, '_blank', 'noopener,noreferrer')
@@ -33,6 +30,10 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
       )
       window.open(`https://wa.me/${phone}?text=${msg}`, '_blank', 'noopener,noreferrer')
     }
+  }
+
+  const handlePrintNota = () => {
+    window.print()
   }
 
   return (
@@ -64,19 +65,26 @@ export function VisitDetailModal({ visit: initialVisit, onClose }: VisitDetailMo
               onClick={handleOpenWhatsApp}
               className="rounded-xl px-3.5 min-h-[44px] text-xs font-bold flex items-center gap-1.5"
             >
-              <span>💬</span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
               <span>WhatsApp</span>
             </Button>
 
-            <Link to={notaLink} target="_blank" rel="noopener noreferrer">
-              <Button
-                variant="primary"
-                size="md"
-                className="rounded-xl px-4 min-h-[44px] text-xs font-bold shadow-xs"
-              >
-                Buka Nota ↗
-              </Button>
-            </Link>
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              onClick={handlePrintNota}
+              className="rounded-xl px-4 min-h-[44px] text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9V2h12v7" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>Export PDF / Cetak</span>
+            </Button>
           </div>
         </div>
       }
