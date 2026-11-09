@@ -1,13 +1,27 @@
-// Format rupiah
-export function formatRupiah(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(amount)
+// Format rupiah sesuai aturan Titipku (contoh: Rp12.000)
+export function rupiah(amount: number): string {
+  const rounded = Math.round(amount || 0)
+  return `Rp${rounded.toLocaleString('id-ID')}`
 }
 
-// Format tanggal WIB
+export function formatRupiah(amount: number): string {
+  return rupiah(amount)
+}
+
+// Format tanggal hari ini / ISO dalam WIB (contoh: "Rabu, 28 Okt 2026")
+export function tanggalWIB(date: Date | string = new Date()): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(d)
+}
+
+// Format tanggal WIB standar
 export function formatDateWIB(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('id-ID', {
@@ -27,7 +41,6 @@ export function formatJamWIB(date: Date | string): string {
     minute: '2-digit',
     hour12: false,
   })
-  // id-ID biasanya menghasilkan "07.12" atau "07:12" tergantung platform browser/node
   return formatter.format(d).replace(':', '.')
 }
 

@@ -1,164 +1,145 @@
-import React from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-
-// ============================================================================
-// IKON SVG INLINE MURNI (Konsisten satu set gaya Lucide/Phosphor tanpa dependensi)
-// ============================================================================
-
-function HomeIcon({ className = 'w-5 h-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  )
-}
-
-function VisitIcon({ className = 'w-5 h-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-      <path d="M9 16l2 2 4-4" />
-    </svg>
-  )
-}
-
-function StoreIcon({ className = 'w-5 h-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M3 9l2-5h14l2 5" />
-      <path d="M21 9v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9" />
-      <path d="M9 22V12h6v10" />
-      <path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" />
-    </svg>
-  )
-}
-
-function InvoiceIcon({ className = 'w-5 h-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <polyline points="10 9 9 9 8 9" />
-    </svg>
-  )
-}
-
-function ProductIcon({ className = 'w-5 h-5' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-      <line x1="12" y1="22.08" x2="12" y2="12" />
-    </svg>
-  )
-}
-
-function BrandLogo({ className = 'w-7 h-7' }: { className?: string }) {
-  return (
-    <div className={`rounded-xl bg-primary flex items-center justify-center text-white shrink-0 shadow-xs ${className}`}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
-        <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21" />
-      </svg>
-    </div>
-  )
-}
-
-// ============================================================================
-// KONFIGURASI 5 NAVIGASI RESMI TITIPKU
-// ============================================================================
-
-export interface NavItemConfig {
-  to: string
-  label: string
-  icon: (props: { className?: string }) => React.ReactNode
-  hasBadge?: boolean
-}
-
-export const NAV_ITEMS: NavItemConfig[] = [
-  { to: '/', label: 'Beranda', icon: HomeIcon },
-  { to: '/kunjungan', label: 'Kunjungan', icon: VisitIcon },
-  { to: '/warung', label: 'Warung', icon: StoreIcon },
-  { to: '/tagihan', label: 'Tagihan', icon: InvoiceIcon, hasBadge: true },
-  { to: '/produk', label: 'Produk', icon: ProductIcon },
-]
-
-// ============================================================================
-// KOMPONEN UTAMA APPLAYOUT (RESPONSIF DESKTOP SIDEBAR + MOBILE BOTTOM NAV)
-// ============================================================================
+import { useState, useEffect } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS, type NavItemConfig } from './nav-items'
+import { MapIcon, LogoutIcon } from './nav-icons'
+import { NotificationPopover } from '@/components/shared/NotificationPopover'
+import { ProfileDetailModal } from '@/components/shared/ProfileDetailModal'
+import { useCurrentAccount, logoutUser } from '@/features/auth'
+import { toast } from '@/components/ui/toast-store'
 
 export function AppLayout() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const isVisitNew = location.pathname.startsWith('/kunjungan/baru')
+
+  const { data: currentAccount } = useCurrentAccount()
+  const user = currentAccount?.user
+  const isPemilikToko = user?.account_type === 'pemilik_toko'
+
+  const navItems = isPemilikToko ? PEMILIK_TOKO_NAV_ITEMS : NAV_ITEMS
+
+  // Custom profile state synced with localStorage
+  const [customProfile, setCustomProfile] = useState<{
+    fullName?: string
+    businessName?: string
+    photoUrl?: string
+  } | null>(() => {
+    try {
+      const raw = localStorage.getItem('titipku_custom_profile')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  })
+
+  useEffect(() => {
+    const handleProfileUpdate = () => {
+      try {
+        const raw = localStorage.getItem('titipku_custom_profile')
+        if (raw) setCustomProfile(JSON.parse(raw))
+      } catch {
+        // ignore
+      }
+    }
+    window.addEventListener('titipku_profile_updated', handleProfileUpdate)
+    return () => window.removeEventListener('titipku_profile_updated', handleProfileUpdate)
+  }, [])
+
+  const entityTitle = isPemilikToko
+    ? currentAccount?.store?.name || 'Toko Saya'
+    : customProfile?.businessName || currentAccount?.business?.name || 'Keripik Pisang Rina'
+
+  const ownerName = customProfile?.fullName || user?.full_name || 'Bu Rina'
+  const profilePhoto = customProfile?.photoUrl
+
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+
+  const handleLogout = () => {
+    logoutUser()
+    setShowLogoutConfirm(false)
+    toast.show({
+      title: 'Berhasil Keluar',
+      description: 'Anda telah keluar dari akun Titipku.',
+      type: 'info',
+    })
+    navigate('/auth', { replace: true })
+  }
 
   return (
     <div
       className="app-layout min-h-screen bg-page text-ink flex flex-col md:flex-row font-sans"
       style={{ ['--bottom-offset' as string]: '76px' }}
+      data-testid="app-layout"
     >
       {/* --------------------------------------------------------------------
-          1. DESKTOP SIDEBAR (Hanya tampil pada viewport md: >= 768px)
+          1. MOBILE TOP HEADER (Khusus Mobile: Layar < 768px)
           -------------------------------------------------------------------- */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-surface border-r border-line p-4 justify-between z-30 select-none">
-        <div className="flex flex-col gap-6">
-          {/* Header Brand Logo */}
-          <div className="flex items-center gap-2.5 px-2 py-1">
-            <BrandLogo className="w-8 h-8" />
-            <span className="text-title-2 font-extrabold text-ink tracking-tight">Titipku</span>
+      <header className="md:hidden sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-line px-4 py-2.5 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-sm shadow-2xs">
+            T
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-900 leading-tight">Titipku</span>
+              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                {isPemilikToko ? 'Toko' : 'Penitip'}
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-500 leading-tight truncate max-w-[170px]">
+              {entityTitle} · {ownerName}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Fitur Notifikasi Pojok Kanan Atas dengan Titik Merah */}
+          <NotificationPopover userRole={isPemilikToko ? 'pemilik_toko' : 'penitip'} />
+
+          {/* Tombol Profil Pojok Kanan Atas Mobile */}
+          <button
+            type="button"
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center justify-center w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 transition-all cursor-pointer min-h-[44px]"
+            title="Profil Akun"
+          >
+            <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs overflow-hidden">
+              {profilePhoto ? (
+                <img src={profilePhoto} alt={ownerName} className="w-full h-full object-cover" />
+              ) : (
+                ownerName.slice(0, 1).toUpperCase()
+              )}
+            </div>
+          </button>
+        </div>
+      </header>
+
+      {/* --------------------------------------------------------------------
+          2. DESKTOP SIDEBAR NAVIGASI (Hanya tampil di breakpoint md: ke atas)
+          -------------------------------------------------------------------- */}
+      <aside
+        className="hidden md:flex flex-col w-[84px] bg-surface border-r border-line py-6 shrink-0 fixed inset-y-0 left-0 z-30 justify-between"
+        aria-label="Navigasi Utama Desktop"
+      >
+        <div>
+          {/* Brand & Profil Monokrom */}
+          <div className="flex flex-col items-center mb-6 px-2 text-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-base shadow-2xs">
+              T
+            </div>
+            <span className="text-xs font-bold text-slate-900 mt-2">Titipku</span>
+            <span className="text-[10px] text-slate-500 max-w-[76px] truncate font-medium">
+              {entityTitle}
+            </span>
+            <span className="text-[10px] text-slate-400 max-w-[76px] truncate">
+              {ownerName}
+            </span>
           </div>
 
-          {/* Daftar Navigasi Utama Sidebar */}
-          <nav aria-label="Navigasi Utama Desktop" className="flex flex-col gap-1.5">
-            {NAV_ITEMS.map((item) => {
+          {/* Daftar Menu Desktop */}
+          <nav className="flex flex-col items-center gap-1.5 px-2">
+            {navItems.map((item: NavItemConfig) => {
               const isActive =
                 item.to === '/'
                   ? location.pathname === '/' || location.pathname === '/home'
@@ -168,59 +149,119 @@ export function AppLayout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-button font-medium transition-colors ${
+                  className={`relative flex flex-col items-center justify-center w-16 h-15 rounded-xl transition-all ${
                     isActive
-                      ? 'bg-primary-soft text-primary font-bold shadow-2xs'
-                      : 'text-ink-soft hover:text-ink hover:bg-surface-raised'
+                      ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 font-medium'
                   }`}
+                  title={item.label}
                 >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
+                  <div className="relative">
+                    <item.icon className="w-5 h-5 stroke-[2]" />
+                    {item.hasBadge && (
+                      <span
+                        className="absolute -top-1 -right-1 w-2 h-2 bg-slate-900 rounded-full ring-2 ring-white"
+                        aria-label="Ada notifikasi"
+                      />
+                    )}
                   </div>
-
-                  {/* Badge Indikator (Contoh: Titik Perhatian di Tagihan) */}
-                  {item.hasBadge && (
-                    <span className="w-2 h-2 rounded-full bg-danger ring-2 ring-surface" />
-                  )}
+                  <span className="text-[10px] mt-1 tracking-tight leading-none font-medium text-center">
+                    {item.label}
+                  </span>
                 </NavLink>
               )
             })}
+
+            {/* Tombol Akses Peta di Desktop */}
+            {!isPemilikToko && (
+              <NavLink
+                to="/peta"
+                className={`relative flex flex-col items-center justify-center w-16 h-15 rounded-xl transition-all mt-1 ${
+                  location.pathname.startsWith('/peta') || location.pathname.startsWith('/map')
+                    ? 'bg-slate-900 text-white shadow-2xs font-semibold'
+                    : 'text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200'
+                }`}
+                title="Peta Toko Mitra"
+              >
+                <MapIcon className="w-5 h-5 stroke-[2]" />
+                <span className="text-[10px] mt-1 tracking-tight leading-none font-medium text-center">
+                  Peta Toko
+                </span>
+              </NavLink>
+            )}
           </nav>
         </div>
 
-        {/* Footer Sidebar: Profil Pengguna (Bu Rina - Keripik Pisang Rina) */}
-        <div className="p-2.5 rounded-2xl bg-surface-raised border border-line flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-accent-soft text-accent font-extrabold text-caption flex items-center justify-center shrink-0 border border-accent/20">
-            BR
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-caption font-bold text-ink truncate leading-tight">Bu Rina</p>
-            <p className="text-[11px] text-ink-soft truncate leading-tight mt-0.5">
-              Keripik Pisang Rina
-            </p>
-          </div>
+        {/* Tombol Logout Desktop di Bawah Sidebar */}
+        <div className="px-2 pt-2 border-t border-line flex flex-col items-center">
+          <button
+            type="button"
+            onClick={() => setShowLogoutConfirm(true)}
+            className="flex flex-col items-center justify-center w-16 h-13 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all cursor-pointer"
+            title="Keluar dari Akun"
+          >
+            <LogoutIcon className="w-4 h-4 stroke-[2]" />
+            <span className="text-[10px] mt-1 font-medium">Keluar</span>
+          </button>
         </div>
       </aside>
 
       {/* --------------------------------------------------------------------
-          2. AREA KONTEN UTAMA (Tempat Halaman Dirender via <Outlet />)
+          3. AREA KONTEN UTAMA
           -------------------------------------------------------------------- */}
-      <main className="flex-1 md:pl-64 flex flex-col min-w-0 pb-20 md:pb-8">
-        <div className="w-full max-w-5xl mx-auto">
-          <Outlet />
-        </div>
+      <main
+        className={`flex-1 min-w-0 md:pl-[84px] ${
+          isVisitNew ? 'pb-0' : 'pb-24 md:pb-8'
+        }`}
+      >
+        {/* Header Desktop dengan Fitur Notifikasi di Pojok Kanan Atas */}
+        {!isVisitNew && (
+          <header className="hidden md:flex items-center justify-between px-6 lg:px-8 py-3 bg-surface/90 backdrop-blur-md border-b border-line sticky top-0 z-20">
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span className="font-bold text-slate-900">{entityTitle}</span>
+              <span>·</span>
+              <span>{isPemilikToko ? 'Pemilik Toko Mitra' : 'Produsen Penitip'}</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Fitur Notifikasi Pojok Kanan Atas Desktop */}
+              <NotificationPopover userRole={isPemilikToko ? 'pemilik_toko' : 'penitip'} />
+
+              {/* Button Profil Pojok Kanan Atas Desktop */}
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer min-h-[44px]"
+                title="Lihat Profil Akun"
+              >
+                <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-2xs overflow-hidden">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt={ownerName} className="w-full h-full object-cover" />
+                  ) : (
+                    ownerName.slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-semibold text-slate-900 leading-tight">{ownerName}</span>
+                  <span className="text-[10px] text-slate-400 leading-none">{isPemilikToko ? 'Pemilik Toko' : 'Penitip'}</span>
+                </div>
+              </button>
+            </div>
+          </header>
+        )}
+
+        <Outlet />
       </main>
 
       {/* --------------------------------------------------------------------
-          3. MOBILE BOTTOM NAVIGATION (Hanya tampil di mobile < 768px)
+          4. MOBILE BOTTOM NAVIGATION (Khusus Mobile: Layar < 768px)
           -------------------------------------------------------------------- */}
-      <nav
-        aria-label="Navigasi Bawah Mobile"
-        className="fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t border-line md:hidden pb-[env(safe-area-inset-bottom,0px)]"
-      >
-        <div className="flex items-center justify-around px-2 py-1">
-          {NAV_ITEMS.map((item) => {
+      {!isVisitNew && (
+        <nav
+          className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-line px-2 py-2 flex items-center justify-around z-50 shadow-lg"
+          aria-label="Navigasi Bawah Mobile"
+        >
+          {navItems.map((item: NavItemConfig) => {
             const isActive =
               item.to === '/'
                 ? location.pathname === '/' || location.pathname === '/home'
@@ -230,34 +271,94 @@ export function AppLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className="flex-1 min-h-[52px] min-w-[48px] py-1 flex flex-col items-center justify-center gap-1 transition-colors select-none"
+                className={`relative flex flex-col items-center justify-center flex-1 py-1.5 px-1 rounded-xl transition-all min-h-[50px] ${
+                  isActive
+                    ? 'text-slate-900 font-bold'
+                    : 'text-slate-400 hover:text-slate-700 font-medium'
+                }`}
               >
-                {/* Ikon dengan Pill Aktif di Mobile */}
-                <div
-                  className={`relative px-3 py-1 rounded-full flex items-center justify-center transition-colors ${
-                    isActive ? 'bg-primary-soft text-primary' : 'text-ink-soft'
-                  }`}
-                >
-                  <item.icon className="w-5 h-5" />
-                  {/* Badge Indikator Mobile */}
+                <div className="relative">
+                  <item.icon
+                    className={`w-5 h-5 transition-transform ${
+                      isActive ? 'stroke-[2.2] scale-105' : 'stroke-[1.8]'
+                    }`}
+                  />
                   {item.hasBadge && (
-                    <span className="absolute top-0.5 right-1.5 w-2 h-2 rounded-full bg-danger ring-1.5 ring-surface" />
+                    <span
+                      className="absolute -top-0.5 -right-1 w-2 h-2 bg-slate-900 rounded-full ring-2 ring-white"
+                      aria-label="Ada notifikasi"
+                    />
                   )}
                 </div>
 
-                {/* Teks Label Baku */}
                 <span
-                  className={`text-[11px] leading-none tracking-tight ${
-                    isActive ? 'text-primary font-bold' : 'text-ink-soft font-medium'
+                  className={`text-[10px] mt-1 leading-none tracking-tight ${
+                    isActive ? 'font-bold' : 'font-medium'
                   }`}
                 >
                   {item.label}
                 </span>
+
+                {isActive && (
+                  <span className="w-1 h-1 bg-slate-900 rounded-full mt-1" />
+                )}
               </NavLink>
             )
           })}
+        </nav>
+      )}
+
+      {/* --------------------------------------------------------------------
+          5. MODAL KONFIRMASI LOGOUT MONOKROM
+          -------------------------------------------------------------------- */}
+      {showLogoutConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/30 backdrop-blur-xs animate-fadeIn"
+        >
+          <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-200 p-5 shadow-lg flex flex-col gap-4 font-sans">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
+                <LogoutIcon className="w-5 h-5 stroke-[2]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Konfirmasi Keluar</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Apakah Anda yakin ingin keluar dari akun Titipku?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all shadow-xs cursor-pointer"
+              >
+                Ya, Keluar
+              </button>
+            </div>
+          </div>
         </div>
-      </nav>
+      )}
+      {/* Modal Detail Profil Pengguna (Pojok Kanan Atas) */}
+      <ProfileDetailModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        currentAccount={currentAccount}
+        onLogout={() => {
+          setShowProfileModal(false)
+          setShowLogoutConfirm(true)
+        }}
+      />
     </div>
   )
 }

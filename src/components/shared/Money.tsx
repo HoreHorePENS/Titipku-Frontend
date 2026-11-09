@@ -1,9 +1,15 @@
-import { formatRupiah } from '../../lib/format'
+import { formatRibuan, formatRupiah } from '@/lib/format'
 
-interface MoneyProps {
+export interface MoneyProps {
   amount: number
+  showPrefix?: boolean
+  className?: string
 }
 
-export function Money({ amount }: MoneyProps) {
-  return <span>{formatRupiah(amount)}</span>
+export function Money({ amount, showPrefix = true, className = '' }: MoneyProps) {
+  return (
+    <span className={`tabular-nums ${className}`}>
+      {showPrefix ? formatRupiah(amount) : formatRibuan(amount)}
+    </span>
+  )
 }

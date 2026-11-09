@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import React from 'react'
 import { Badge } from './Badge'
-import { healthTier, HealthBadge } from '@/components/shared/HealthBadge'
-import { PaymentBadge, PAYMENT_STATUS_MAP } from '@/components/shared/PaymentBadge'
-import { ReasonChip, REASON_CONFIG_MAP } from '@/components/shared/ReasonChip'
+import { HealthBadge } from '@/components/shared/HealthBadge'
+import { PaymentBadge } from '@/components/shared/PaymentBadge'
+import { ReasonChip } from '@/components/shared/ReasonChip'
+import {
+  healthTier,
+  PAYMENT_STATUS_MAP,
+  REASON_CONFIG_MAP,
+} from '@/components/shared/badge-constants'
 
 describe('healthTier boundary logic', () => {
   it('harus mengembalikan "bagus" untuk skor >= 80', () => {
@@ -33,7 +38,7 @@ describe('healthTier boundary logic', () => {
 })
 
 describe('PaymentBadge Domain Component', () => {
-  it('harus memetakan status pembayaran ke tone dan label baku yang tepat', () => {
+  it('harus memetakan status pembayaran ke tone dan label yang benar', () => {
     expect(PAYMENT_STATUS_MAP.lunas.label).toBe('Lunas')
     expect(PAYMENT_STATUS_MAP.lunas.tone).toBe('success')
 
@@ -44,7 +49,7 @@ describe('PaymentBadge Domain Component', () => {
     expect(PAYMENT_STATUS_MAP.belum_lunas.tone).toBe('danger')
   })
 
-  it('harus merender elemen PaymentBadge dengan label benar', () => {
+  it('harus merender elemen Badge dengan benar', () => {
     const el = React.createElement(PaymentBadge, { status: 'lunas' })
     expect(el.props.status).toBe('lunas')
   })
@@ -60,14 +65,14 @@ describe('ReasonChip Domain Component', () => {
   it('harus merender ReasonChip dengan label default dan custom children', () => {
     const el = React.createElement(ReasonChip, { reason: 'stok_hampir_habis' })
     expect(el.props.reason).toBe('stok_hampir_habis')
-    const customEl = React.createElement(ReasonChip, { reason: 'piutang', children: 'Jatuh tempo 14 hari' })
+    const customEl = React.createElement(ReasonChip, { reason: 'piutang' }, 'Jatuh tempo 14 hari')
     expect(customEl.props.children).toBe('Jatuh tempo 14 hari')
   })
 })
 
 describe('Badge UI Accessibility & Non-interactive guarantees', () => {
   it('harus merupakan elemen span non-interaktif tanpa tabIndex secara default', () => {
-    const el = React.createElement(Badge, { children: 'Lunas' })
+    const el = React.createElement(Badge, null, 'Lunas')
     expect(el.props.tabIndex).toBeUndefined()
     expect(el.props['aria-hidden']).toBeUndefined()
   })

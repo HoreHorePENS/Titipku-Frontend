@@ -2,139 +2,58 @@
 
 /* ==========================================================================
    SEMANTIC DESIGN TOKENS
-   Palet warna semantik untuk Titipku (Light Mode & Dark Mode).
+   Palet warna cerah, bersih, dan modern untuk Titipku (Tema Putih Cerah).
    Mengikuti standar aksesibilitas WCAG 2.1 AA (mobile-first & outdoor-friendly).
    ========================================================================== */
 
 :root {
   /* ------------------------------------------------------------------------
-     1. NETRAL (Permukaan, Garis, dan Tipografi)
-     Latar belakang bersih dan kontras tinggi untuk penggunaan di bawah sinar matahari.
+     1. NETRAL (Putih Bersih, Cerah & Elegan)
+     Latar belakang kanvas putih cerah modern (slate-50 / pure white).
      ------------------------------------------------------------------------ */
-  --color-page: #f8fafc;           /* slate-50  : kanvas dasar aplikasi */
-  --color-surface: #ffffff;        /* white     : kartu, sheet, modal */
+  --color-page: #f8fafc;           /* slate-50  : kanvas dasar putih bersih cerah */
+  --color-surface: #ffffff;        /* white     : kartu, sheet, modal, panel */
   --color-surface-raised: #f1f5f9; /* slate-100 : elemen interaktif terangkat / hover */
-  --color-line: #e2e8f0;           /* slate-200 : pemisah non-kritis dan garis tabel */
-  --color-line-strong: #94a3b8;    /* slate-400 : border input & batas komponen (≥ 3:1) */
-  --color-ink: #0f172a;            /* slate-900 : teks judul dan isi utama */
+  --color-line: #e2e8f0;           /* slate-200 : garis pembatas halus bersih */
+  --color-line-strong: #cbd5e1;    /* slate-300 : border input & batas komponen */
+  --color-ink: #0f172a;            /* slate-900 : teks judul dan isi utama tajam */
   --color-ink-soft: #64748b;       /* slate-500 : label, placeholder, teks keterangan */
   --color-ink-disabled: #94a3b8;   /* slate-400 : teks dan kontrol yang dinonaktifkan */
 
   /* ------------------------------------------------------------------------
-     2. PRIMER (Teal - Brand & Aksi Utama)
-     Digunakan untuk tombol utama (Catat Kunjungan), tab aktif, dan metrik kunci.
+     2. PRIMER (Teal - Brand & Aksi Utama Titipku)
      ------------------------------------------------------------------------ */
   --color-primary: #0f766e;        /* teal-700  : tombol utama, elemen aktif */
   --color-primary-hover: #115e59;  /* teal-800  : state hover/pressed aksi primer */
-  --color-primary-soft: #f0fdfa;   /* teal-50   : latar badge & aksen primer lembut */
-  --color-on-primary: #ffffff;     /* white     : teks di atas primary (5,47:1) */
+  --color-primary-soft: #ccfbf1;   /* teal-100  : latar nav aktif & badge lembut */
+  --color-on-primary: #ffffff;     /* white     : teks di atas primary (kontras tinggi) */
   --color-on-primary-soft: #0f766e;/* teal-700  : teks di atas primary-soft */
 
   /* ------------------------------------------------------------------------
-     3. AKSEN (Amber - Perhatian, Sebagian, Saran)
-     Amber hanya untuk latar/ikon. Teks di atasnya selalu memakai amber-900.
+     3. AKSEN / PANTAU (Amber - Perhatian, Sebagian, Pantau)
      ------------------------------------------------------------------------ */
-  --color-accent: #78350f;         /* amber-900 : teks status peringatan/sebagian */
-  --color-accent-soft: #fef3c7;    /* amber-100 : latar kartu alert & badge peringatan */
-  --color-on-accent: #78350f;      /* amber-900 : teks di atas aksen (8,15:1) */
+  --color-accent: #b45309;         /* amber-700 : teks status peringatan/pantau */
+  --color-accent-soft: #fef3c7;    /* amber-100 : latar kartu alert & badge pantau */
+  --color-on-accent: #b45309;      /* amber-700 : teks di atas aksen */
 
   /* ------------------------------------------------------------------------
-     4. SUKSES (Hijau - Lunas, Selesai, Stok Terjual)
-     Teks memakai green-700/800 agar lolos kontras.
+     4. SUKSES / BAGUS (Hijau - Lunas, Selesai, Bagus)
      ------------------------------------------------------------------------ */
-  --color-success: #15803d;        /* green-700 : teks status lunas / tren positif */
-  --color-success-soft: #dcfce7;   /* green-100 : latar badge sukses & alert selesai */
-  --color-on-success: #15803d;     /* green-700 : teks di atas success-soft (4,57:1) */
+  --color-success: #15803d;        /* green-700 : teks status bagus / lunas */
+  --color-success-soft: #dcfce7;   /* green-100 : latar badge bagus & alert sukses */
+  --color-on-success: #15803d;     /* green-700 : teks di atas success-soft */
 
   /* ------------------------------------------------------------------------
-     5. BAHAYA (Merah - Belum Lunas, Retur, Kedaluwarsa)
-     Warna peringatan kritis lapangan.
+     5. BAHAYA / EVALUASI (Merah - Evaluasi, Belum Bayar)
      ------------------------------------------------------------------------ */
-  --color-danger: #b91c1c;         /* red-700   : teks status belum lunas / retur */
-  --color-danger-soft: #fee2e2;    /* red-100   : latar badge bahaya & alert kedaluwarsa */
-  --color-on-danger: #b91c1c;      /* red-700   : teks di atas danger-soft (5,30:1) */
+  --color-danger: #b91c1c;         /* red-700   : teks status evaluasi / belum lunas */
+  --color-danger-soft: #fee2e2;    /* red-100   : latar badge evaluasi & alert batas */
+  --color-on-danger: #b91c1c;      /* red-700   : teks di atas danger-soft */
 
   /* ------------------------------------------------------------------------
      6. AKSESIBILITAS
-     Fokus navigasi keyboard dan touch feedback.
      ------------------------------------------------------------------------ */
   --color-focus-ring: #0f766e;     /* teal-700  : outline fokus aksesibilitas */
-}
-
-/* ==========================================================================
-   DARK MODE
-   Diaktifkan via class .dark atau otomatis via preferensi sistem OS.
-   Kedalaman dibuat dari permukaan yang makin terang, tanpa hitam murni (#000).
-   ========================================================================== */
-
-.dark {
-  /* 1. Netral Gelap */
-  --color-page: #020617;           /* slate-950 : kanvas malam pekat tanpa #000 murni */
-  --color-surface: #0f172a;        /* slate-900 : permukaan kartu utama */
-  --color-surface-raised: #1e293b; /* slate-800 : kartu bertingkat, modal, bottom nav */
-  --color-line: #1e293b;           /* slate-800 : garis pembatas halus */
-  --color-line-strong: #475569;    /* slate-600 : border input & batas interaktif */
-  --color-ink: #f1f5f9;            /* slate-100 : teks utama (lembut, bukan putih murni) */
-  --color-ink-soft: #94a3b8;       /* slate-400 : teks sekunder (kontras 6,96:1) */
-  --color-ink-disabled: #475569;   /* slate-600 : teks dinonaktifkan */
-
-  /* 2. Primer Gelap (Desaturasi & Step Terang agar tidak silau) */
-  --color-primary: #2dd4bf;        /* teal-400  : aksen tombol di latar gelap */
-  --color-primary-hover: #5eead4;  /* teal-300  : hover state primer */
-  --color-primary-soft: #042f2e;   /* teal-950  : latar badge/tombol subtle gelap */
-  --color-on-primary: #020617;     /* slate-950 : teks gelap di atas tombol teal-400 */
-  --color-on-primary-soft: #5eead4;/* teal-300  : teks terang di atas primary-soft gelap */
-
-  /* 3. Aksen Gelap */
-  --color-accent: #fbbf24;         /* amber-400 : teks status amber di latar gelap */
-  --color-accent-soft: #451a03;    /* amber-950 : latar badge amber malam */
-  --color-on-accent: #fcd34d;      /* amber-300 : teks di atas accent-soft (8,97:1) */
-
-  /* 4. Sukses Gelap */
-  --color-success: #4ade80;        /* green-400 : teks status sukses malam */
-  --color-success-soft: #052e16;   /* green-950 : latar badge sukses malam */
-  --color-on-success: #86efac;     /* green-300 : teks di atas success-soft (8,55:1) */
-
-  /* 5. Bahaya Gelap */
-  --color-danger: #f87171;         /* red-400   : teks status bahaya malam */
-  --color-danger-soft: #450a0a;    /* red-950   : latar badge bahaya malam */
-  --color-on-danger: #fca5a5;      /* red-300   : teks di atas danger-soft (5,84:1) */
-
-  /* 6. Aksesibilitas Gelap */
-  --color-focus-ring: #2dd4bf;     /* teal-400  : ring fokus kontras tinggi */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --color-page: #020617;
-    --color-surface: #0f172a;
-    --color-surface-raised: #1e293b;
-    --color-line: #1e293b;
-    --color-line-strong: #475569;
-    --color-ink: #f1f5f9;
-    --color-ink-soft: #94a3b8;
-    --color-ink-disabled: #475569;
-
-    --color-primary: #2dd4bf;
-    --color-primary-hover: #5eead4;
-    --color-primary-soft: #042f2e;
-    --color-on-primary: #020617;
-    --color-on-primary-soft: #5eead4;
-
-    --color-accent: #fbbf24;
-    --color-accent-soft: #451a03;
-    --color-on-accent: #fcd34d;
-
-    --color-success: #4ade80;
-    --color-success-soft: #052e16;
-    --color-on-success: #86efac;
-
-    --color-danger: #f87171;
-    --color-danger-soft: #450a0a;
-    --color-on-danger: #fca5a5;
-
-    --color-focus-ring: #2dd4bf;
-  }
 }
 
 /* ==========================================================================
@@ -172,78 +91,3 @@
 
   --color-focus-ring: var(--color-focus-ring);
 }
-
-/* ==========================================================================
-   TIPOGRAFI SEMANTIK
-   Menggunakan font Plus Jakarta Sans (bobot 400, 500, 600, 700, 800)
-   dengan fallback system-ui.
-   ========================================================================== */
-
-@theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-  /* Display & Judul (responsif clamp untuk layar 360px) */
-  --text-display: clamp(1.875rem, 7.5vw, 2.5rem); /* 30px -> 40px */
-  --text-display--line-height: 1.1;
-  --text-display--letter-spacing: -0.03em;
-  --text-display--font-weight: 800;
-
-  --text-title-1: clamp(1.375rem, 5.5vw, 1.75rem); /* 22px -> 28px */
-  --text-title-1--line-height: 1.2;
-  --text-title-1--font-weight: 800;
-
-  --text-title-2: 1.25rem; /* 20px */
-  --text-title-2--line-height: 1.25;
-  --text-title-2--font-weight: 800;
-
-  --text-title-3: 1rem; /* 16px */
-  --text-title-3--line-height: 1.35;
-  --text-title-3--font-weight: 700;
-
-  /* Teks Konten & Keterangan */
-  --text-body: 0.9375rem; /* 15px */
-  --text-body--line-height: 1.5;
-  --text-body--font-weight: 400;
-
-  --text-caption: 0.8125rem; /* 13px */
-  --text-caption--line-height: 1.4;
-  --text-caption--font-weight: 500;
-
-  /* Angka & Keuangan (Tabular) */
-  --text-amount: 2.125rem; /* 34px */
-  --text-amount--line-height: 1.15;
-  --text-amount--font-weight: 800;
-
-  --text-amount-md: 1.125rem; /* 18px */
-  --text-amount-md--line-height: 1.25;
-  --text-amount-md--font-weight: 700;
-
-  --text-stepper: 1.375rem; /* 22px */
-  --text-stepper--line-height: 1.2;
-  --text-stepper--font-weight: 700;
-
-  /* UI Interaktif & Label */
-  --text-button: 0.875rem; /* 14px */
-  --text-button--line-height: 1.25;
-  --text-button--font-weight: 600;
-
-  --text-badge: 0.75rem; /* 12px */
-  --text-badge--line-height: 1.33;
-  --text-badge--font-weight: 600;
-
-  --text-nav: 0.75rem; /* 12px */
-  --text-nav--line-height: 1.2;
-  --text-nav--font-weight: 600;
-}
-
-/* Utilitas Angka Tabular & Slashed Zero */
-@utility tabular-nums {
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
-}
-
-@utility slashed-zero {
-  font-variant-numeric: slashed-zero;
-  font-feature-settings: "zero";
-}
-

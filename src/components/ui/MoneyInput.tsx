@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect, useRef } from 'react'
+import React, { forwardRef, useState, useRef } from 'react'
 import { Input, type InputProps } from './Input'
 import { formatRibuan, parseRibuan } from '@/lib/format'
 
@@ -22,14 +22,15 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
     ref
   ) => {
     // State tampilan lokal (string berformat titik)
+    const [prevValue, setPrevValue] = useState(value)
     const [displayValue, setDisplayValue] = useState<string>(() => formatRibuan(value))
     const internalInputRef = useRef<HTMLInputElement | null>(null)
 
-    // Sinkronisasi saat value prop dari luar berubah
-    useEffect(() => {
-      const formatted = formatRibuan(value)
-      setDisplayValue(formatted)
-    }, [value])
+    // Sinkronisasi saat value prop dari luar berubah tanpa cascading render effect
+    if (value !== prevValue) {
+      setPrevValue(value)
+      setDisplayValue(formatRibuan(value))
+    }
 
     const handleCombinedRef = (node: HTMLInputElement | null) => {
       internalInputRef.current = node

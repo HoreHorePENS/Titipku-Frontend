@@ -2,14 +2,19 @@ import { lazy, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AppLayout from '@/app/layouts/AppLayout'
 import PublicLayout from '@/app/layouts/PublicLayout'
+import ProtectedRoute from '@/app/ProtectedRoute'
 import Home from '@/routes/Home'
+import Visit from '@/routes/Visit'
 import Landing from '@/routes/Landing'
 import Auth from '@/routes/Auth'
 import VisitNew from '@/routes/VisitNew'
-import VisitSummary from '@/routes/VisitSummary'
 import Invoices from '@/routes/Invoices'
 import Catalog from '@/routes/Catalog'
+import Warung from '@/routes/Warung'
 import Receipt from '@/routes/Receipt'
+import MapPage from '@/routes/MapPage'
+import MyStore from '@/routes/MyStore'
+import Penitip from '@/routes/Penitip'
 
 // Lazy load DesignLab khusus saat development environment (tree-shaken di build produksi)
 const LazyDesignLab = import.meta.env.DEV
@@ -30,17 +35,25 @@ const devRoutes =
       ]
     : []
 
-export const router = createBrowserRouter([
-  // 1. Rute Terpusat dengan Shell Navigasi Utama (AppLayout)
+const router = createBrowserRouter([
+  // 1. Rute Terpusat dengan Shell Navigasi Utama (AppLayout) yang diproteksi login
   {
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     children: [
       { path: '/', element: <Home /> },
       { path: '/home', element: <Home /> },
-      { path: '/kunjungan', element: <VisitNew /> },
+      { path: '/peta', element: <MapPage /> },
+      { path: '/map', element: <MapPage /> },
+      { path: '/toko-saya', element: <MyStore /> },
+      { path: '/penitip', element: <Penitip /> },
+      { path: '/kunjungan', element: <Visit /> },
+      { path: '/kunjungan/baru', element: <VisitNew /> },
       { path: '/visit/new', element: <VisitNew /> },
-      { path: '/visit/summary', element: <VisitSummary /> },
-      { path: '/warung', element: <Catalog /> },
+      { path: '/warung', element: <Warung /> },
       { path: '/tagihan', element: <Invoices /> },
       { path: '/invoices', element: <Invoices /> },
       { path: '/produk', element: <Catalog /> },
@@ -49,7 +62,6 @@ export const router = createBrowserRouter([
   },
 
   // 2. Rute Publik Tanpa Navigasi Pemilik (PublicLayout)
-  // /i/:token sesuai kontrak tautan WhatsApp dari backend, /n/:token dipertahankan sebagai alias
   {
     element: <PublicLayout><Receipt /></PublicLayout>,
     path: '/i/:token',
