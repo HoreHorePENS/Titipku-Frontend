@@ -1,0 +1,43 @@
+# Dependencies & build output (di-build ulang di dalam image)
+node_modules
+dist
+dist-ssr
+.vite
+coverage
+
+# VCS & CI
+.git
+.gitignore
+.github
+
+# Environment / rahasia — jangan pernah masuk ke build context
+.env
+.env.*
+!.env.example
+*.local
+
+# Log
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Output test / screenshot
+test-results
+playwright-report
+screenshots
+__screenshots__
+
+# Editor & OS
+.vscode
+.idea
+.DS_Store
+*.sw?
+
+# File Docker & dokumentasi yang tidak dibutuhkan saat build
+Dockerfile
+.dockerignore
+README.md
+*.MD
