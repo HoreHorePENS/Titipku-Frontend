@@ -14,7 +14,7 @@ export function VisitCardMobile({ visit, onSelect }: VisitCardMobileProps) {
   const statusLabel =
     visit.status === 'paid' ? 'LUNAS' : visit.status === 'partial' ? 'SEBAGIAN' : 'BELUM LUNAS'
 
-  const notaLink = visit.publicToken ? `/n/${visit.publicToken}` : `/kunjungan`
+  const notaLink = `/n/${visit.publicToken || visit.number}`
 
   return (
     <div
