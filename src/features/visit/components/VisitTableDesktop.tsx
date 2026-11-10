@@ -1,5 +1,4 @@
 import { Fragment } from 'react'
-import { Link } from 'react-router-dom'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Money } from '@/components/shared/Money'
 import { aggregateVisitItems } from '../calc'
@@ -50,8 +49,6 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
                       ? 'SEBAGIAN'
                       : 'BELUM LUNAS'
 
-                  const notaLink = `/n/${visit.publicToken || visit.number}`
-
                   return (
                     <tr
                       key={visit.id}
@@ -96,14 +93,15 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
                         <StatusBadge status={statusLabel} />
                       </td>
 
-                      {/* Nota */}
-                      <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          to={notaLink}
-                          className="font-mono text-caption font-semibold text-primary hover:underline"
+                      {/* Nota / Detail */}
+                      <td className="py-3 px-4">
+                        <button
+                          type="button"
+                          onClick={() => onSelect?.(visit)}
+                          className="font-mono text-caption font-semibold text-primary hover:underline cursor-pointer"
                         >
                           {visit.number}
-                        </Link>
+                        </button>
                       </td>
                     </tr>
                   )

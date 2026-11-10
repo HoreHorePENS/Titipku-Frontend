@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Money } from '@/components/shared/Money'
 import { aggregateVisitItems } from '../calc'
@@ -13,8 +12,6 @@ export function VisitCardMobile({ visit, onSelect }: VisitCardMobileProps) {
   const { sold } = aggregateVisitItems(visit.items)
   const statusLabel =
     visit.status === 'paid' ? 'LUNAS' : visit.status === 'partial' ? 'SEBAGIAN' : 'BELUM LUNAS'
-
-  const notaLink = `/n/${visit.publicToken || visit.number}`
 
   return (
     <div
@@ -33,15 +30,15 @@ export function VisitCardMobile({ visit, onSelect }: VisitCardMobileProps) {
         <StatusBadge status={statusLabel} />
       </div>
 
-      {/* Baris Bawah: Tautan Nota & Total Tagihan */}
+      {/* Baris Bawah: Tombol Detail Nota & Total Tagihan */}
       <div className="flex items-end justify-between pt-0.5">
-        <Link
-          to={notaLink}
-          onClick={(e) => e.stopPropagation()}
-          className="text-caption font-semibold text-primary hover:underline pb-0.5"
+        <button
+          type="button"
+          onClick={() => onSelect?.(visit)}
+          className="text-caption font-semibold text-primary hover:underline pb-0.5 cursor-pointer text-left"
         >
-          Lihat nota
-        </Link>
+          Detail nota
+        </button>
 
         <div className="text-right">
           <div className="text-title-3 font-bold text-ink tabular-nums">
