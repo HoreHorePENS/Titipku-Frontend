@@ -221,6 +221,10 @@ export default function MapPage() {
                           <span className="text-caption font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
                             Mitra Aktif
                           </span>
+                        ) : store.hasPendingProposal ? (
+                          <span className="text-caption font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300">
+                            Menunggu Persetujuan
+                          </span>
                         ) : (
                           <span className="text-caption text-slate-500 font-medium">
                             Bisa Dititipi
@@ -254,11 +258,16 @@ export default function MapPage() {
 
                       <Button
                         size="sm"
-                        variant="primary"
+                        variant={store.hasPendingProposal ? 'outline' : 'primary'}
                         className="flex-1 text-caption font-semibold rounded-lg"
+                        disabled={store.hasPendingProposal}
                         onClick={() => handleOpenConsign(store)}
                       >
-                        {store.hasConsigned ? 'Tambah Barang' : 'Titip Barang'}
+                        {store.hasConsigned
+                          ? 'Tambah Barang'
+                          : store.hasPendingProposal
+                          ? 'Pengajuan Menunggu'
+                          : 'Titip Barang'}
                       </Button>
                     </div>
                   </div>

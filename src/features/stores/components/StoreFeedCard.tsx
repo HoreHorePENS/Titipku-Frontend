@@ -60,12 +60,16 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
         >
           {store.isActive ? 'Menerima' : 'Tutup'}
         </span>
-        {/* Badge Sudah Bermitra */}
-        {store.hasConsigned && (
+        {/* Badge Sudah Bermitra / Menunggu */}
+        {store.hasConsigned ? (
           <span className="absolute top-2 left-2 text-caption font-semibold px-2 py-0.5 rounded-full bg-slate-900 text-white border border-slate-800">
             Mitra
           </span>
-        )}
+        ) : store.hasPendingProposal ? (
+          <span className="absolute top-2 left-2 text-caption font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-300">
+            Menunggu
+          </span>
+        ) : null}
       </div>
 
       {/* Info Toko */}
@@ -83,13 +87,17 @@ export function StoreFeedCard({ store, onConsign }: StoreFeedCardProps) {
         {/* Tombol Aksi */}
         <div className="flex items-center gap-1.5 mt-auto pt-1">
           <Button
-            variant={store.hasConsigned ? 'outline' : 'primary'}
+            variant={store.hasConsigned || store.hasPendingProposal ? 'outline' : 'primary'}
             size="sm"
             onClick={() => onConsign(store)}
             className="flex-1 text-caption font-semibold rounded-xl min-h-[44px]"
-            disabled={!store.isActive && !store.hasConsigned}
+            disabled={!store.isActive || store.hasConsigned || store.hasPendingProposal}
           >
-            {store.hasConsigned ? 'Sudah bermitra' : 'Ajukan titip'}
+            {store.hasConsigned
+              ? 'Sudah bermitra'
+              : store.hasPendingProposal
+              ? 'Pengajuan menunggu'
+              : 'Ajukan titip'}
           </Button>
           <button
             type="button"

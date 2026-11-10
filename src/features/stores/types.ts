@@ -20,6 +20,7 @@ export interface Store {
   photoUrl?: string | null
   isActive: boolean
   hasConsigned: boolean
+  hasPendingProposal: boolean
   createdAt: string
   updatedAt: string
 }

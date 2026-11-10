@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/toast-store'
 import { formatRupiah, formatDateWIB } from '@/lib/format'
 import { useQueryClient } from '@tanstack/react-query'
-import { createStoreDigitalInvoice } from '../digital-invoices'
+import { createStoreDigitalInvoice, saveStoreDigitalInvoice } from '../digital-invoices'
+import { useCreateStoreVisit } from '../store-visits-api'
 import { ProductStockCard } from '@/features/visit/components/ProductStockCard'
 import { calculateVisitTotals } from '@/features/visit/calc'
 import { useConsignmentRequests, type ConsignmentRequest } from '@/features/stores'
@@ -26,6 +27,7 @@ export function CreateStoreInvoiceModal({
   storeName = 'Warung Mitra',
 }: CreateStoreInvoiceModalProps) {
   const queryClient = useQueryClient()
+  const createStoreVisit = useCreateStoreVisit()
   const { requests } = useConsignmentRequests()
 
   const partnerSelectId = useId()
@@ -128,7 +130,7 @@ export function CreateStoreInvoiceModal({
   const totals = calculateVisitTotals(items, 0)
 
   // Selesaikan perhitungan dan terbitkan nota resmi
-  const handleGenerateInvoice = () => {
+  const handleGenerateInvoice = async () => {
     if (!activePenitip) {
       toast.show({
         title: 'Pilih Penitip',
@@ -147,38 +149,66 @@ export function CreateStoreInvoiceModal({
       return
     }
 
-    const newRecord = createStoreDigitalInvoice({
-      partnerId: activePenitip.id,
-      partnerName: `${activePenitip.producerBusinessName} (${activePenitip.producerOwnerName})`,
-      partnerWhatsApp: activePenitip.producerWhatsapp ?? undefined,
-      businessName: storeName,
-      receivedBy: storeName,
-      status: paymentStatus,
-      notes: notes.trim()
-        ? `${notes.trim()} (Metode: ${paymentMethod.toUpperCase()})`
-        : `Metode: ${paymentMethod.toUpperCase()}`,
-      items: items.map((it) => ({
-        productId: it.productId,
-        productName: it.productName,
-        unitPrice: it.consignPrice,
-        sold: Math.max(0, it.prevStock - it.remaining - it.returned),
-        returned: it.returned,
-        remaining: it.remaining,
-      })),
-    })
+    try {
+      const record = await createStoreVisit.mutateAsync({
+        proposalId: activePenitip.id,
+        businessId: activePenitip.producerBusinessId,
+        receivedBy: storeName,
+        items: items.map((it) => ({
+          productId: it.productId,
+          remaining: it.remaining,
+          returned: it.returned,
+          newDrop: it.newDrop,
+        })),
+        payment: {
+          amount: paymentStatus === 'paid' ? totals.todayTotal : 0,
+          method: paymentMethod,
+        },
+      })
 
-    // Invalidate TanStack query
-    queryClient.invalidateQueries({ queryKey: ['visits'] })
-    queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      saveStoreDigitalInvoice(record)
+      setCreatedInvoice(record)
+      setStep('success')
 
-    setCreatedInvoice(newRecord)
-    setStep('success')
+      toast.show({
+        title: 'Nota Digital Berhasil Diterbitkan',
+        description: `Nota ${record.number} untuk ${record.partnerName} telah tersimpan dan terhubung ke akun penitip.`,
+        type: 'success',
+      })
+    } catch {
+      // Fallback offline / local jika API terhambat
+      const fallback = createStoreDigitalInvoice({
+        partnerId: activePenitip.id,
+        partnerName: `${activePenitip.producerBusinessName} (${activePenitip.producerOwnerName})`,
+        partnerWhatsApp: activePenitip.producerWhatsapp ?? undefined,
+        businessName: storeName,
+        receivedBy: storeName,
+        status: paymentStatus,
+        notes: notes.trim()
+          ? `${notes.trim()} (Metode: ${paymentMethod.toUpperCase()})`
+          : `Metode: ${paymentMethod.toUpperCase()}`,
+        items: items.map((it) => ({
+          productId: it.productId,
+          productName: it.productName,
+          unitPrice: it.consignPrice,
+          sold: Math.max(0, it.prevStock - it.remaining - it.returned),
+          returned: it.returned,
+          remaining: it.remaining,
+        })),
+      })
 
-    toast.show({
-      title: 'Nota Digital Berhasil Diterbitkan',
-      description: `Nota ${newRecord.number} untuk ${newRecord.partnerName} telah tersimpan.`,
-      type: 'success',
-    })
+      queryClient.invalidateQueries({ queryKey: ['visits'] })
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+
+      setCreatedInvoice(fallback)
+      setStep('success')
+
+      toast.show({
+        title: 'Nota Digital Berhasil Diterbitkan',
+        description: `Nota ${fallback.number} tersimpan secara lokal.`,
+        type: 'success',
+      })
+    }
   }
 
   const handleClose = () => {

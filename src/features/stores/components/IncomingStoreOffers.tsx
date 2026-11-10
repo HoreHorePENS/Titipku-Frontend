@@ -9,8 +9,10 @@ import { describeApiError } from '@/lib/api-errors'
 import { useCatalogProducts } from '@/features/catalog/api'
 import { getCategoryMeta } from '../constants'
 import { useStoreOffers, type StoreOffer } from '../store-offers'
+import { useSetProposalItems } from '../proposals-api'
 import { WhatsAppIcon } from './whatsapp'
 import { whatsappLink } from '../whatsapp-link'
+import { OfferProductSelectModal } from './OfferProductSelectModal'
 
 type OfferFilter = 'pending' | 'accepted' | 'all'
 
@@ -48,10 +50,12 @@ function OfferCard({
   offer,
   busy,
   onRespond,
+  onOpenProductSelect,
 }: {
   offer: StoreOffer
   busy: boolean
   onRespond: (offer: StoreOffer, accept: boolean) => void
+  onOpenProductSelect: (offer: StoreOffer) => void
 }) {
   const meta = getCategoryMeta(offer.storeCategory)
   const details = [offer.shelfLocation && `Tempat: ${offer.shelfLocation}`, offer.estimatedCapacity && `Kapasitas: ${offer.estimatedCapacity}`]
@@ -91,11 +95,32 @@ function OfferCard({
         </a>
         {offer.status === 'pending' && (
           <>
-            <Button variant="outline" size="sm" className="flex-1 rounded-xl min-h-[44px]" disabled={busy} onClick={() => onRespond(offer, false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-xl min-h-[44px]"
+              disabled={busy}
+              onClick={() => onRespond(offer, false)}
+            >
               Tolak
             </Button>
-            <Button variant="primary" size="sm" className="flex-1 rounded-xl min-h-[44px]" loading={busy} onClick={() => onRespond(offer, true)}>
-              Terima tawaran
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 rounded-xl min-h-[44px]"
+              disabled={busy}
+              onClick={() => onOpenProductSelect(offer)}
+            >
+              Pilih Produk
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="flex-1 rounded-xl min-h-[44px]"
+              loading={busy}
+              onClick={() => onRespond(offer, true)}
+            >
+              Terima
             </Button>
           </>
         )}
@@ -108,8 +133,10 @@ function OfferCard({
 export function IncomingStoreOffers() {
   const navigate = useNavigate()
   const offersQuery = useStoreOffers()
+  const setProposalItems = useSetProposalItems()
   const { data: products, isLoading: isLoadingProducts } = useCatalogProducts(true)
   const [filter, setFilter] = useState<OfferFilter>('pending')
+  const [selectedOfferForItems, setSelectedOfferForItems] = useState<StoreOffer | null>(null)
 
   const { offers, pendingCount, approveOffer, rejectOffer, respondingId } = offersQuery
   const counts = {
@@ -132,6 +159,28 @@ export function IncomingStoreOffers() {
       )
     } catch (err) {
       toast.show({ title: 'Tawaran belum bisa diproses', description: describeApiError(err).message, type: 'error' })
+    }
+  }
+
+  const handleSendItems = async (items: { productId: string; qty: number }[]) => {
+    if (!selectedOfferForItems) return
+    try {
+      await setProposalItems.mutateAsync({
+        proposalId: selectedOfferForItems.id,
+        items,
+      })
+      toast.show({
+        title: 'Rincian produk terkirim',
+        description: `Rincian produk telah dikirimkan ke ${selectedOfferForItems.storeName}. Pemilik toko akan memeriksa dan menyetujui barang yang akan dititipkan.`,
+        type: 'success',
+      })
+      setSelectedOfferForItems(null)
+    } catch (err) {
+      toast.show({
+        title: 'Gagal mengirim rincian produk',
+        description: describeApiError(err).message,
+        type: 'error',
+      })
     }
   }
 
@@ -194,10 +243,25 @@ export function IncomingStoreOffers() {
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {visible.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} busy={respondingId === offer.id} onRespond={handleRespond} />
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              busy={respondingId === offer.id}
+              onRespond={handleRespond}
+              onOpenProductSelect={(target) => setSelectedOfferForItems(target)}
+            />
           ))}
         </ul>
       )}
+
+      {/* Modal Pemilihan Produk untuk Diajukan ke Toko */}
+      <OfferProductSelectModal
+        isOpen={Boolean(selectedOfferForItems)}
+        onClose={() => setSelectedOfferForItems(null)}
+        offer={selectedOfferForItems}
+        onSubmit={handleSendItems}
+        isSubmitting={setProposalItems.isPending}
+      />
     </section>
   )
 }

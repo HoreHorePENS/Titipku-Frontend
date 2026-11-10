@@ -14,6 +14,7 @@ interface RawStoreResponse {
   photo_url?: string | null
   is_active: boolean
   has_consigned: boolean
+  has_pending_proposal: boolean
   created_at: string
   updated_at: string
 }
@@ -31,6 +32,7 @@ function mapStore(raw: RawStoreResponse): Store {
     photoUrl: resolveMediaUrl(raw.photo_url),
     isActive: raw.is_active,
     hasConsigned: raw.has_consigned,
+    hasPendingProposal: Boolean(raw.has_pending_proposal),
     createdAt: raw.created_at,
     updatedAt: raw.updated_at,
   }

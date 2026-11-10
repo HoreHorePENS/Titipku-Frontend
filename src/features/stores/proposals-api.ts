@@ -240,13 +240,38 @@ export function useCreateConsignmentRequest() {
 
 export type ProposalAction = 'accept' | 'reject' | 'cancel'
 
-/** Setujui / tolak (penerima) atau batalkan (pengirim) proposal. */
+export interface ProposalActionInput {
+  id: string
+  action: ProposalAction
+  items?: { productId: string; qty: number }[]
+}
+
+/** Setujui / tolak (penerima) atau batalkan (pengirim) proposal. Mendukung partial approval bila items diisi. */
 export function useProposalAction() {
   const invalidate = useInvalidateProposals()
   return useMutation({
-    mutationFn: async ({ id, action }: { id: string; action: ProposalAction }) => {
+    mutationFn: async ({ id, action, items }: ProposalActionInput) => {
+      const body = items && items.length > 0 ? JSON.stringify({ items: items.map(it => ({ product_id: it.productId, qty: it.qty })) }) : undefined
       const res = await apiClient<{ data: RawProposal }>(`/v1/proposals/${id}/${action}`, {
         method: 'POST',
+        body,
+      })
+      return mapProposal(res.data)
+    },
+    onSuccess: invalidate,
+  })
+}
+
+/** Penitip mengirimkan atau memperbarui daftar produk untuk tawaran kemitraan. */
+export function useSetProposalItems() {
+  const invalidate = useInvalidateProposals()
+  return useMutation({
+    mutationFn: async ({ proposalId, items }: { proposalId: string; items: { productId: string; qty: number }[] }) => {
+      const res = await apiClient<{ data: RawProposal }>(`/v1/proposals/${proposalId}/items`, {
+        method: 'POST',
+        body: JSON.stringify({
+          items: items.map((it) => ({ product_id: it.productId, qty: it.qty })),
+        }),
       })
       return mapProposal(res.data)
     },

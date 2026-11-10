@@ -27,6 +27,7 @@ function memoryStorage(): Storage {
 
 describe('penyimpanan lokal per akun', () => {
   beforeEach(() => {
+    setAuthToken(null)
     vi.stubGlobal('localStorage', memoryStorage())
     vi.stubGlobal('sessionStorage', memoryStorage())
   })

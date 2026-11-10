@@ -82,8 +82,16 @@ export function useConsignmentRequests(enabled = true) {
     isError: query.isError,
     error: query.error,
     refetch: query.refetch,
-    updateRequestStatus: (requestId: string, status: 'accepted' | 'rejected') =>
-      action.mutateAsync({ id: requestId, action: status === 'accepted' ? 'accept' : 'reject' }),
+    updateRequestStatus: (
+      requestId: string,
+      status: 'accepted' | 'rejected',
+      items?: { productId: string; qty: number }[]
+    ) =>
+      action.mutateAsync({
+        id: requestId,
+        action: status === 'accepted' ? 'accept' : 'reject',
+        items,
+      }),
     isUpdating: action.isPending,
     updatingId: action.isPending ? action.variables?.id : undefined,
   }

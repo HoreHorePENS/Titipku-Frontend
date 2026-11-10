@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fetchVisits, fetchVisitDetail } from './api'
 import * as apiClientModule from '@/lib/api-client'
+import * as digitalInvoicesModule from '@/features/invoices/digital-invoices'
 
 describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
   let callCount = 0
@@ -9,6 +10,7 @@ describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
   beforeEach(() => {
     callCount = 0
     calledUrls.length = 0
+    vi.spyOn(digitalInvoicesModule, 'getStoreDigitalInvoices').mockReturnValue([])
 
     // Mock apiClient
     vi.spyOn(apiClientModule, 'apiClient').mockImplementation(async (path: string) => {
