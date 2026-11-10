@@ -341,9 +341,64 @@ export function useCreateVisit() {
 // 5. PUBLIC INVOICE (NOTA DIGITAL MITRA)
 // ============================================================================
 
+export function mapVisitRecordToPublicInvoice(local: VisitRecord): PublicInvoiceData {
+  return {
+    business: {
+      name: local.businessName || 'Warung Mitra',
+      owner_name: local.receivedBy || 'Penjaga Toko',
+      whatsapp: local.partnerWhatsApp,
+    },
+    partner: {
+      name: local.partnerName,
+      owner_name: local.partnerOwnerName || local.partnerName,
+      whatsapp: local.partnerWhatsApp,
+    },
+    visit_number: local.number,
+    visit_date: local.visitedAt,
+    received_by: local.receivedBy,
+    items: (local.items || []).map((it) => ({
+      product_name: it.productName,
+      remaining: it.remaining,
+      returned: it.returned,
+      new_drop: it.newDrop,
+      sold: it.sold,
+      stock_after: it.stockAfter,
+      unit_price: it.unitPrice,
+      subtotal: it.subtotal,
+    })),
+    total: local.total,
+    paid: local.paid,
+    remaining: Math.max(0, local.total - local.paid),
+    status: local.status,
+  }
+}
+
 export async function fetchPublicInvoice(token: string): Promise<PublicInvoiceData> {
-  const response = await apiClient<{ data: PublicInvoiceData }>(`/v1/public/invoices/${token}`)
-  return response.data
+  const findLocal = () => {
+    const localList = getStoreDigitalInvoices()
+    return localList.find(
+      (x) => x.publicToken === token || x.number === token || x.id === token
+    )
+  }
+
+  // Jika token lokal eksplisit (token-* atau store-inv-*), langsung baca dari local
+  if (token.startsWith('token-') || token.startsWith('store-inv-')) {
+    const local = findLocal()
+    if (local) {
+      return mapVisitRecordToPublicInvoice(local)
+    }
+  }
+
+  try {
+    const response = await apiClient<{ data: PublicInvoiceData }>(`/v1/public/invoices/${token}`)
+    return response.data
+  } catch (err) {
+    const local = findLocal()
+    if (local) {
+      return mapVisitRecordToPublicInvoice(local)
+    }
+    throw err
+  }
 }
 
 export function usePublicInvoice(token: string | null | undefined) {

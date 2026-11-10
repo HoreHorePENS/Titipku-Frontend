@@ -50,7 +50,7 @@ export function VisitTableDesktop({ groups, onSelect }: VisitTableDesktopProps) 
                       ? 'SEBAGIAN'
                       : 'BELUM LUNAS'
 
-                  const notaLink = visit.publicToken ? `/n/${visit.publicToken}` : `/kunjungan`
+                  const notaLink = `/n/${visit.publicToken || visit.number}`
 
                   return (
                     <tr

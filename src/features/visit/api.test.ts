@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchVisits, fetchVisitDetail } from './api'
+import { fetchVisits, fetchVisitDetail, fetchPublicInvoice } from './api'
 import * as apiClientModule from '@/lib/api-client'
 import * as digitalInvoicesModule from '@/features/invoices/digital-invoices'
 
@@ -83,6 +83,23 @@ describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
         }
       }
 
+      if (path.startsWith('/v1/public/invoices/valid-token')) {
+        return {
+          data: {
+            business: { name: 'Usaha Jaya', owner_name: 'Budi' },
+            partner: { name: 'Warung Barokah', owner_name: 'Bu Siti' },
+            visit_number: 'NOTA-001',
+            visit_date: '2026-10-28T10:00:00Z',
+            received_by: 'Bu Siti',
+            items: [],
+            total: 50000,
+            paid: 50000,
+            remaining: 0,
+            status: 'paid',
+          },
+        }
+      }
+
       return { data: [] }
     })
   })
@@ -104,5 +121,51 @@ describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
     expect(detail.id).toBe('visit-1')
     expect(detail.items.length).toBe(1)
     expect(calledUrls).toContain('/v1/visits/visit-1')
+  })
+
+  it('mengambil data nota publik via API ketika token valid', async () => {
+    const invoice = await fetchPublicInvoice('valid-token')
+    expect(invoice.visit_number).toBe('NOTA-001')
+    expect(invoice.partner.name).toBe('Warung Barokah')
+    expect(invoice.total).toBe(50000)
+  })
+
+  it('melakukan fallback ke nota digital lokal jika token lokal atau API gagal', async () => {
+    vi.spyOn(digitalInvoicesModule, 'getStoreDigitalInvoices').mockReturnValue([
+      {
+        id: 'store-inv-1',
+        number: 'NOTA-LOKAL-001',
+        partnerId: 'part-1',
+        partnerName: 'Warung Bu Siti',
+        partnerOwnerName: 'Bu Siti',
+        visitedAt: '2026-11-10T10:00:00Z',
+        receivedBy: 'Bu Siti',
+        total: 75000,
+        paid: 75000,
+        status: 'paid',
+        publicToken: 'token-lokal-123',
+        items: [
+          {
+            id: 'it-1',
+            productId: 'p-1',
+            productName: 'Keripik Tempe',
+            prevStock: 10,
+            remaining: 2,
+            returned: 1,
+            newDrop: 0,
+            sold: 7,
+            stockAfter: 2,
+            unitPrice: 10000,
+            subtotal: 70000,
+          },
+        ],
+      },
+    ])
+
+    const localInvoice = await fetchPublicInvoice('token-lokal-123')
+    expect(localInvoice.visit_number).toBe('NOTA-LOKAL-001')
+    expect(localInvoice.partner.name).toBe('Warung Bu Siti')
+    expect(localInvoice.items[0].product_name).toBe('Keripik Tempe')
+    expect(localInvoice.items[0].sold).toBe(7)
   })
 })
