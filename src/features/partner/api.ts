@@ -8,6 +8,8 @@ interface RawPartnerResponse {
   owner_name: string
   whatsapp: string
   address?: string | null
+  store_id?: string | null
+  proposal_id?: string | null
   is_active: boolean
   receivable: number
   created_at?: string
@@ -21,6 +23,8 @@ function mapPartnerResponse(raw: RawPartnerResponse): Partner {
     ownerName: raw.owner_name,
     whatsapp: raw.whatsapp,
     address: raw.address,
+    storeId: raw.store_id ?? null,
+    proposalId: raw.proposal_id ?? null,
     isActive: raw.is_active,
     receivable: raw.receivable || 0,
     createdAt: raw.created_at,

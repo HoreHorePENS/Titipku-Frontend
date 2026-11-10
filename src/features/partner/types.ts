@@ -4,6 +4,8 @@ export interface Partner {
   ownerName: string
   whatsapp: string
   address?: string | null
+  storeId?: string | null
+  proposalId?: string | null
   isActive: boolean
   receivable: number
   createdAt?: string

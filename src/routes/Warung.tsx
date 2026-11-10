@@ -5,10 +5,14 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { ErrorState } from '@/components/shared/ErrorState'
 import { PageContainer, PageHeader, FilterBar } from '@/components/shared'
-import { usePartners, useCreatePartner, useUpdatePartner } from '@/features/partner/api'
+import { toast } from '@/components/ui/toast-store'
+import { describeApiError } from '@/lib/api-errors'
+import { usePartners, useCreatePartner, useUpdatePartner, useSetPartnerActive } from '@/features/partner/api'
+import { useTerminatePartnership } from '@/features/stores'
 import { useVisits } from '@/features/visit/api'
 import { PartnerDetailModal } from '@/features/partner/components/PartnerDetailModal'
 import { PartnerFormModal } from '@/features/partner/components/PartnerFormModal'
+import { TerminatePartnerConfirmModal } from '@/features/partner/components/TerminatePartnerConfirmModal'
 import type { Partner, PartnerFormInput } from '@/features/partner/types'
 
 type AvailabilityTab = 'all' | 'tersedia' | 'tidak_tersedia'
@@ -20,11 +24,13 @@ export default function WarungRoute() {
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState<AvailabilityTab>('all')
 
-  // State modal detail & modal form CRUD
+  // State modal detail & modal form CRUD & putus mitra
   const [detailPartner, setDetailPartner] = useState<Partner | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingPartner, setEditingPartner] = useState<Partner | null>(null)
+  const [terminatingPartner, setTerminatingPartner] = useState<Partner | null>(null)
+  const [isTerminateOpen, setIsTerminateOpen] = useState(false)
 
   // Query API
   const { data: partners = [], isLoading, isError, refetch } = usePartners()
@@ -32,6 +38,8 @@ export default function WarungRoute() {
 
   const createPartnerMutation = useCreatePartner()
   const updatePartnerMutation = useUpdatePartner()
+  const terminateProposalMutation = useTerminatePartnership()
+  const setPartnerActiveMutation = useSetPartnerActive()
 
   // Hitung jumlah per ketersediaan untuk badge tab
   const counts = useMemo(() => {
@@ -91,6 +99,42 @@ export default function WarungRoute() {
   const handleOpenEdit = (partner: Partner) => {
     setEditingPartner(partner)
     setIsFormOpen(true)
+  }
+
+  // Handle buka modal putus mitra
+  const handleOpenTerminate = (partner: Partner) => {
+    setTerminatingPartner(partner)
+    setIsTerminateOpen(true)
+  }
+
+  // Eksekusi putus kemitraan
+  const handleConfirmTerminate = async () => {
+    if (!terminatingPartner) return
+    try {
+      if (terminatingPartner.proposalId) {
+        // Jika kemitraan berasal dari proposal, putus proposal (yang juga menonaktifkan partner)
+        await terminateProposalMutation.mutateAsync(terminatingPartner.proposalId)
+      } else {
+        // Fallback untuk partner manual: set is_active = false
+        await setPartnerActiveMutation.mutateAsync({
+          id: terminatingPartner.id,
+          isActive: false,
+        })
+      }
+      toast.show({
+        title: 'Kemitraan Diputus',
+        description: `Kemitraan dengan ${terminatingPartner.name} telah dinonaktifkan.`,
+        type: 'info',
+      })
+      setIsTerminateOpen(false)
+      setTerminatingPartner(null)
+    } catch (err) {
+      toast.show({
+        title: 'Gagal Memutus Kemitraan',
+        description: describeApiError(err).message,
+        type: 'error',
+      })
+    }
   }
 
   // Submit CRUD (Create / Update)
@@ -219,7 +263,17 @@ export default function WarungRoute() {
                     </div>
                   </div>
 
-                  <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="shrink-0 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    {partner.isActive !== false && (
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleOpenTerminate(partner)}
+                        className="text-caption font-semibold rounded-xl min-h-[40px] px-3.5 bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                      >
+                        Putus Mitra
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -252,6 +306,18 @@ export default function WarungRoute() {
         onSubmit={handleSubmitForm}
         initialData={editingPartner}
         isLoading={createPartnerMutation.isPending || updatePartnerMutation.isPending}
+      />
+
+      {/* Modal Konfirmasi Putus Kemitraan */}
+      <TerminatePartnerConfirmModal
+        isOpen={isTerminateOpen}
+        onClose={() => {
+          setIsTerminateOpen(false)
+          setTerminatingPartner(null)
+        }}
+        partner={terminatingPartner}
+        onConfirm={handleConfirmTerminate}
+        isLoading={terminateProposalMutation.isPending || setPartnerActiveMutation.isPending}
       />
     </PageContainer>
   )

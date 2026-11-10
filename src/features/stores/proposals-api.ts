@@ -278,3 +278,22 @@ export function useSetProposalItems() {
     onSuccess: invalidate,
   })
 }
+
+/** Penitip memutus kemitraan konsinyasi aktif. */
+export function useTerminatePartnership() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (proposalId: string) => {
+      const res = await apiClient<{ data: RawProposal }>(`/v1/proposals/${proposalId}/terminate`, {
+        method: 'POST',
+      })
+      return mapProposal(res.data)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: proposalKeys.all })
+      queryClient.invalidateQueries({ queryKey: ['partners'] })
+      queryClient.invalidateQueries({ queryKey: ['stores'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}

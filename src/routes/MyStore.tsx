@@ -61,10 +61,55 @@ function toFormState(store: Store): StoreFormState {
   }
 }
 
-function StoreProfileCard({ store, onEdit }: { store: Store; onEdit: () => void }) {
+function StoreProfileCard({
+  store,
+  onEdit,
+  onToggleActive,
+  isTogglingActive,
+}: {
+  store: Store
+  onEdit: () => void
+  onToggleActive: () => void
+  isTogglingActive: boolean
+}) {
   const meta = getCategoryMeta(store.category)
   return (
     <div className="flex flex-col gap-5">
+      {/* Status Toko & Tutup Warung Sementara */}
+      <section className="p-4 sm:p-5 bg-white rounded-2xl border border-line shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-title-3 text-ink">Status Operasional Toko</h2>
+            <span
+              className={`text-caption font-semibold px-2.5 py-0.5 rounded-full border ${
+                store.isActive
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  : 'bg-slate-100 text-slate-600 border-slate-200'
+              }`}
+            >
+              {store.isActive ? '● Menerima Titipan di Peta' : '○ Tutup Sementara'}
+            </span>
+          </div>
+          <p className="text-caption text-ink-soft mt-1">
+            {store.isActive
+              ? 'Toko Anda aktif dan terlihat di peta bagi para produsen UMKM penitip.'
+              : 'Toko Anda sedang disembunyikan sementara dari pencarian peta titip konsinyasi.'}
+          </p>
+        </div>
+
+        <div className="shrink-0">
+          <Button
+            variant={store.isActive ? 'outline' : 'primary'}
+            size="sm"
+            onClick={onToggleActive}
+            loading={isTogglingActive}
+            className="rounded-xl min-h-[44px] text-caption font-semibold"
+          >
+            {store.isActive ? 'Tutup Warung Sementara' : 'Buka & Terima Titipan'}
+          </Button>
+        </div>
+      </section>
+
       <section className="p-5 bg-white rounded-2xl border border-line flex flex-col gap-4">
         <div className="flex items-start gap-4">
           <div className="w-24 aspect-[4/3] rounded-xl overflow-hidden border border-line bg-slate-50 shrink-0 flex items-center justify-center text-slate-400">
@@ -426,7 +471,12 @@ export default function MyStoreRoute() {
           isEditing ? (
             <StoreEditForm store={store} onDone={() => setIsEditing(false)} />
           ) : (
-            <StoreProfileCard store={store} onEdit={() => setIsEditing(true)} />
+            <StoreProfileCard
+              store={store}
+              onEdit={() => setIsEditing(true)}
+              onToggleActive={handleToggleActive}
+              isTogglingActive={setActiveMutation.isPending}
+            />
           )
         ) : (
           <StoreRequestsTab />
