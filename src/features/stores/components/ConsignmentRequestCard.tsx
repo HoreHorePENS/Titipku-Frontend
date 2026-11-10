@@ -7,12 +7,13 @@ interface ConsignmentRequestCardProps {
   onClick: (request: ConsignmentRequest) => void
   onApprove?: (request: ConsignmentRequest) => void
   onReject?: (request: ConsignmentRequest) => void
-  onCalculate?: (request: ConsignmentRequest) => void
+  /** Buka daftar nota penjualan dari penitip ini (hanya-baca). */
+  onViewNotas?: (request: ConsignmentRequest) => void
   /** true saat aksi setuju/tolak untuk kartu ini sedang diproses. */
   busy?: boolean
 }
 
-export function ConsignmentRequestCard({ request, onClick, onApprove, onReject, onCalculate, busy = false }: ConsignmentRequestCardProps) {
+export function ConsignmentRequestCard({ request, onClick, onApprove, onReject, onViewNotas, busy = false }: ConsignmentRequestCardProps) {
   const totalUnits = request.items.reduce((sum, item) => sum + item.qty, 0)
   const totalValue = request.items.reduce((sum, item) => sum + item.qty * item.consignPrice, 0)
   const summary =
@@ -50,9 +51,9 @@ export function ConsignmentRequestCard({ request, onClick, onApprove, onReject, 
             Setujui
           </Button>
         )}
-        {request.status === 'accepted' && onCalculate && (
-          <Button variant="primary" size="sm" className="rounded-xl min-h-[44px]" onClick={() => onCalculate(request)}>
-            Buat nota
+        {request.status === 'accepted' && onViewNotas && (
+          <Button variant="primary" size="sm" className="rounded-xl min-h-[44px]" onClick={() => onViewNotas(request)}>
+            Nota penjualan
           </Button>
         )}
         <Button variant="outline" size="sm" className="rounded-xl min-h-[44px]" onClick={() => onClick(request)}>

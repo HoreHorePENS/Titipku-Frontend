@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from '@/components/ui/toast-store'
 import { describeApiError } from '@/lib/api-errors'
-import { formatTimeAgo, useNotifications, type AppNotification, type NotificationRole } from '@/features/notifications/notification-store'
+import {
+  formatTimeAgo,
+  notificationTarget,
+  useNotifications,
+  type AppNotification,
+  type NotificationRole,
+} from '@/features/notifications/notification-store'
 import { useProposalAction } from '@/features/stores/proposals-api'
 
 interface NotificationPopoverProps {
@@ -43,6 +49,7 @@ export function NotificationPopover({ userRole }: NotificationPopoverProps) {
     try {
       await action.mutateAsync({ id: notif.proposalId, action: accept ? 'accept' : 'reject' })
       markAsRead(notif.id)
+      setIsOpen(false)
       toast.show(
         accept
           ? { title: 'Tawaran diterima', description: 'Toko tersebut kini menjadi mitramu.', type: 'success' }
@@ -56,7 +63,7 @@ export function NotificationPopover({ userRole }: NotificationPopoverProps) {
   const openDetail = (notif: AppNotification) => {
     markAsRead(notif.id)
     setIsOpen(false)
-    navigate(userRole === 'pemilik_toko' ? '/penitip' : '/')
+    navigate(notificationTarget(notif, userRole))
   }
 
   return (

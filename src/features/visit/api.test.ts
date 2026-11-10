@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { fetchVisits, fetchVisitDetail, fetchPublicInvoice } from './api'
 import * as apiClientModule from '@/lib/api-client'
-import * as digitalInvoicesModule from '@/features/invoices/digital-invoices'
 
 describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
   let callCount = 0
@@ -10,7 +9,6 @@ describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
   beforeEach(() => {
     callCount = 0
     calledUrls.length = 0
-    vi.spyOn(digitalInvoicesModule, 'getStoreDigitalInvoices').mockReturnValue([])
 
     // Mock apiClient
     vi.spyOn(apiClientModule, 'apiClient').mockImplementation(async (path: string) => {
@@ -130,42 +128,8 @@ describe('fetchVisits Request Optimization (Eliminasi N+1)', () => {
     expect(invoice.total).toBe(50000)
   })
 
-  it('melakukan fallback ke nota digital lokal jika token lokal atau API gagal', async () => {
-    vi.spyOn(digitalInvoicesModule, 'getStoreDigitalInvoices').mockReturnValue([
-      {
-        id: 'store-inv-1',
-        number: 'NOTA-LOKAL-001',
-        partnerId: 'part-1',
-        partnerName: 'Warung Bu Siti',
-        partnerOwnerName: 'Bu Siti',
-        visitedAt: '2026-11-10T10:00:00Z',
-        receivedBy: 'Bu Siti',
-        total: 75000,
-        paid: 75000,
-        status: 'paid',
-        publicToken: 'token-lokal-123',
-        items: [
-          {
-            id: 'it-1',
-            productId: 'p-1',
-            productName: 'Keripik Tempe',
-            prevStock: 10,
-            remaining: 2,
-            returned: 1,
-            newDrop: 0,
-            sold: 7,
-            stockAfter: 2,
-            unitPrice: 10000,
-            subtotal: 70000,
-          },
-        ],
-      },
-    ])
-
-    const localInvoice = await fetchPublicInvoice('token-lokal-123')
-    expect(localInvoice.visit_number).toBe('NOTA-LOKAL-001')
-    expect(localInvoice.partner.name).toBe('Warung Bu Siti')
-    expect(localInvoice.items[0].product_name).toBe('Keripik Tempe')
-    expect(localInvoice.items[0].sold).toBe(7)
+  it('tidak memakai nota lokal: error API nota publik diteruskan ke pemanggil', async () => {
+    vi.spyOn(apiClientModule, 'apiClient').mockRejectedValueOnce(new Error('not found'))
+    await expect(fetchPublicInvoice('token-lokal-123')).rejects.toThrow('not found')
   })
 })

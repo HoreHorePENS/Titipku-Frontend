@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppLayout } from './AppLayout'
-import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS } from './nav-items'
+import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS, activeNavItem } from './nav-items'
 
 function renderLayout() {
   // Lonceng notifikasi memakai TanStack Query (data proposal asli).
@@ -18,15 +18,32 @@ function renderLayout() {
 }
 
 describe('AppLayout Shell & Navigation', () => {
-  it('harus memuat tepat 5 item navigasi resmi', () => {
-    expect(NAV_ITEMS.length).toBe(5)
+  it('harus memuat 6 item navigasi penitip termasuk Catat Kunjungan & Catat Tagihan', () => {
+    expect(NAV_ITEMS.length).toBe(6)
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
       'Beranda',
+      'Catat Kunjungan',
       'Bukti Nota',
       'Toko Mitra',
-      'Tagihan',
+      'Catat Tagihan',
       'Produk',
     ])
+  })
+
+  it('label mobile ringkas agar bottom nav tetap satu baris di 360px', () => {
+    NAV_ITEMS.forEach((item) => {
+      expect((item.shortLabel ?? item.label).length).toBeLessThanOrEqual(9)
+    })
+  })
+
+  it('menyalakan menu paling spesifik untuk path aktif', () => {
+    expect(activeNavItem(NAV_ITEMS, '/kunjungan/baru')?.label).toBe('Catat Kunjungan')
+    expect(activeNavItem(NAV_ITEMS, '/visit/new')?.label).toBe('Catat Kunjungan')
+    expect(activeNavItem(NAV_ITEMS, '/kunjungan')?.label).toBe('Bukti Nota')
+    expect(activeNavItem(NAV_ITEMS, '/kunjungan/abc-123')?.label).toBe('Bukti Nota')
+    expect(activeNavItem(NAV_ITEMS, '/home')?.label).toBe('Beranda')
+    expect(activeNavItem(NAV_ITEMS, '/tagihan')?.label).toBe('Catat Tagihan')
+    expect(activeNavItem(NAV_ITEMS, '/peta')).toBeUndefined()
   })
 
   it('harus memuat 3 item navigasi khusus pemilik toko termasuk penitip', () => {
@@ -52,7 +69,7 @@ describe('AppLayout Shell & Navigation', () => {
     // Memeriksa keberadaan bottom navigation mobile
     expect(html).toContain('aria-label="Navigasi Bawah Mobile"')
 
-    // Memeriksa 5 label navigasi muncul di dokumen
+    // Semua label navigasi muncul di dokumen (desktop: label penuh)
     NAV_ITEMS.forEach((item) => {
       expect(html).toContain(item.label)
     })

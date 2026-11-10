@@ -1,22 +1,42 @@
 import { Button } from '@/components/ui/Button'
-import { derivePartnerStock } from '../calc'
+import { useProposals } from '@/features/stores/proposals-api'
+import { consignedProducts, usePartnerStock } from '../stock-api'
 import type { Partner } from '../types'
-import type { VisitRecord } from '@/features/visit/types'
 
 export interface PartnerDetailPanelProps {
   partner: Partner
-  visits?: VisitRecord[]
   onEdit: (partner: Partner) => void
   onBackMobile?: () => void
 }
 
+/** "2027-01-02" -> "2 Jan 2027" (tanggal kalender, tanpa geser zona waktu). */
+function formatExpiry(date: string | null): string {
+  if (!date) return '-'
+  const [year, month, day] = date.split('-').map(Number)
+  if (!year || !month || !day) return '-'
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+}
+
 export function PartnerDetailPanel({
   partner,
-  visits = [],
   onEdit,
   onBackMobile,
 }: PartnerDetailPanelProps) {
-  const stockItems = derivePartnerStock(partner.id, visits)
+  const stockQuery = usePartnerStock(partner.id)
+  const stockItems = consignedProducts(stockQuery.data ?? [])
+
+  // Nama pemilik asli toko (akun pemilik toko) dari data proposal kemitraan;
+  // partner manual tetap memakai nama pengelola yang diisi penitip.
+  const { data: proposals = [] } = useProposals(Boolean(partner.storeId))
+  const storeOwnerName = partner.storeId
+    ? proposals.find((p) => p.store.id === partner.storeId)?.store.ownerName
+    : undefined
+  const ownerName = storeOwnerName || partner.ownerName
 
   const cleanPhone = (partner.whatsapp || '').replace(/\D/g, '')
   const formattedPhone = cleanPhone.startsWith('0')
@@ -24,7 +44,7 @@ export function PartnerDetailPanel({
     : cleanPhone
 
   const waUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(
-    `Halo ${partner.ownerName || partner.name}, dari Titipku...`
+    `Halo ${ownerName || partner.name}, dari Titipku...`
   )}`
 
   const mapsQuery = encodeURIComponent(
@@ -65,7 +85,7 @@ export function PartnerDetailPanel({
             </div>
 
             <p className="text-caption text-slate-500 mt-1">
-              Pemilik / Pengelola: <strong className="text-slate-800">{partner.ownerName || 'Pemilik Toko'}</strong>
+              Pemilik / Pengelola: <strong className="text-slate-800">{ownerName || '-'}</strong>
             </p>
           </div>
 
@@ -146,9 +166,20 @@ export function PartnerDetailPanel({
           </p>
         </div>
 
-        {stockItems.length === 0 ? (
+        {stockQuery.isLoading ? (
           <div className="p-6 text-center text-caption text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-            Belum ada produk yang tercatat dititipkan ke toko ini.
+            Memuat stok di rak…
+          </div>
+        ) : stockQuery.isError ? (
+          <div className="p-6 text-center text-caption text-slate-500 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center gap-2">
+            <span>Stok di toko ini belum bisa dimuat.</span>
+            <Button variant="outline" size="sm" onClick={() => stockQuery.refetch()} className="rounded-xl">
+              Coba lagi
+            </Button>
+          </div>
+        ) : stockItems.length === 0 ? (
+          <div className="p-6 text-center text-caption text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+            Belum ada produk yang dititipkan ke toko ini. Catat kunjungan untuk mulai menitipkan barang.
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-line">
@@ -157,14 +188,21 @@ export function PartnerDetailPanel({
                 <tr className="border-b border-line bg-slate-50 text-caption font-bold text-slate-500">
                   <th className="py-2.5 px-4">NAMA PRODUK</th>
                   <th className="py-2.5 px-4 text-right">STOK DI RAK</th>
+                  <th className="py-2.5 px-4 text-right whitespace-nowrap">KEDALUWARSA TERDEKAT</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/60">
                 {stockItems.map((st) => (
                   <tr key={st.productId} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-900">{st.productName}</td>
-                    <td className="py-3 px-4 text-right tabular-nums font-bold text-slate-900">
+                    <td className="py-3 px-4 font-semibold text-slate-900">
+                      {st.productName}
+                      {!st.isActive && <span className="ml-1.5 text-slate-400 font-medium">(nonaktif)</span>}
+                    </td>
+                    <td className="py-3 px-4 text-right tabular-nums font-bold text-slate-900 whitespace-nowrap">
                       {st.onShelf} bungkus
+                    </td>
+                    <td className="py-3 px-4 text-right tabular-nums text-slate-600 whitespace-nowrap">
+                      {st.onShelf > 0 ? formatExpiry(st.nearestExpiry) : '-'}
                     </td>
                   </tr>
                 ))}

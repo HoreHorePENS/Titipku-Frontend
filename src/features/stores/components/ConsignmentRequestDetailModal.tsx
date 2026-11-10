@@ -19,7 +19,8 @@ interface ConsignmentRequestDetailModalProps {
     items?: { productId: string; qty: number }[]
   ) => Promise<unknown>
   isUpdating?: boolean
-  onCreateInvoice?: (request: ConsignmentRequest) => void
+  /** Buka detail nota penjualan dari penitip ini (hanya-baca). */
+  onViewNotas?: (request: ConsignmentRequest) => void
 }
 
 export function ConsignmentRequestDetailModal({
@@ -28,7 +29,7 @@ export function ConsignmentRequestDetailModal({
   onClose,
   onUpdateStatus,
   isUpdating = false,
-  onCreateInvoice,
+  onViewNotas,
 }: ConsignmentRequestDetailModalProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [quantities, setQuantities] = useState<Record<string, number>>({})
@@ -266,16 +267,16 @@ export function ConsignmentRequestDetailModal({
               </Button>
             </>
           )}
-          {request.status === 'accepted' && onCreateInvoice && (
+          {request.status === 'accepted' && onViewNotas && (
             <Button
               variant="primary"
               className="flex-1 rounded-xl min-h-[44px]"
               onClick={() => {
                 onClose()
-                onCreateInvoice(request)
+                onViewNotas(request)
               }}
             >
-              Buat nota penjualan
+              Detail nota penjualan
             </Button>
           )}
         </div>

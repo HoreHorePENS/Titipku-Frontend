@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import { getStoreDigitalInvoices } from '@/features/invoices/digital-invoices'
 import type {
   VisitRecord,
   VisitItem,
@@ -139,7 +138,7 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
   const query = partnerId && partnerId !== 'all' ? `?partner_id=${encodeURIComponent(partnerId)}` : ''
 
   const [visitsRes, invoicesRes, partnersRes] = await Promise.all([
-    apiClient<{ data: BackendVisit[] }>(`/v1/visits${query}`).catch(() => ({ data: [] })),
+    apiClient<{ data: BackendVisit[] }>(`/v1/visits${query}`),
     apiClient<{ data: BackendInvoice[] }>('/v1/invoices').catch(() => ({ data: [] })),
     apiClient<{ data: BackendPartner[] }>('/v1/partners').catch(() => ({ data: [] })),
   ])
@@ -200,16 +199,7 @@ export async function fetchVisits(partnerId?: string): Promise<VisitRecord[]> {
     }
   })
 
-  // Gabungkan dengan bukti nota digital yang diterbitkan langsung oleh Pemilik Warung dari aplikasi
-  const storeDigitalInvoices = getStoreDigitalInvoices().filter((inv) => {
-    if (partnerId && partnerId !== 'all') {
-      return inv.partnerId === partnerId
-    }
-    return true
-  })
-
-  const combined = [...storeDigitalInvoices, ...backendRecords]
-  return combined.sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
+  return backendRecords.sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
 }
 
 export function useVisits(partnerId?: string, enabled = true) {
@@ -222,12 +212,6 @@ export function useVisits(partnerId?: string, enabled = true) {
 }
 
 export async function fetchVisitDetail(visitId: string): Promise<VisitRecord> {
-  // Cek terlebih dahulu di bukti nota digital lokal dari warung
-  if (visitId.startsWith('store-inv-')) {
-    const local = getStoreDigitalInvoices().find((x) => x.id === visitId)
-    if (local) return local
-  }
-
   const [res, invoicesRes, partnersRes] = await Promise.all([
     apiClient<{ data: BackendVisit }>(`/v1/visits/${visitId}`),
     apiClient<{ data: BackendInvoice[] }>('/v1/invoices').catch(() => ({ data: [] })),
@@ -330,6 +314,9 @@ export function useCreateVisit() {
     mutationFn: submitVisit,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['visits'] })
+      queryClient.invalidateQueries({ queryKey: ['partner-stock'] })
+      queryClient.invalidateQueries({ queryKey: ['store-notas'] })
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['partners'] })
       queryClient.invalidateQueries({ queryKey: ['partner-options'] })
@@ -341,64 +328,9 @@ export function useCreateVisit() {
 // 5. PUBLIC INVOICE (NOTA DIGITAL MITRA)
 // ============================================================================
 
-export function mapVisitRecordToPublicInvoice(local: VisitRecord): PublicInvoiceData {
-  return {
-    business: {
-      name: local.businessName || 'Warung Mitra',
-      owner_name: local.receivedBy || 'Penjaga Toko',
-      whatsapp: local.partnerWhatsApp,
-    },
-    partner: {
-      name: local.partnerName,
-      owner_name: local.partnerOwnerName || local.partnerName,
-      whatsapp: local.partnerWhatsApp,
-    },
-    visit_number: local.number,
-    visit_date: local.visitedAt,
-    received_by: local.receivedBy,
-    items: (local.items || []).map((it) => ({
-      product_name: it.productName,
-      remaining: it.remaining,
-      returned: it.returned,
-      new_drop: it.newDrop,
-      sold: it.sold,
-      stock_after: it.stockAfter,
-      unit_price: it.unitPrice,
-      subtotal: it.subtotal,
-    })),
-    total: local.total,
-    paid: local.paid,
-    remaining: Math.max(0, local.total - local.paid),
-    status: local.status,
-  }
-}
-
 export async function fetchPublicInvoice(token: string): Promise<PublicInvoiceData> {
-  const findLocal = () => {
-    const localList = getStoreDigitalInvoices()
-    return localList.find(
-      (x) => x.publicToken === token || x.number === token || x.id === token
-    )
-  }
-
-  // Jika token lokal eksplisit (token-* atau store-inv-*), langsung baca dari local
-  if (token.startsWith('token-') || token.startsWith('store-inv-')) {
-    const local = findLocal()
-    if (local) {
-      return mapVisitRecordToPublicInvoice(local)
-    }
-  }
-
-  try {
-    const response = await apiClient<{ data: PublicInvoiceData }>(`/v1/public/invoices/${token}`)
-    return response.data
-  } catch (err) {
-    const local = findLocal()
-    if (local) {
-      return mapVisitRecordToPublicInvoice(local)
-    }
-    throw err
-  }
+  const response = await apiClient<{ data: PublicInvoiceData }>(`/v1/public/invoices/${encodeURIComponent(token)}`)
+  return response.data
 }
 
 export function usePublicInvoice(token: string | null | undefined) {

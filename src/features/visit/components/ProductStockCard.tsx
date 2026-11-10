@@ -17,7 +17,7 @@ export function ProductStockCard({ item, onChange }: ProductStockCardProps) {
     unitPrice: item.consignPrice,
   })
 
-  const dropSuggestions = getDropSuggestions(item.prevStock)
+  const dropSuggestions = getDropSuggestions(item.prevStock, item.remaining, item.returned)
 
   return (
     <div

@@ -1,13 +1,11 @@
 import { Modal } from '@/components/shared/Modal'
 import { PartnerDetailPanel } from './PartnerDetailPanel'
 import type { Partner } from '../types'
-import type { VisitRecord } from '@/features/visit/types'
 
 export interface PartnerDetailModalProps {
   isOpen: boolean
   onClose: () => void
   partner: Partner | null
-  visits?: VisitRecord[]
   onEdit: (partner: Partner) => void
 }
 
@@ -15,7 +13,6 @@ export function PartnerDetailModal({
   isOpen,
   onClose,
   partner,
-  visits = [],
   onEdit,
 }: PartnerDetailModalProps) {
   if (!partner) return null
@@ -31,7 +28,6 @@ export function PartnerDetailModal({
       <div className="py-2">
         <PartnerDetailPanel
           partner={partner}
-          visits={visits}
           onEdit={(p) => {
             onClose()
             onEdit(p)

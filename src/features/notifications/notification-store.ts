@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useProposals, type Proposal } from '@/features/stores/proposals-api'
+import { useStoreNotas, type StoreNota } from '@/features/invoices/store-visits-api'
+import { rupiah } from '@/lib/format'
 import { ACCOUNT_STORAGE_KEYS, readAccountItem, writeAccountItem } from '@/lib/account-storage'
 
 export type NotificationRole = 'penitip' | 'pemilik_toko'
@@ -11,8 +13,13 @@ export interface AppNotification {
   message: string
   timestamp: string
   isRead: boolean
-  type: 'offer_incoming' | 'request_incoming' | 'accepted' | 'rejected'
+  type: 'offer_incoming' | 'request_incoming' | 'accepted' | 'rejected' | 'nota_new'
+  /** Proposal sumber notifikasi ('' untuk notifikasi nota). */
   proposalId: string
+  /** Nota sumber notifikasi (khusus 'nota_new'). */
+  notaId?: string
+  /** Toko yang terlibat di proposal (untuk membuka detail toko mitra). */
+  storeId: string
   /** true bila notifikasi bisa langsung disetujui/ditolak (proposal masuk yang masih pending). */
   actionable: boolean
 }
@@ -41,7 +48,7 @@ export function buildNotifications(proposals: Proposal[], role: NotificationRole
     const counterpart = role === 'penitip' ? proposal.store.name : proposal.business.name
     const id = `${proposal.id}:${proposal.status}`
 
-    let entry: Omit<AppNotification, 'id' | 'isRead' | 'timestamp' | 'proposalId'> | null = null
+    let entry: Omit<AppNotification, 'id' | 'isRead' | 'timestamp' | 'proposalId' | 'storeId' | 'notaId'> | null = null
     if (isIncoming && proposal.status === 'pending') {
       entry =
         role === 'penitip'
@@ -57,10 +64,49 @@ export function buildNotifications(proposals: Proposal[], role: NotificationRole
         actionable: false,
       }
     }
-    if (entry) notifications.push({ ...entry, id, timestamp, proposalId: proposal.id, isRead: readIds.has(id) })
+    if (entry) notifications.push({ ...entry, id, timestamp, proposalId: proposal.id, storeId: proposal.store.id, isRead: readIds.has(id) })
   }
 
   return notifications.sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+}
+
+/**
+ * Tujuan tombol "Lihat" sebuah notifikasi:
+ * - penitip, pengajuan disetujui -> Toko Mitra dengan detail toko tsb terbuka
+ * - penitip, pengajuan ditolak   -> daftar pengajuan di Toko Mitra, item tsb disorot
+ * - pemilik toko, pengajuan masuk -> Toko Saya, tab pengajuan
+ */
+export function notificationTarget(notif: AppNotification, role: NotificationRole): string {
+  const id = encodeURIComponent(notif.proposalId)
+  if (role === 'penitip') {
+    if (notif.type === 'accepted') return `/warung?toko=${encodeURIComponent(notif.storeId)}`
+    if (notif.type === 'rejected') return `/warung?pengajuan=${id}#pengajuan-saya`
+    return '/'
+  }
+  if (notif.type === 'request_incoming') return `/toko-saya?tab=pengajuan&pengajuan=${id}`
+  if (notif.type === 'nota_new' && notif.notaId) return `/penitip?nota=${encodeURIComponent(notif.notaId)}`
+  return '/penitip'
+}
+
+/** Pemilik toko: satu notifikasi per nota baru dari penitip (30 hari terakhir). */
+export function buildNotaNotifications(notas: StoreNota[], readIds: Set<string>, now = Date.now()): AppNotification[] {
+  return notas
+    .filter((nota) => now - new Date(nota.visitedAt).getTime() <= MAX_AGE_MS)
+    .map((nota) => {
+      const id = `nota:${nota.id}`
+      return {
+        id,
+        type: 'nota_new' as const,
+        title: `Nota baru dari ${nota.businessName}`,
+        message: nota.total > 0 ? `${nota.number} · Tagihan ${rupiah(nota.total)}` : `${nota.number} · Titip barang`,
+        timestamp: nota.visitedAt,
+        isRead: readIds.has(id),
+        proposalId: '',
+        notaId: nota.id,
+        storeId: '',
+        actionable: false,
+      }
+    })
 }
 
 export function formatTimeAgo(iso: string, now = Date.now()): string {
@@ -92,14 +138,19 @@ function saveReadIds(ids: Set<string>) {
   }
 }
 
-/** Notifikasi untuk akun yang login, diturunkan dari /v1/proposals. */
+/** Notifikasi untuk akun yang login: dari /v1/proposals, dan untuk toko juga nota baru (/v1/store-visits). */
 export function useNotifications(role: NotificationRole) {
   const proposalsQuery = useProposals()
+  const notasQuery = useStoreNotas(role === 'pemilik_toko')
   const [readIds, setReadIds] = useState<Set<string>>(loadReadIds)
 
   const notifications = useMemo(
-    () => buildNotifications(proposalsQuery.data ?? [], role, readIds),
-    [proposalsQuery.data, role, readIds]
+    () =>
+      [
+        ...buildNotifications(proposalsQuery.data ?? [], role, readIds),
+        ...(role === 'pemilik_toko' ? buildNotaNotifications(notasQuery.data ?? [], readIds) : []),
+      ].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
+    [proposalsQuery.data, notasQuery.data, role, readIds]
   )
 
   const markRead = useCallback((ids: string[]) => {

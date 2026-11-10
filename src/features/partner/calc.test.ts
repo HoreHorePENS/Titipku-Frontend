@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
   calculatePartnerHealth,
-  derivePartnerStock,
-  derivePartnerSuggestion,
   filterPartners,
 } from './calc'
 import type { Partner } from './types'
@@ -67,20 +65,6 @@ describe('Partner calculations & pure functions', () => {
     const badHealth = calculatePartnerHealth(badPartner, dummyVisits)
     expect(badHealth.tier).toBe('evaluasi')
     expect(badHealth.label).toBe('EVALUASI')
-  })
-
-  it('menghitung stok dan tanggal basi terdekat dari kunjungan terakhir', () => {
-    const stock = derivePartnerStock(dummyPartner.id, dummyVisits)
-    expect(stock.length).toBeGreaterThan(0)
-    expect(stock[0].productName).toBe('Keripik Pisang Original 100 g')
-    expect(stock[0].nearestExpiry).toBeDefined()
-  })
-
-  it('memberikan rekomendasi saran kunjungan berikutnya', () => {
-    const suggestion = derivePartnerSuggestion(dummyPartner)
-    expect(suggestion.title).toBe('SARAN KUNJUNGAN BERIKUTNYA')
-    expect(suggestion.content).toContain('Balado')
-    expect(suggestion.suggestedQty).toBe(22)
   })
 
   it('memfilter daftar warung berdasarkan nama, tier, dan filter tanpa utang', () => {

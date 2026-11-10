@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   calculateVisitItem,
+  getDropSuggestions,
   calculateVisitTotals,
   aggregateVisitItems,
   formatDateHeadersWIB,
@@ -201,5 +202,23 @@ describe('calculateVisitItem & calculateVisitTotals', () => {
     expect(totals.oldDebt).toBe(100000)
     expect(totals.grandTotal).toBe(500000)
     expect(totals.hasInvalidItems).toBe(false)
+  })
+})
+
+describe('getDropSuggestions (dari isian kunjungan, bukan angka contoh)', () => {
+  it('menyarankan angka awal untuk warung tanpa stok', () => {
+    expect(getDropSuggestions(0).map((s) => s.amount)).toEqual([10, 20, 30])
+  })
+
+  it('menyarankan mengganti yang laku dan mengisi kembali ke stok kemarin', () => {
+    // stok 10, sisa 4, retur 2 -> laku 4; isi kembali ke 10 butuh 6
+    expect(getDropSuggestions(10, 4, 2)).toEqual([
+      { label: 'Ganti yang laku (4)', amount: 4 },
+      { label: 'Isi kembali ke 10 (6)', amount: 6 },
+    ])
+  })
+
+  it('tetap memberi satu saran bila belum ada yang laku', () => {
+    expect(getDropSuggestions(8, 8, 0)).toEqual([{ label: 'Titip 8', amount: 8 }])
   })
 })

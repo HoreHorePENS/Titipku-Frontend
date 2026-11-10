@@ -1,4 +1,4 @@
-import type { Partner, PartnerHealthInfo, PartnerStockItem, PartnerSuggestion, PartnerFilterOptions } from './types'
+import type { Partner, PartnerHealthInfo, PartnerFilterOptions } from './types'
 import type { VisitRecord } from '@/features/visit/types'
 
 /**
@@ -71,86 +71,6 @@ export function calculatePartnerHealth(
     label: 'BAGUS',
     reason: 'Laku cepat, jarang retur, bayar tepat waktu',
     score: 92,
-  }
-}
-
-/**
- * Menghitung stok saat ini di rak warung beserta perkiraan tanggal basi/kedaluwarsa.
- */
-export function derivePartnerStock(
-  partnerId: string,
-  visits: VisitRecord[] = []
-): PartnerStockItem[] {
-  const partnerVisits = visits
-    .filter((v) => v.partnerId === partnerId)
-    .sort((a, b) => new Date(b.visitedAt).getTime() - new Date(a.visitedAt).getTime())
-
-  if (partnerVisits.length === 0) {
-    return [
-      {
-        productId: 'prod-1',
-        productName: 'Keripik Pisang Original 100 g',
-        onShelf: 24,
-        dailySales: 6,
-        nearestExpiry: '19 Nov',
-      },
-      {
-        productId: 'prod-2',
-        productName: 'Keripik Pisang Balado 100 g',
-        onShelf: 22,
-        dailySales: 4,
-        nearestExpiry: '19 Nov',
-      },
-      {
-        productId: 'prod-3',
-        productName: 'Keripik Singkong Pedas 150 g',
-        onShelf: 15,
-        dailySales: 5,
-        nearestExpiry: '4 Des',
-      },
-    ]
-  }
-
-  const latestVisit = partnerVisits[0]
-  if (!latestVisit.items || latestVisit.items.length === 0) {
-    return []
-  }
-
-  const baseDate = new Date(latestVisit.visitedAt)
-
-  return latestVisit.items.map((it, idx) => {
-    // Estimasi masa kedaluwarsa ~20-30 hari dari tanggal kunjungan
-    const expDate = new Date(baseDate)
-    expDate.setDate(expDate.getDate() + 20 + idx * 5)
-    const day = expDate.getDate()
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-    const expFormatted = `${day} ${monthNames[expDate.getMonth()]}`
-
-    const sold = it.sold || 0
-    const calculatedDaily = Math.max(1, Math.round((sold / 7) * 10) / 10)
-
-    return {
-      productId: it.productId,
-      productName: it.productName,
-      onShelf: it.stockAfter ?? it.remaining,
-      dailySales: Math.round(calculatedDaily) || 3,
-      nearestExpiry: expFormatted,
-    }
-  })
-}
-
-/**
- * Menghitung rekomendasi kunjungan berikutnya (saran cerdas).
- */
-export function derivePartnerSuggestion(
-  _partner: Partner,
-  _stock: PartnerStockItem[] = []
-): PartnerSuggestion {
-  return {
-    title: 'SARAN KUNJUNGAN BERIKUTNYA',
-    content: 'Tambah titipan Balado jadi 22, laku lebih cepat dari rata-rata',
-    subtext: 'Di sini ±2.3/hari, rata-rata semua warung ±1.5/hari',
-    suggestedQty: 22,
   }
 }
 

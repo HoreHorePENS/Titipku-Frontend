@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setAuthToken } from './api-client'
 import { fakeAccountToken } from './test-account-token'
-import { currentAccountId, readAccountItem, writeAccountItem, removeAccountItem } from './account-storage'
-import { getStoreDigitalInvoices, saveStoreDigitalInvoice } from '@/features/invoices/digital-invoices'
-import type { VisitRecord } from '@/features/visit/types'
+import { currentAccountId, purgeObsoleteStorage, readAccountItem, writeAccountItem, removeAccountItem } from './account-storage'
 
 function memoryStorage(): Storage {
   let data: Record<string, string> = {}
@@ -47,18 +45,26 @@ describe('penyimpanan lokal per akun', () => {
     expect(currentAccountId()).toBeNull()
   })
 
-  it('nota buatan toko tidak terlihat oleh akun lain di browser yang sama', () => {
+  it('data satu akun tidak terlihat oleh akun lain di browser yang sama', () => {
     setAuthToken(fakeAccountToken('toko-a'))
-    saveStoreDigitalInvoice({ id: 'nota-a' } as VisitRecord)
-    expect(getStoreDigitalInvoices().map((n) => n.id)).toEqual(['nota-a'])
-    expect(localStorage.getItem('titipku_digital_invoices:toko-a')).not.toBeNull()
+    expect(writeAccountItem('titipku_custom_profile', '{"a":1}')).toBe(true)
+    expect(localStorage.getItem('titipku_custom_profile:toko-a')).toBe('{"a":1}')
 
     setAuthToken(fakeAccountToken('toko-b'))
-    expect(getStoreDigitalInvoices()).toEqual([])
-    saveStoreDigitalInvoice({ id: 'nota-b' } as VisitRecord)
+    expect(readAccountItem('titipku_custom_profile')).toBeNull()
 
     setAuthToken(fakeAccountToken('toko-a'))
-    expect(getStoreDigitalInvoices().map((n) => n.id)).toEqual(['nota-a'])
+    expect(readAccountItem('titipku_custom_profile')).toBe('{"a":1}')
+  })
+
+  it('sisa nota toko lama di localStorage dihapus (tidak dipakai lagi)', () => {
+    localStorage.setItem('titipku_digital_invoices', '[]')
+    localStorage.setItem('titipku_digital_invoices:toko-a', '[{"id":"x"}]')
+    localStorage.setItem('titipku_custom_profile:toko-a', '{}')
+    purgeObsoleteStorage()
+    expect(localStorage.getItem('titipku_digital_invoices')).toBeNull()
+    expect(localStorage.getItem('titipku_digital_invoices:toko-a')).toBeNull()
+    expect(localStorage.getItem('titipku_custom_profile:toko-a')).toBe('{}')
   })
 
   it('data lama tanpa ID pindah ke akun pertama yang mengaksesnya, tidak ke akun berikutnya', () => {

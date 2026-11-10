@@ -11,7 +11,6 @@ import { getAuthToken } from './api-client'
 
 /** Data milik akun yang disimpan di localStorage. */
 export const ACCOUNT_STORAGE_KEYS = {
-  digitalInvoices: 'titipku_digital_invoices',
   customProfile: 'titipku_custom_profile',
   notificationsRead: 'titipku_notifications_read_v2',
   visitDraft: 'titipku_visit_draft_v1',
@@ -56,9 +55,29 @@ function getStorage(): Storage | null {
  * lalu hapus key lama. Akun pertama yang login/mengakses data tersebut yang mendapatkannya;
  * bila akun ini sudah punya data sendiri, data lama tidak menimpanya dan tetap dihapus.
  */
+/** Key lama yang tidak dipakai lagi (nota buatan toko kini hanya di backend). */
+const OBSOLETE_KEY_PREFIXES = ['titipku_digital_invoices'] as const
+
+/** Hapus sisa data lama yang tidak dipakai lagi dari localStorage (semua akun). */
+export function purgeObsoleteStorage(): void {
+  const storage = getStorage()
+  if (!storage) return
+  try {
+    const keys: string[] = []
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i)
+      if (key && OBSOLETE_KEY_PREFIXES.some((prefix) => key === prefix || key.startsWith(`${prefix}:`))) keys.push(key)
+    }
+    keys.forEach((key) => storage.removeItem(key))
+  } catch {
+    // Storage tidak tersedia: abaikan.
+  }
+}
+
 export function migrateLegacyAccountData(accountId: string, bases: readonly AccountStorageBase[] = Object.values(ACCOUNT_STORAGE_KEYS)) {
   const storage = getStorage()
   if (!storage) return
+  purgeObsoleteStorage()
   for (const base of bases) {
     try {
       const legacy = storage.getItem(base)

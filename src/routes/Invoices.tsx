@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import {
   PageContainer,
@@ -10,7 +11,6 @@ import {
 import { InvoiceCardMobile } from '@/features/invoices/components/InvoiceCardMobile'
 import { InvoiceTableDesktop } from '@/features/invoices/components/InvoiceTableDesktop'
 import { PaymentRecordModal } from '@/features/invoices/components/PaymentRecordModal'
-import { CreateManualInvoiceModal } from '@/features/invoices/components/CreateManualInvoiceModal'
 import { useInvoices, useCreatePayment } from '@/features/invoices/api'
 import { usePartners } from '@/features/partner/api'
 import { calculateInvoicesMetrics, filterInvoices } from '@/features/invoices/calc'
@@ -22,12 +22,13 @@ export default function InvoicesRoute() {
   const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all')
   const [selectedPartnerIdFilter, setSelectedPartnerIdFilter] = useState<string>('')
 
-  // State Modal Bayar & Modal Tambah Tagihan Belum Lunas
+  const navigate = useNavigate()
+
+  // State Modal Bayar
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [isCreateInvoiceModalOpen, setIsCreateInvoiceModalOpen] = useState(false)
   const [modalPartnerId, setModalPartnerId] = useState<string>('')
 
-  // Query Backend & Local
+  // Query Backend
   const { data: invoices = [], isLoading: isInvoicesLoading, isError: isInvoicesError, refetch } = useInvoices()
   const { data: partners = [] } = usePartners()
   const createPaymentMutation = useCreatePayment()
@@ -122,11 +123,12 @@ export default function InvoicesRoute() {
             <Button
               variant="outline"
               size="md"
-              onClick={() => setIsCreateInvoiceModalOpen(true)}
+              onClick={() => navigate('/kunjungan/baru')}
+              title="Tagihan terbit otomatis dari barang laku saat kunjungan dicatat"
               className="min-h-[44px] px-3.5 text-caption font-bold rounded-xl flex items-center gap-1.5 cursor-pointer"
             >
               <span className="text-body font-bold">+</span>
-              <span>Tambah Tagihan Belum Lunas</span>
+              <span>Tagihan dari Kunjungan</span>
             </Button>
             <Button
               variant="primary"
@@ -279,14 +281,6 @@ export default function InvoicesRoute() {
           </div>
         </>
       )}
-
-      {/* Modal Tambah Tagihan Belum Lunas */}
-      <CreateManualInvoiceModal
-        isOpen={isCreateInvoiceModalOpen}
-        onClose={() => setIsCreateInvoiceModalOpen(false)}
-        partners={partners}
-        onSuccess={() => refetch()}
-      />
 
       {/* Modal Catat Pembayaran */}
       <PaymentRecordModal

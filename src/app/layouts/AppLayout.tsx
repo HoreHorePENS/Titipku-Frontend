@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS, type NavItemConfig } from './nav-items'
+import { NAV_ITEMS, PEMILIK_TOKO_NAV_ITEMS, activeNavItem, type NavItemConfig } from './nav-items'
 import { MapIcon, LogoutIcon } from './nav-icons'
 import { NotificationPopover } from '@/components/shared/NotificationPopover'
 import { ProfileDetailModal } from '@/components/shared/ProfileDetailModal'
@@ -19,6 +19,7 @@ export function AppLayout() {
   const isPemilikToko = user?.account_type === 'pemilik_toko'
 
   const navItems = isPemilikToko ? PEMILIK_TOKO_NAV_ITEMS : NAV_ITEMS
+  const activeItem = activeNavItem(navItems, location.pathname)
 
   // Penanda menu dari data asli: tawaran (penitip) / pengajuan (toko) yang menunggu jawaban.
   const { data: proposals } = useProposals(Boolean(currentAccount))
@@ -158,10 +159,7 @@ export function AppLayout() {
           {/* Daftar Menu Desktop */}
           <nav className="flex flex-col items-center gap-1.5 px-2">
             {navItems.map((item: NavItemConfig) => {
-              const isActive =
-                item.to === '/'
-                  ? location.pathname === '/' || location.pathname === '/home'
-                  : location.pathname.startsWith(item.to)
+              const isActive = activeItem?.to === item.to
 
               return (
                 <NavLink
@@ -183,7 +181,7 @@ export function AppLayout() {
                       />
                     )}
                   </div>
-                  <span className="text-caption mt-1 tracking-tight leading-none font-medium text-center">
+                  <span className="text-caption mt-1 tracking-tight leading-none font-medium text-center line-clamp-2">
                     {item.label}
                   </span>
                 </NavLink>
@@ -280,16 +278,15 @@ export function AppLayout() {
           aria-label="Navigasi Bawah Mobile"
         >
           {navItems.map((item: NavItemConfig) => {
-            const isActive =
-              item.to === '/'
-                ? location.pathname === '/' || location.pathname === '/home'
-                : location.pathname.startsWith(item.to)
+            const isActive = activeItem?.to === item.to
 
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={`relative flex flex-col items-center justify-start flex-1 min-w-0 py-1.5 px-0.5 rounded-xl transition-all min-h-[50px] ${
+                aria-label={item.label}
+                title={item.label}
+                className={`relative flex flex-col items-center justify-start flex-1 basis-0 min-w-0 py-1.5 px-0 rounded-xl transition-all min-h-[50px] ${
                   isActive
                     ? 'text-slate-900 font-bold'
                     : 'text-slate-400 hover:text-slate-700 font-medium'
@@ -310,11 +307,11 @@ export function AppLayout() {
                 </div>
 
                 <span
-                  className={`block w-full text-center truncate whitespace-nowrap text-caption mt-1 leading-tight ${
+                  className={`block w-full text-center truncate whitespace-nowrap text-[11px] tracking-tight mt-1 leading-tight ${
                     isActive ? 'font-bold' : 'font-medium'
                   }`}
                 >
-                  {item.label}
+                  {item.shortLabel ?? item.label}
                 </span>
 
                 {isActive && (

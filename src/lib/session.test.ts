@@ -72,19 +72,20 @@ describe('sesi: ganti akun tidak membawa data akun sebelumnya', () => {
 
     expect(localStorage.getItem('titipku_digital_invoices')).toBeNull()
     expect(localStorage.getItem('titipku_custom_profile')).toBeNull()
-    expect(localStorage.getItem('titipku_digital_invoices:u2')).toBe('[{"id":"nota-lama"}]')
+    // Nota toko lama tidak dipakai lagi: dihapus, tidak dipindahkan.
+    expect(localStorage.getItem('titipku_digital_invoices:u2')).toBeNull()
     expect(localStorage.getItem('titipku_custom_profile:u2')).toBe('{"fullName":"Bu Siti"}')
   })
 
   it('logout menghapus token dan cache, tetapi data per akun tetap tersimpan untuk akun itu', () => {
     setAuthToken(fakeAccountToken('u1'))
-    localStorage.setItem('titipku_digital_invoices:u1', '[]')
+    localStorage.setItem('titipku_custom_profile:u1', '{}')
     queryClient.setQueryData(['dashboard'], { total: 1 })
 
     logoutUser()
 
     expect(getAuthToken()).toBeNull()
     expect(queryClient.getQueryData(['dashboard'])).toBeUndefined()
-    expect(localStorage.getItem('titipku_digital_invoices:u1')).toBe('[]')
+    expect(localStorage.getItem('titipku_custom_profile:u1')).toBe('{}')
   })
 })

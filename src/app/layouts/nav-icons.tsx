@@ -59,6 +59,26 @@ export function VisitIcon({ className = 'w-5 h-5' }: { className?: string }): Re
   )
 }
 
+export function VisitAddIcon({ className = 'w-5 h-5' }: { className?: string }): React.ReactElement {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z" />
+      <line x1="12" y1="10" x2="12" y2="16" />
+      <line x1="9" y1="13" x2="15" y2="13" />
+    </svg>
+  )
+}
+
 export function StoreIcon({ className = 'w-5 h-5' }: { className?: string }): React.ReactElement {
   return (
     <svg

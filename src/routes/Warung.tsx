@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/toast-store'
 import { describeApiError } from '@/lib/api-errors'
 import { usePartners, useCreatePartner, useUpdatePartner, useSetPartnerActive } from '@/features/partner/api'
 import { useTerminatePartnership } from '@/features/stores'
-import { useVisits } from '@/features/visit/api'
+import { OutgoingRequestsSection } from '@/features/stores/components/OutgoingRequestsSection'
 import { PartnerDetailModal } from '@/features/partner/components/PartnerDetailModal'
 import { PartnerFormModal } from '@/features/partner/components/PartnerFormModal'
 import { TerminatePartnerConfirmModal } from '@/features/partner/components/TerminatePartnerConfirmModal'
@@ -34,7 +34,22 @@ export default function WarungRoute() {
 
   // Query API
   const { data: partners = [], isLoading, isError, refetch } = usePartners()
-  const { data: visits = [] } = useVisits()
+
+  // Tautan dari notifikasi: ?toko=<storeId> membuka detail toko mitra,
+  // ?pengajuan=<proposalId> menyorot pengajuan di daftar "Pengajuan Titip Saya".
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const focusStoreId = searchParams.get('toko')
+  const focusProposalId = searchParams.get('pengajuan')
+  const [handledLocationKey, setHandledLocationKey] = useState<string | null>(null)
+  if (focusStoreId && partners.length > 0 && handledLocationKey !== location.key) {
+    setHandledLocationKey(location.key)
+    const target = partners.find((p) => p.storeId === focusStoreId)
+    if (target) {
+      setDetailPartner(target)
+      setIsDetailOpen(true)
+    }
+  }
 
   const createPartnerMutation = useCreatePartner()
   const updatePartnerMutation = useUpdatePartner()
@@ -290,12 +305,16 @@ export default function WarungRoute() {
         </div>
       )}
 
+      {/* Pengajuan titip yang dikirim penitip ke toko (status disetujui/ditolak/menunggu) */}
+      <div className="mt-8">
+        <OutgoingRequestsSection focusId={focusProposalId} />
+      </div>
+
       {/* Modal Detail Toko Mitra Lengkap */}
       <PartnerDetailModal
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         partner={detailPartner}
-        visits={visits}
         onEdit={handleOpenEdit}
       />
 

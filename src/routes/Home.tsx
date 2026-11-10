@@ -10,7 +10,7 @@ import { useDashboard, usePartners } from '@/features/dashboard/api'
 import { useVisits } from '@/features/visit/api'
 import { useAccountRole, useCurrentAccount } from '@/features/auth'
 import { ApiErrorState } from '@/components/shared/ApiErrorState'
-import { CreateStoreInvoiceModal } from '@/features/invoices'
+import { StoreNotaModal } from '@/features/invoices'
 import {
   useMyStore,
   useSetMyStoreActive,
@@ -59,7 +59,7 @@ function PemilikTokoDashboard({
   const [selectedPenitip, setSelectedPenitip] = useState<PenitipBusiness | null>(null)
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false)
+  const [isNotaOpen, setIsNotaOpen] = useState(false)
 
   const handleOpenOffer = (business: PenitipBusiness) => {
     setSelectedPenitip(business)
@@ -115,11 +115,10 @@ function PemilikTokoDashboard({
             <Button
               variant="outline"
               size="md"
-              onClick={() => setIsCreateInvoiceOpen(true)}
+              onClick={() => setIsNotaOpen(true)}
               className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
-              <span className="font-bold">+</span>
-              <span>Buat Nota Penjualan</span>
+              <span>Detail Nota Penjualan</span>
             </Button>
             <Button
               variant="outline"
@@ -291,10 +290,10 @@ function PemilikTokoDashboard({
         onOpenRequests={() => navigate('/penitip')}
       />
 
-      {/* Modal Buat Nota Penjualan Digital Langsung dari Toko */}
-      <CreateStoreInvoiceModal
-        isOpen={isCreateInvoiceOpen}
-        onClose={() => setIsCreateInvoiceOpen(false)}
+      {/* Nota penjualan dari penitip (hanya-baca + unduh PDF) */}
+      <StoreNotaModal
+        isOpen={isNotaOpen}
+        onClose={() => setIsNotaOpen(false)}
         storeName={store?.name || 'Tokomu'}
       />
     </PageContainer>
@@ -386,15 +385,6 @@ function PenitipMarketplace({
               className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
               <span>Peta Toko</span>
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => handleStartVisit()}
-              className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
-            >
-              <span className="text-body leading-none font-bold">+</span>
-              <span>Catat Kunjungan</span>
             </Button>
           </div>
         }

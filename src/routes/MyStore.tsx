@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageContainer, PageHeader } from '@/components/shared'
 import { ApiErrorState } from '@/components/shared/ApiErrorState'
 import { EmptyState } from '@/components/shared/EmptyState'
@@ -312,11 +312,17 @@ function StoreEditForm({ store, onDone }: { store: Store; onDone: () => void }) 
   )
 }
 
-function StoreRequestsTab() {
+function StoreRequestsTab({ focusId }: { focusId?: string | null }) {
   const navigate = useNavigate()
   const requestsQuery = useConsignmentRequests()
   const [selected, setSelected] = useState<ConsignmentRequest | null>(null)
   const { requests, updateRequestStatus, isUpdating, updatingId } = requestsQuery
+
+  // Gulir ke pengajuan yang dibuka dari notifikasi.
+  useEffect(() => {
+    if (!focusId || requests.length === 0) return
+    document.getElementById(`pengajuan-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [focusId, requests.length])
 
   const respond = async (request: ConsignmentRequest, status: 'accepted' | 'rejected') => {
     try {
@@ -357,7 +363,12 @@ function StoreRequestsTab() {
     <>
       <ul className="flex flex-col gap-2.5">
         {requests.map((request) => (
-          <li key={request.id}>
+          <li
+            key={request.id}
+            id={`pengajuan-${request.id}`}
+            aria-current={request.id === focusId ? 'true' : undefined}
+            className={request.id === focusId ? 'rounded-2xl ring-2 ring-ink/20' : undefined}
+          >
             <ConsignmentRequestCard
               request={request}
               onClick={setSelected}
@@ -383,7 +394,18 @@ export default function MyStoreRoute() {
   const { data: store, isLoading, isError, error, refetch } = useMyStore()
   const setActiveMutation = useSetMyStoreActive()
   const { pendingCount } = useConsignmentRequests()
-  const [activeTab, setActiveTab] = useState<'profile' | 'requests'>('profile')
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState<'profile' | 'requests'>(
+    searchParams.get('tab') === 'pengajuan' ? 'requests' : 'profile'
+  )
+  // Notifikasi pengajuan masuk: ?tab=pengajuan membuka tab pengajuan (juga saat halaman sudah terbuka).
+  const [handledLocationKey, setHandledLocationKey] = useState(location.key)
+  if (handledLocationKey !== location.key) {
+    setHandledLocationKey(location.key)
+    if (searchParams.get('tab') === 'pengajuan') setActiveTab('requests')
+  }
+  const focusRequestId = searchParams.get('pengajuan')
   const [isEditing, setIsEditing] = useState(false)
 
   const handleToggleActive = async () => {
@@ -479,7 +501,7 @@ export default function MyStoreRoute() {
             />
           )
         ) : (
-          <StoreRequestsTab />
+          <StoreRequestsTab focusId={focusRequestId} />
         )}
       </div>
     </PageContainer>

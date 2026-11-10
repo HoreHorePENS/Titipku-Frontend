@@ -104,21 +104,28 @@ export function calculateVisitTotals(
 /**
  * Menghitung rekomendasi kuantitas titip baru (chips saran)
  */
-export function getDropSuggestions(prevStock: number): Array<{ label: string; amount: number }> {
+export function getDropSuggestions(
+  prevStock: number,
+  remaining = prevStock,
+  returned = 0
+): Array<{ label: string; amount: number }> {
   if (prevStock <= 0) {
     return [
+      { label: 'Titip 10', amount: 10 },
       { label: 'Titip 20', amount: 20 },
       { label: 'Titip 30', amount: 30 },
-      { label: 'Titip 50', amount: 50 },
     ]
   }
 
-  // Jika warung sudah ada riwayat konsinyasi
-  return [
-    { label: 'Laku ±3/hari (21 bks)', amount: 21 },
-    { label: 'Laku ±5/hari (35 bks)', amount: 35 },
-    { label: `Samakan (${prevStock} bks)`, amount: prevStock },
-  ]
+  // Dihitung dari isian kunjungan ini (bukan angka contoh).
+  const sold = Math.max(0, prevStock - remaining - returned)
+  const refill = Math.max(0, prevStock - remaining)
+  const suggestions: Array<{ label: string; amount: number }> = []
+  if (sold > 0) suggestions.push({ label: `Ganti yang laku (${sold})`, amount: sold })
+  // Titip baru agar stok di rak kembali seperti kemarin.
+  if (refill > 0 && refill !== sold) suggestions.push({ label: `Isi kembali ke ${prevStock} (${refill})`, amount: refill })
+  if (suggestions.length === 0) suggestions.push({ label: `Titip ${prevStock}`, amount: prevStock })
+  return suggestions
 }
 
 /**

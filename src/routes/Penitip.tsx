@@ -3,13 +3,13 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { ApiErrorState } from '@/components/shared/ApiErrorState'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { describeApiError } from '@/lib/api-errors'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { PageContainer } from '@/components/shared'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { toast } from '@/components/ui/toast-store'
 import { useCurrentAccount } from '@/features/auth'
-import { CreateStoreInvoiceModal } from '@/features/invoices'
+import { StoreNotaModal } from '@/features/invoices'
 import {
   ConsignmentRequestCard,
   ConsignmentRequestDetailModal,
@@ -35,8 +35,27 @@ export default function PenitipRoute() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreateInvoiceOpen, setIsCreateInvoiceOpen] = useState(false)
-  const [invoicePenitipTarget, setInvoicePenitipTarget] = useState<ConsignmentRequest | null>(null)
+  // Detail nota penjualan (dibuat penitip, toko hanya melihat & mengunduh)
+  const [isNotaOpen, setIsNotaOpen] = useState(false)
+  const [notaPenitip, setNotaPenitip] = useState<ConsignmentRequest | null>(null)
+  const [notaInitialId, setNotaInitialId] = useState<string | null>(null)
+  const openNotas = (request: ConsignmentRequest | null) => {
+    setNotaPenitip(request)
+    setNotaInitialId(null)
+    setIsNotaOpen(true)
+  }
+
+  // Notifikasi "Nota baru": ?nota=<id> langsung membuka detail nota tsb.
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const notaParam = searchParams.get('nota')
+  const [handledLocationKey, setHandledLocationKey] = useState<string | null>(null)
+  if (notaParam && handledLocationKey !== location.key) {
+    setHandledLocationKey(location.key)
+    setNotaPenitip(null)
+    setNotaInitialId(notaParam)
+    setIsNotaOpen(true)
+  }
 
   const respond = async (request: ConsignmentRequest, status: 'accepted' | 'rejected') => {
     try {
@@ -133,14 +152,10 @@ export default function PenitipRoute() {
             <Button
               variant="primary"
               size="md"
-              onClick={() => {
-                setInvoicePenitipTarget(null)
-                setIsCreateInvoiceOpen(true)
-              }}
+              onClick={() => openNotas(null)}
               className="flex items-center gap-1.5 text-caption font-semibold rounded-xl min-h-[44px]"
             >
-              <span className="font-bold">+</span>
-              <span>Buat Nota Penjualan</span>
+              <span>Detail Nota Penjualan</span>
             </Button>
           </div>
         </div>
@@ -362,7 +377,7 @@ export default function PenitipRoute() {
                       Mitra Penitip Aktif ({activeRequests.length})
                     </h2>
                   </div>
-                  <span className="text-caption text-slate-500 font-medium pl-[18px] sm:pl-0">Siap drop barang &amp; hitung nota</span>
+                  <span className="text-caption text-slate-500 font-medium pl-[18px] sm:pl-0">Lihat nota penjualan dari penitip</span>
                 </div>
 
                 {activeRequests.length === 0 ? (
@@ -379,10 +394,7 @@ export default function PenitipRoute() {
                         onApprove={handleQuickApprove}
                         onReject={handleQuickReject}
                         busy={updatingId === request.id}
-                        onCalculate={(req) => {
-                          setInvoicePenitipTarget(req)
-                          setIsCreateInvoiceOpen(true)
-                        }}
+                        onViewNotas={openNotas}
                       />
                     ))}
                   </div>
@@ -415,10 +427,7 @@ export default function PenitipRoute() {
                         onApprove={handleQuickApprove}
                         onReject={handleQuickReject}
                         busy={updatingId === request.id}
-                        onCalculate={(req) => {
-                          setInvoicePenitipTarget(req)
-                          setIsCreateInvoiceOpen(true)
-                        }}
+                        onViewNotas={openNotas}
                       />
                     ))}
                   </div>
@@ -435,10 +444,7 @@ export default function PenitipRoute() {
                   onApprove={handleQuickApprove}
                   onReject={handleQuickReject}
                         busy={updatingId === request.id}
-                  onCalculate={(req) => {
-                    setInvoicePenitipTarget(req)
-                    setIsCreateInvoiceOpen(true)
-                  }}
+                  onViewNotas={openNotas}
                 />
               ))}
             </div>
@@ -452,21 +458,21 @@ export default function PenitipRoute() {
           onClose={() => setIsDetailModalOpen(false)}
           onUpdateStatus={updateRequestStatus}
           isUpdating={isUpdating}
-          onCreateInvoice={(req) => {
-            setInvoicePenitipTarget(req)
-            setIsCreateInvoiceOpen(true)
-          }}
+          onViewNotas={openNotas}
         />
 
-        {/* Modal Buat Nota Penjualan Digital */}
-        <CreateStoreInvoiceModal
-          isOpen={isCreateInvoiceOpen}
+        {/* Detail nota penjualan dari penitip (hanya-baca + unduh PDF) */}
+        <StoreNotaModal
+          isOpen={isNotaOpen}
           onClose={() => {
-            setIsCreateInvoiceOpen(false)
-            setInvoicePenitipTarget(null)
+            setIsNotaOpen(false)
+            setNotaPenitip(null)
+            setNotaInitialId(null)
           }}
-          initialPenitip={invoicePenitipTarget}
           storeName={myStore?.name ?? 'Tokomu'}
+          businessId={notaPenitip?.producerBusinessId}
+          businessName={notaPenitip?.producerBusinessName}
+          initialNotaId={notaInitialId}
         />
       </div>
     </PageContainer>

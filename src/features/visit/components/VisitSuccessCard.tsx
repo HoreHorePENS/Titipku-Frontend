@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { rupiah } from '@/lib/format'
+import { buildNotaWhatsAppUrl } from '../nota-whatsapp'
 import type { CreatedVisitResult } from '../types'
 
 export interface VisitSuccessCardProps {
@@ -10,21 +11,8 @@ export interface VisitSuccessCardProps {
 
 export function VisitSuccessCard({ visit, onNewVisit }: VisitSuccessCardProps) {
   const notaUrl = visit.publicToken ? `/n/${visit.publicToken}` : `/kunjungan`
-
-  const handleOpenWhatsApp = () => {
-    if (visit.whatsappUrl) {
-      window.open(visit.whatsappUrl, '_blank', 'noopener,noreferrer')
-    } else {
-      // Fallback pesan wa standar
-      const phone = visit.partnerWhatsApp || ''
-      const msg = encodeURIComponent(
-        `Halo, ini nota titipan ${visit.businessName} nomor ${visit.number}. Total: ${rupiah(
-          visit.total
-        )}. Terima kasih!`
-      )
-      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank', 'noopener,noreferrer')
-    }
-  }
+  // Kirim ke nomor toko: ringkasan nota + link nota publik.
+  const whatsappUrl = buildNotaWhatsAppUrl(visit)
 
   return (
     <div className="max-w-md mx-auto bg-surface rounded-3xl border border-line p-6 shadow-xs flex flex-col items-center text-center font-sans animate-fadeIn">
@@ -38,7 +26,7 @@ export function VisitSuccessCard({ visit, onNewVisit }: VisitSuccessCardProps) {
         <span>Tersimpan</span>
       </div>
 
-      <h2 className="text-title-2 text-ink">Kunjungan Berhasil Disimpan</h2>
+      <h2 className="text-title-2 text-ink">Nota Berhasil Disimpan</h2>
       <p className="text-caption text-ink-soft mt-1">
         Nomor Nota: <strong className="text-ink">{visit.number}</strong>
       </p>
@@ -65,14 +53,22 @@ export function VisitSuccessCard({ visit, onNewVisit }: VisitSuccessCardProps) {
 
       {/* Tombol Aksi Utama: Kirim via WhatsApp -> */}
       <div className="w-full flex flex-col gap-2.5">
-        <button
-          type="button"
-          onClick={handleOpenWhatsApp}
-          className="w-full h-12 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:brightness-95 text-white font-bold text-body flex items-center justify-center gap-2 shadow-xs transition-all"
-        >
-          <span>💬</span>
-          <span>Kirim via WhatsApp →</span>
-        </button>
+        {whatsappUrl ? (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full h-12 rounded-xl bg-[#25D366] hover:bg-[#20ba59] active:brightness-95 text-white font-bold text-body flex items-center justify-center gap-2 shadow-xs transition-all"
+          >
+            <span aria-hidden="true">💬</span>
+            <span>Kirim ke WhatsApp</span>
+          </a>
+        ) : (
+          <p className="text-caption text-ink-soft">
+            Nomor WhatsApp toko belum valid, nota belum bisa dikirim lewat WhatsApp.
+          </p>
+        )}
+        <p className="text-caption text-ink-soft -mt-1">Nota juga sudah langsung terlihat di akun toko.</p>
 
         <Link to={notaUrl} target="_blank" className="w-full">
           <Button variant="outline-primary" size="lg" fullWidth className="rounded-xl h-11 text-caption font-bold">

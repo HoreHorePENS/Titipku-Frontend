@@ -1,121 +1,134 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import type { VisitRecord } from '@/features/visit/types'
 
-export interface StoreVisitItemInput {
+/**
+ * Nota penjualan dari penitip, dilihat oleh pemilik toko (hanya-baca).
+ * Nota dibuat penitip lewat Catat Kunjungan; toko tidak menerbitkan nota sendiri.
+ */
+export type StoreNotaPaymentStatus = 'paid' | 'partial' | 'unpaid' | 'no_invoice'
+
+export interface StoreNotaItem {
   productId: string
+  productName: string
+  prevStock: number
   remaining: number
   returned: number
   newDrop: number
+  sold: number
+  stockAfter: number
+  unitPrice: number
+  subtotal: number
 }
 
-export interface StoreVisitPaymentInput {
-  amount: number
-  method: 'cash' | 'transfer' | 'qris'
+export interface StoreNota {
+  id: string
+  number: string
+  /** Usaha penitip pembuat nota. */
+  businessId: string
+  businessName: string
+  ownerName: string
+  whatsapp: string
+  visitedAt: string
+  receivedBy: string
+  total: number
+  paid: number
+  paymentStatus: StoreNotaPaymentStatus
+  publicInvoiceUrl?: string
+  items: StoreNotaItem[]
 }
 
-export interface CreateStoreVisitInput {
-  proposalId?: string
-  businessId?: string
-  receivedBy?: string
-  visitedAt?: string
-  items: StoreVisitItemInput[]
-  payment?: StoreVisitPaymentInput
+export interface RawStoreNota {
+  id: string
+  number: string
+  business_id: string
+  partner_name: string
+  partner_owner_name: string
+  partner_whatsapp: string
+  visited_at: string
+  received_by: string
+  total: number
+  paid: number
+  payment_status: StoreNotaPaymentStatus
+  public_invoice_url?: string
+  items?: Array<{
+    product_id: string
+    product_name: string
+    prev_stock?: number
+    remaining: number
+    returned: number
+    new_drop: number
+    sold: number
+    stock_after: number
+    unit_price: number
+    subtotal: number
+  }>
 }
 
-interface RawStoreVisitResponse {
-  data: {
-    id: string
-    number: string
-    business_name: string
-    partner_id: string
-    partner_name: string
-    partner_whatsapp?: string
-    visited_at: string
-    received_by: string
-    total: number
-    public_token?: string
-    public_invoice_url?: string
-    whatsapp_url?: string
-    items?: Array<{
-      id?: string
-      product_id: string
-      product_name: string
-      prev_stock?: number
-      remaining: number
-      returned: number
-      new_drop: number
-      sold: number
-      stock_after: number
-      unit_price: number
-      subtotal: number
-    }>
+export function mapStoreNota(raw: RawStoreNota): StoreNota {
+  return {
+    id: raw.id,
+    number: raw.number,
+    businessId: raw.business_id,
+    businessName: raw.partner_name,
+    ownerName: raw.partner_owner_name,
+    whatsapp: raw.partner_whatsapp,
+    visitedAt: raw.visited_at,
+    receivedBy: raw.received_by,
+    total: raw.total,
+    paid: raw.paid ?? 0,
+    paymentStatus: raw.payment_status,
+    publicInvoiceUrl: raw.public_invoice_url,
+    items: (raw.items ?? []).map((it) => ({
+      productId: it.product_id,
+      productName: it.product_name,
+      prevStock: it.prev_stock ?? 0,
+      remaining: it.remaining,
+      returned: it.returned,
+      newDrop: it.new_drop,
+      sold: it.sold,
+      stockAfter: it.stock_after,
+      unitPrice: it.unit_price,
+      subtotal: it.subtotal,
+    })),
   }
 }
 
-export function useCreateStoreVisit() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (input: CreateStoreVisitInput) => {
-      const res = await apiClient<RawStoreVisitResponse>('/v1/store-visits', {
-        method: 'POST',
-        body: JSON.stringify({
-          proposal_id: input.proposalId,
-          business_id: input.businessId,
-          received_by: input.receivedBy,
-          visited_at: input.visitedAt,
-          items: input.items.map((it) => ({
-            product_id: it.productId,
-            remaining: it.remaining,
-            returned: it.returned,
-            new_drop: it.newDrop,
-          })),
-          payment: input.payment
-            ? {
-                amount: input.payment.amount,
-                method: input.payment.method,
-              }
-            : undefined,
-        }),
-      })
-      const v = res.data
-      const record: VisitRecord = {
-        id: v.id,
-        number: v.number,
-        businessName: v.business_name,
-        partnerId: v.partner_id,
-        partnerName: v.partner_name,
-        partnerWhatsApp: v.partner_whatsapp,
-        visitedAt: v.visited_at,
-        receivedBy: v.received_by,
-        total: v.total,
-        paid: input.payment ? input.payment.amount : 0,
-        status: input.payment && input.payment.amount >= v.total ? 'paid' : 'unpaid',
-        publicToken: v.public_token,
-        publicInvoiceUrl: v.public_invoice_url,
-        whatsappUrl: v.whatsapp_url,
-        items: (v.items || []).map((it) => ({
-          id: it.id,
-          productId: it.product_id,
-          productName: it.product_name,
-          prevStock: it.prev_stock ?? 0,
-          remaining: it.remaining,
-          returned: it.returned,
-          newDrop: it.new_drop,
-          sold: it.sold,
-          stockAfter: it.stock_after,
-          unitPrice: it.unit_price,
-          subtotal: it.subtotal,
-        })),
-      }
-      return record
+export const STORE_NOTA_STATUS_LABEL: Record<StoreNotaPaymentStatus, string> = {
+  paid: 'Lunas',
+  partial: 'Dibayar sebagian',
+  unpaid: 'Belum dibayar',
+  no_invoice: 'Titip barang (tanpa tagihan)',
+}
+
+export const storeNotaKeys = {
+  all: ['store-notas'] as const,
+  list: () => ['store-notas', 'list'] as const,
+  detail: (id: string) => ['store-notas', 'detail', id] as const,
+}
+
+/** Daftar nota dari semua penitip untuk toko ini (terbaru dulu). */
+export function useStoreNotas(enabled = true) {
+  return useQuery({
+    queryKey: storeNotaKeys.list(),
+    enabled,
+    staleTime: 1000 * 20,
+    refetchInterval: 1000 * 60,
+    queryFn: async () => {
+      const res = await apiClient<{ data: RawStoreNota[] }>('/v1/store-visits?limit=100')
+      return (res.data ?? []).map(mapStoreNota)
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['visits'] })
-      queryClient.invalidateQueries({ queryKey: ['invoices'] })
-      queryClient.invalidateQueries({ queryKey: ['store-visits'] })
-      queryClient.invalidateQueries({ queryKey: ['proposals'] })
-      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+  })
+}
+
+/** Detail satu nota beserta rincian produk. */
+export function useStoreNota(id: string | null | undefined) {
+  return useQuery({
+    queryKey: storeNotaKeys.detail(id ?? ''),
+    enabled: Boolean(id),
+    staleTime: 1000 * 20,
+    queryFn: async () => {
+      const res = await apiClient<{ data: RawStoreNota }>(`/v1/store-visits/${encodeURIComponent(id!)}`)
+      return mapStoreNota(res.data)
     },
   })
 }

@@ -29,22 +29,6 @@ export interface PartnerHealthInfo {
   score: number
 }
 
-export interface PartnerStockItem {
-  productId: string
-  productName: string
-  onShelf: number
-  dailySales: number
-  nearestExpiry: string
-}
-
-export interface PartnerSuggestion {
-  title: string
-  content: string
-  subtext: string
-  targetProductId?: string
-  suggestedQty?: number
-}
-
 export interface PartnerFilterOptions {
   search?: string
   tierFilter?: 'all' | HealthTier
